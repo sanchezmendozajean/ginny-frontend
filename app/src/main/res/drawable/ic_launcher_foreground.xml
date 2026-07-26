@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Rounded-square "G" glyph, evokes a D-Pad tile without copying any existing brand mark -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,28 C69,28 81,40 81,54 C81,68 69,80 54,80 C39,80 27,68 27,54 C27,40 39,28 54,28 Z M54,38 C44.6,38 37,45.6 37,54 C37,62.4 44.6,70 54,70 C60.4,70 65.9,66.3 68.4,60.9 L54.5,60.9 L54.5,52.4 L79,52.4 L79,54 C79,68.9 67.9,80 54,80 C40,80 29,69 29,54 C29,39.6 40,28.5 54,28.5 C61.6,28.5 68.3,31.9 72.7,37.2 L65.7,43.4 C62.9,40.1 58.7,38 54,38 Z" />
+</vector>

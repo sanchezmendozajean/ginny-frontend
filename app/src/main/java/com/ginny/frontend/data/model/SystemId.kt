@@ -1,0 +1,21 @@
+package com.ginny.frontend.data.model
+
+/** Stable identifier for a supported console. Doubles as the ROM/Assets subfolder name. */
+enum class SystemId(val folderName: String) {
+    NES("nes"),
+    SNES("snes"),
+    GB("gb"),
+    GBC("gbc"),
+    GBA("gba"),
+    PS1("ps1"),
+    GENESIS("genesis"),
+    MASTERSYSTEM("mastersystem"),
+    NEOGEO("neogeo"),
+    FBNEO("fbneo"),
+    MAME("mame"),
+    GC("gc"),
+    PS2("ps2"),
+    PSP("psp"),
+    DREAMCAST("dreamcast"),
+    SWITCH("switch"),
+}

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Maqueta visual — Frontend de emuladores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-page: #dfe6ee;
+    --shell-bg:
+      radial-gradient(circle at 12% 18%, rgba(168,140,214,0.28), transparent 42%),
+      radial-gradient(circle at 50% 6%, rgba(120,200,175,0.30), transparent 46%),
+      radial-gradient(circle at 88% 20%, rgba(240,214,150,0.32), transparent 46%),
+      radial-gradient(circle at 20% 88%, rgba(120,150,215,0.26), transparent 46%),
+      radial-gradient(circle at 82% 85%, rgba(220,140,185,0.26), transparent 46%),
+      linear-gradient(160deg,#f2f4f8 0%, #eaeef4 100%);
+    --card-bg: #ffffff;
+    --card-shadow: 0 6px 14px rgba(60,90,130,0.14), 0 1px 2px rgba(60,90,130,0.10);
+    --text-primary: #33414d;
+    --text-secondary: #7c8a96;
+    --text-inverse: #ffffff;
+    --accent-celeste: #7dd3f0;
+    --accent-blue: #2f6fed;
+    --accent-gradient: linear-gradient(135deg, var(--accent-celeste), var(--accent-blue));
+    --accent-red: #e2665f;
+    --accent-red-soft: #ea8781;
+    --bar-bg: rgba(255,255,255,0.72);
+    --bar-border: rgba(255,255,255,0.9);
+    --unfocused-border: #ffffff;
+    --unfocused-shadow: 0 2px 6px rgba(60,90,130,0.16);
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --radius-sm: 10px;
+    --system-a: #ff8a65;
+    --system-b: #4fc3a1;
+    --system-c: #7e8ce0;
+    --system-d: #f2b134;
+    --system-e: #ec6f9c;
+    --system-f: #5bb8d4;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg-page);
+    font-family: 'Nunito Sans', sans-serif;
+    color: var(--text-primary);
+    padding: 40px 24px 80px;
+  }
+
+  .page-title{
+    max-width: 1180px;
+    margin: 0 auto 8px;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size: 28px;
+    color:#2a3540;
+  }
+  .page-subtitle{
+    max-width: 1180px;
+    margin: 0 auto 40px;
+    color: var(--text-secondary);
+    font-size:15px;
+    line-height:1.5;
+  }
+
+  .frame-block{
+    max-width: 1180px;
+    margin: 0 auto 56px;
+  }
+  .frame-label{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size: 15px;
+    letter-spacing:.02em;
+    color: var(--accent-blue);
+    margin-bottom: 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .frame-label .num{
+    width:22px; height:22px;
+    border-radius:50%;
+    background:var(--accent-gradient);
+    color:#fff;
+    font-size:12px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .frame-note{
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 10px 2px 0;
+    line-height:1.55;
+  }
+
+  /* ---------- Device shell ---------- */
+  .shell{
+    aspect-ratio: 16/9;
+    width: 100%;
+    background: var(--shell-bg);
+    border-radius: 28px;
+    box-shadow: 0 20px 40px rgba(30,50,80,0.22), inset 0 0 0 1px rgba(255,255,255,0.6);
+    padding: 18px 22px;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:hidden;
+  }
+  .shell::before{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(circle at 15% 0%, rgba(255,255,255,0.55), transparent 45%);
+    pointer-events:none;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    height: 46px;
+    background: var(--bar-bg);
+    border: 1px solid var(--bar-border);
+    border-radius: 999px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 0 8px 0 20px;
+    backdrop-filter: blur(6px);
+    font-family:'Baloo 2', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    color: var(--text-primary);
+    z-index:2;
+    box-shadow: 0px 0px 30px #aabcfd;
+  }
+  .topbar-title{
+    font-weight:700;
+    font-size:15px;
+    color: var(--text-primary);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .topbar-right{
+    display:flex;
+    align-items:center;
+    gap:16px;
+  }
+  .topbar .clock{ display:flex; align-items:center; gap:8px; }
+  .topbar .clock .dot{ width:6px;height:6px;border-radius:50%; background:var(--accent-blue); }
+  .battery{ display:flex; align-items:center; gap:6px; font-size:14px; }
+  .battery-icon{
+    width:26px; height:13px;
+    border:1.6px solid var(--text-primary);
+    border-radius:3px;
+    position:relative;
+    display:inline-block;
+  }
+  .battery-icon::after{
+    content:"";
+    position:absolute; right:-4px; top:3px;
+    width:2.5px; height:5px;
+    background:var(--text-primary);
+    border-radius:0 1px 1px 0;
+  }
+  .battery-icon .fill{
+    position:absolute; top:1.5px; left:1.5px; bottom:1.5px;
+    width:70%;
+    background: var(--accent-gradient);
+    border-radius:1px;
+  }
+  .options-btn{
+    width:34px; height:34px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:#fff;
+    box-shadow: 0 2px 5px rgba(60,90,130,0.16);
+  }
+
+  /* ---------- Grid panel (mismo cuerpo que las barras) ---------- */
+  .grid-panel{
+    flex:1;
+    margin: 14px 0;
+    background: var(--bar-bg);
+    border: 1px solid var(--bar-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(6px);
+    padding: 20px;
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    box-shadow: 0px 0px 20px pink;
+  }
+  .grid{
+    width:100%;
+    display:grid;
+    gap: 16px;
+  }
+  .grid.systems{ grid-template-columns: repeat(7, 1fr); }
+  .grid.games{ grid-template-columns: repeat(7, 1fr); }
+  .grid.saves{ grid-template-columns: repeat(5, 1fr); }
+
+  .tile{
+    aspect-ratio: 1/1;
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+    border: 8px solid var(--unfocused-border);
+    box-shadow: var(--unfocused-shadow);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+    font-family:'Baloo 2', sans-serif;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .tile.focused{
+    border: 8px solid transparent;
+    background-image: linear-gradient(var(--card-bg), var(--card-bg)), var(--accent-gradient);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 0 0 6px rgba(47,111,237,0.18), 0 10px 22px rgba(47,111,237,0.30);
+    transform: scale(1.04);
+  }
+  .tile-glyph{
+    width:100%; height:100%;
+    border-radius: 10px;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff;
+    font-weight:800;
+    font-size: clamp(14px, 2.2vw, 22px);
+    letter-spacing:.02em;
+  }
+  .tile-fade{
+    opacity:.38;
+  }
+
+  /* system color rotation */
+  .tile:nth-child(7n+1) .tile-glyph{ background: var(--system-a); }
+  .tile:nth-child(7n+2) .tile-glyph{ background: var(--system-b); }
+  .tile:nth-child(7n+3) .tile-glyph{ background: var(--system-c); }
+  .tile:nth-child(7n+4) .tile-glyph{ background: var(--system-d); }
+  .tile:nth-child(7n+5) .tile-glyph{ background: var(--system-e); }
+  .tile:nth-child(7n+6) .tile-glyph{ background: var(--system-f); }
+  .tile:nth-child(7n+0) .tile-glyph{ background: var(--system-a); }
+
+  .tile.newgame{
+    border-style: dashed;
+    border-color:#b9c6d1;
+    box-shadow:none;
+    background: rgba(255,255,255,0.5);
+  }
+  .tile.newgame .tile-glyph{
+    background:transparent;
+    color: var(--accent-blue);
+    flex-direction:column;
+    gap:4px;
+    font-size:13px;
+    font-weight:700;
+  }
+  .tile.newgame .plus{
+    font-size:26px;
+    line-height:1;
+  }
+
+  .tile.savecard .tile-glyph{
+    width:100%; height:100%;
+    border-radius: var(--radius-md);
+    background: linear-gradient(160deg,#c9d6e5,#9fb3c8);
+    flex-direction:column;
+    justify-content:flex-end;
+    align-items:flex-start;
+    padding:8px;
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+  }
+  .tile.savecard .tile-glyph::before{
+    content:"▶";
+    position:absolute;
+    top:10px; left:10px;
+    font-size:12px;
+    opacity:.85;
+  }
+
+  /* ---------- Bottom bar ---------- */
+  .bottombar{
+    height: 50px;
+    background: var(--bar-bg);
+    border: 1px solid var(--bar-border);
+    border-radius: 999px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 0 10px 0 22px;
+    backdrop-filter: blur(6px);
+    z-index:2;
+    box-shadow: 0px 0px 30px #baf1ac;
+  }
+  .selected-name{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:16px;
+    color: var(--text-primary);
+  }
+  .bottom-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .action-pill{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:#fff;
+    border-radius:999px;
+    padding:6px 14px 6px 6px;
+    box-shadow: 0 2px 5px rgba(60,90,130,0.14);
+    font-family:'Baloo 2', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color: var(--text-primary);
+  }
+  .badge{
+    width:26px; height:26px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800;
+    font-size:13px;
+    color:#fff;
+  }
+  .badge.a{ background: var(--accent-gradient); }
+  .badge.x{ background: linear-gradient(135deg,#b8c2cc,#8b98a4); }
+  .badge.b{ background: linear-gradient(135deg, var(--accent-red-soft), var(--accent-red)); color:#fff; }
+
+  /* legend */
+  .legend{
+    max-width:1180px;
+    margin: 0 auto 4px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    font-size:13px;
+    color: var(--text-secondary);
+  }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .swatch{ width:14px;height:14px;border-radius:4px; display:inline-block; }
+</style>
+</head>
+<body>
+
+  <div class="page-title">Maqueta visual — Frontend de emuladores (estilo 3DS × Wii U)</div>
+  <div class="page-subtitle">
+    Referencia estática, NO funcional. Objetivo: comunicar paleta, tipografía redondeada, tratamiento de "soft UI" con acentos celeste→azul,
+    y la estructura de barra superior / grid central / barra inferior definida en el documento de especificación. Los íconos de sistemas y juegos
+    son placeholders abstractos (sin carátulas ni logos reales) — el diseño final deberá reemplazarlos por las carátulas/logos reales del usuario.
+  </div>
+
+  <!-- FRAME 1: Systems screen -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">1</span> Pantalla de sistemas</div>
+    <div class="shell">
+      <div class="topbar">
+        <div class="topbar-title">Ginny Frontend</div>
+        <div class="topbar-right">
+          <div class="clock"><span class="dot"></span> 12:04 PM</div>
+          <div class="battery">
+            <span class="battery-icon"><span class="fill"></span></span>
+            78%
+          </div>
+          <div class="options-btn"><span class="badge x">X</span></div>
+        </div>
+      </div>
+      <div class="grid-panel">
+        <div class="grid systems">
+          <div class="tile"><div class="tile-glyph">NES</div></div>
+          <div class="tile focused"><div class="tile-glyph">SNES</div></div>
+          <div class="tile"><div class="tile-glyph">GB</div></div>
+          <div class="tile"><div class="tile-glyph">GBC</div></div>
+          <div class="tile"><div class="tile-glyph">GBA</div></div>
+          <div class="tile"><div class="tile-glyph">PS1</div></div>
+          <div class="tile"><div class="tile-glyph">GEN</div></div>
+          <div class="tile tile-fade"><div class="tile-glyph">MSY</div></div>
+          <div class="tile tile-fade"><div class="tile-glyph">NEO</div></div>
+          <div class="tile tile-fade"><div class="tile-glyph">FBN</div></div>
+          <div class="tile tile-fade"><div class="tile-glyph">MAME</div></div>
+          <div class="tile tile-fade"><div class="tile-glyph">GC</div></div>
+          <div class="tile tile-fade"><div class="tile-glyph">PS2</div></div>
+          <div class="tile tile-fade"><div class="tile-glyph">DC</div></div>
+        </div>
+      </div>
+      <div class="bottombar">
+        <div class="selected-name">Super Nintendo</div>
+        <div class="bottom-actions">
+          <div class="action-pill"><span class="badge a">A</span> Abrir</div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-note">
+      Grid configurado a 2 filas visibles. La fila inferior aparece parcialmente atenuada para sugerir que el scroll aún no la centró
+      (estado intermedio, ilustrativo). El elemento con foco (SNES) muestra el borde en degradé celeste→azul y una leve elevación.
+      El botón de opciones (X) ahora vive en la barra superior, junto a la hora y la batería. El título muestra el nombre de la app
+      porque estamos en el selector de sistemas.
+    </div>
+  </div>
+
+  <!-- FRAME 2: Games screen -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">2</span> Pantalla de juegos (dentro de un sistema)</div>
+    <div class="shell">
+      <div class="topbar">
+        <div class="topbar-title">Super Nintendo</div>
+        <div class="topbar-right">
+          <div class="clock"><span class="dot"></span> 12:06 PM</div>
+          <div class="battery">
+            <span class="battery-icon"><span class="fill"></span></span>
+            77%
+          </div>
+          <div class="options-btn"><span class="badge x">X</span></div>
+        </div>
+      </div>
+      <div class="grid-panel">
+        <div class="grid games">
+          <div class="tile"><div class="tile-glyph">A</div></div>
+          <div class="tile"><div class="tile-glyph">B</div></div>
+          <div class="tile"><div class="tile-glyph">C</div></div>
+          <div class="tile focused"><div class="tile-glyph">D</div></div>
+          <div class="tile"><div class="tile-glyph">E</div></div>
+          <div class="tile"><div class="tile-glyph">F</div></div>
+          <div class="tile"><div class="tile-glyph">G</div></div>
+          <div class="tile"><div class="tile-glyph">H</div></div>
+          <div class="tile"><div class="tile-glyph">I</div></div>
+          <div class="tile"><div class="tile-glyph">J</div></div>
+          <div class="tile"><div class="tile-glyph">K</div></div>
+          <div class="tile"><div class="tile-glyph">L</div></div>
+          <div class="tile"><div class="tile-glyph">M</div></div>
+          <div class="tile"><div class="tile-glyph">N</div></div>
+        </div>
+      </div>
+      <div class="bottombar">
+        <div class="selected-name">Donkey Kong Country</div>
+        <div class="bottom-actions">
+          <div class="action-pill"><span class="badge b">B</span> Retroceder</div>
+          <div class="action-pill"><span class="badge a">A</span> Abrir</div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-note">
+      El título de la barra superior ahora muestra el sistema actual ("Super Nintendo") en vez de la hora. El botón "B Retroceder"
+      ya tiene cuerpo sólido igual que "A Abrir", con la B en rojo suave — sigue siendo solo táctil, no navegable por cruceta.
+      Las carátulas se muestran como placeholders con inicial — en la app real serán las imágenes PNG de <code>icons/</code>.
+    </div>
+  </div>
+
+  <!-- FRAME 3: Save states screen -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">3</span> Pantalla de estados guardados (al presionar A sobre un juego con saves)</div>
+    <div class="shell">
+      <div class="topbar">
+        <div class="topbar-title">Super Nintendo</div>
+        <div class="topbar-right">
+          <div class="clock"><span class="dot"></span> 12:07 PM</div>
+          <div class="battery">
+            <span class="battery-icon"><span class="fill"></span></span>
+            77%
+          </div>
+          <div class="options-btn"><span class="badge x">X</span></div>
+        </div>
+      </div>
+      <div class="grid-panel">
+        <div class="grid saves">
+          <div class="tile newgame"><div class="tile-glyph"><span class="plus">+</span>Juego nuevo</div></div>
+          <div class="tile focused savecard"><div class="tile-glyph">Slot 1</div></div>
+          <div class="tile savecard"><div class="tile-glyph">Slot 2</div></div>
+          <div class="tile savecard"><div class="tile-glyph">Slot 3</div></div>
+          <div class="tile savecard"><div class="tile-glyph">Auto</div></div>
+        </div>
+      </div>
+      <div class="bottombar">
+        <div class="selected-name">Slot 1 — 45 min de juego</div>
+        <div class="bottom-actions">
+          <div class="action-pill"><span class="badge b">B</span> Retroceder</div>
+          <div class="action-pill"><span class="badge a">A</span> Cargar</div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-note">
+      "Juego nuevo" siempre es el primer elemento (estilo diferenciado, borde punteado). Los demás elementos son los slots de save state
+      detectados, mostrando su miniatura (leída desde el PNG que genera RetroArch). Esta pantalla solo aparece si el juego tiene saves;
+      si no tiene, se omite y el juego inicia directo.
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--accent-gradient)"></span> Foco (degradé celeste→azul)</span>
+    <span><span class="swatch" style="background:#fff;border:1px solid #dfe6ee"></span> Elemento sin foco (borde blanco)</span>
+    <span><span class="swatch" style="background:var(--bar-bg);border:1px solid #dfe6ee"></span> Barras superior/inferior (glass suave)</span>
+  </div>
+
+</body>
+</html>
