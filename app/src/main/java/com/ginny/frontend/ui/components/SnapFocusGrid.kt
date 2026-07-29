@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.data.ButtonMapping
@@ -61,6 +62,7 @@ fun <T> SnapFocusGrid(
     // render before hitting the LazyVerticalGrid's own scroll-clipping bounds — without this,
     // the glow gets hard-cut in a visible rectangle instead of fading out.
     val edgePadding = 10.dp
+    val density = LocalDensity.current
 
     BoxWithConstraints(modifier = modifier) {
         val usableHeight = maxHeight - edgePadding * 2
@@ -68,6 +70,7 @@ fun <T> SnapFocusGrid(
         val tileSize = ((usableHeight - gap * (visibleRows - 1).coerceAtLeast(0)) / visibleRows.coerceAtLeast(1))
             .coerceAtLeast(1.dp)
         val columns = max(1, floor((usableWidth + gap) / (tileSize + gap)).toInt())
+        val rowStepPx = with(density) { (tileSize + gap).roundToPx() }.coerceAtLeast(1)
 
         val gridState = rememberLazyGridState()
         val focusRequester = remember { FocusRequester() }
@@ -79,17 +82,19 @@ fun <T> SnapFocusGrid(
             onFocusedIndexChange(clampedFocus(next))
         }
 
-        // Rounds up to the next row whenever the grid is mid-scroll into one (any nonzero
-        // firstVisibleItemScrollOffset) rather than truncating down to the row that's only
-        // partially out of view — used by both effects below so they agree on "current top row"
-        // whether or not a touch scroll has settled yet. Without this, the D-Pad-driven effect
-        // (which used to read firstVisibleItemIndex directly) could disagree with the settled
-        // post-scroll snap by one row, producing a visible extra shift ("push") on the next D-Pad
-        // press right after a touch scroll.
+        // Rounds to whichever row currently shows *more* of itself — past the halfway point of a
+        // row's own height, the row below is more visible than the one scrolling out above it, so
+        // that's the one a released touch scroll should settle on (matching how a natural "which
+        // page are we mostly looking at" snap should feel; rounding up on *any* nonzero offset,
+        // as this used to, always preferred the row below no matter how little of it was showing).
+        // Used by both effects below so they agree on "current top row" whether or not a touch
+        // scroll has settled yet — otherwise the D-Pad-driven effect could disagree with the
+        // settled post-scroll snap by one row, producing a visible extra shift ("push") on the
+        // next D-Pad press right after a touch scroll.
         fun currentTopRowRounded(): Int {
             val cols = columns.coerceAtLeast(1)
             val approxRow = gridState.firstVisibleItemIndex / cols
-            return if (gridState.firstVisibleItemScrollOffset > 0) approxRow + 1 else approxRow
+            return if (gridState.firstVisibleItemScrollOffset > rowStepPx / 2) approxRow + 1 else approxRow
         }
 
         // Keep the focused row inside the visible window, moving the scroll window the minimum
