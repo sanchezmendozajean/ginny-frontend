@@ -16,7 +16,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.NES,
             displayName = "Nintendo Entertainment System",
-            romExtensions = setOf("nes"),
+            romExtensions = setOf("nes", "zip"),
             availableEmulators = listOf(
                 EmulatorTarget.RETROARCH,
                 EmulatorTarget.RETROARCH_AARCH64,
@@ -34,7 +34,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.SNES,
             displayName = "Super Nintendo",
-            romExtensions = setOf("sfc", "smc"),
+            romExtensions = setOf("sfc", "smc", "zip"),
             availableEmulators = listOf(
                 EmulatorTarget.RETROARCH,
                 EmulatorTarget.RETROARCH_AARCH64,
@@ -50,7 +50,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.GB,
             displayName = "Game Boy",
-            romExtensions = setOf("gb"),
+            romExtensions = setOf("gb", "zip"),
             availableEmulators = listOf(
                 EmulatorTarget.RETROARCH,
                 EmulatorTarget.RETROARCH_AARCH64,
@@ -65,7 +65,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.GBC,
             displayName = "Game Boy Color",
-            romExtensions = setOf("gbc"),
+            romExtensions = setOf("gbc", "zip"),
             availableEmulators = listOf(
                 EmulatorTarget.RETROARCH,
                 EmulatorTarget.RETROARCH_AARCH64,
@@ -80,7 +80,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.GBA,
             displayName = "Game Boy Advance",
-            romExtensions = setOf("gba"),
+            romExtensions = setOf("gba", "zip"),
             availableEmulators = listOf(
                 EmulatorTarget.RETROARCH,
                 EmulatorTarget.RETROARCH_AARCH64,
@@ -96,7 +96,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.PS1,
             displayName = "PlayStation",
-            romExtensions = setOf("iso", "bin", "cue", "chd", "pbp"),
+            romExtensions = setOf("iso", "bin", "cue", "chd", "pbp", "zip"),
             availableEmulators = listOf(
                 EmulatorTarget.RETROARCH,
                 EmulatorTarget.RETROARCH_AARCH64,
@@ -112,7 +112,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.GENESIS,
             displayName = "Sega Genesis / Mega Drive",
-            romExtensions = setOf("md", "gen", "bin"),
+            romExtensions = setOf("md", "gen", "bin", "zip"),
             availableEmulators = listOf(
                 EmulatorTarget.RETROARCH,
                 EmulatorTarget.RETROARCH_AARCH64,
@@ -128,7 +128,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.MASTERSYSTEM,
             displayName = "Sega Master System",
-            romExtensions = setOf("sms"),
+            romExtensions = setOf("sms", "zip"),
             availableEmulators = listOf(
                 EmulatorTarget.RETROARCH,
                 EmulatorTarget.RETROARCH_AARCH64,
@@ -210,7 +210,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.DREAMCAST,
             displayName = "Dreamcast",
-            romExtensions = setOf("chd", "gdi", "cdi"),
+            romExtensions = setOf("chd", "gdi", "cdi", "zip"),
             availableEmulators = listOf(
                 EmulatorTarget.REDREAM,
                 EmulatorTarget.RETROARCH,

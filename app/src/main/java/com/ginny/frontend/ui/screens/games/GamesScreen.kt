@@ -23,6 +23,7 @@ import com.ginny.frontend.audio.SoundManager
 import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.launch.LaunchResult
 import com.ginny.frontend.ui.common.EmulatorMissingDialog
+import com.ginny.frontend.ui.common.gameCountLabel
 import com.ginny.frontend.ui.components.AuroraBackground
 import com.ginny.frontend.ui.components.FocusableTile
 import com.ginny.frontend.ui.components.GinnyBottomBar
@@ -66,7 +67,10 @@ fun GamesScreen(
 
     AuroraBackground {
         Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
-            GinnyTopBar(contextualTitle = viewModel.systemDefinition.displayName, onOptionsClick = {})
+            GinnyTopBar(
+                contextualTitle = "${viewModel.systemDefinition.displayName} - ${gameCountLabel(games.size)}",
+                onOptionsClick = {},
+            )
             Spacer(Modifier.height(14.dp))
             GridPanel(modifier = Modifier.weight(1f)) {
                 if (games.isEmpty()) {

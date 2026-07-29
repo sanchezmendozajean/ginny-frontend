@@ -19,6 +19,7 @@ import coil.compose.AsyncImage
 import com.ginny.frontend.audio.SoundManager
 import com.ginny.frontend.data.model.SystemDefinition
 import com.ginny.frontend.di.AppContainer
+import com.ginny.frontend.ui.common.gameCountLabel
 import com.ginny.frontend.ui.components.AuroraBackground
 import com.ginny.frontend.ui.components.FocusableTile
 import com.ginny.frontend.ui.components.GinnyBottomBar
@@ -41,6 +42,7 @@ fun SystemsScreen(
     val userFolderUri by container.settingsRepository.userFolderUri.collectAsState(initial = null)
     val romFolderUri by container.settingsRepository.romFolderUri.collectAsState(initial = null)
     val systems by viewModel.availableSystems.collectAsState()
+    val gameCounts by viewModel.gameCounts.collectAsState()
     val isScanning by viewModel.isScanning.collectAsState()
 
     val selected = systems.getOrNull(viewModel.focusedIndex)
@@ -85,7 +87,7 @@ fun SystemsScreen(
             }
             Spacer(Modifier.height(14.dp))
             GinnyBottomBar(
-                selectedName = selected?.displayName.orEmpty(),
+                selectedName = selected?.let { "${it.displayName} - ${gameCountLabel(gameCounts[it.id] ?: 0)}" }.orEmpty(),
                 showBack = false,
                 onBackClick = {},
                 onOpenClick = {

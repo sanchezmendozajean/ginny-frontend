@@ -62,6 +62,21 @@ object FocusGridMath {
     }
 
     /**
+     * If [current]'s row falls outside [windowTopRow, windowTopRow + visibleRows - 1], moves it
+     * to the nearest edge of that window (same column where possible) — used after a touch-driven
+     * scroll settles, so the focused item is always one of the rows the user can actually see,
+     * instead of silently staying off-screen until the next D-Pad press yanks the view back to it.
+     */
+    fun clampRowToWindow(current: Int, windowTopRow: Int, visibleRows: Int, columns: Int, itemCount: Int): Int {
+        if (itemCount == 0) return current
+        val row = rowOf(current, columns)
+        val windowBottomRow = windowTopRow + visibleRows - 1
+        if (row in windowTopRow..windowBottomRow) return current
+        val targetRow = row.coerceIn(windowTopRow, windowBottomRow)
+        return clampToRow(targetRow, columnOf(current, columns), columns, itemCount)
+    }
+
+    /**
      * Smallest top-row index (0-based) such that scrolling the grid so this row is first keeps
      * [focusedIndex]'s row fully within the next [visibleRows] rows, moving the window by the
      * minimum amount necessary from [currentTopRow] (never further than needed).

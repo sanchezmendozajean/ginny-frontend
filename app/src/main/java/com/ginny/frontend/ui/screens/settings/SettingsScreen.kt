@@ -98,10 +98,15 @@ fun SettingsScreen(
             Spacer(Modifier.height(12.dp))
 
             GridPanel(modifier = Modifier.weight(1f)) {
-                when (selectedTab) {
-                    SettingsTab.INTERFAZ -> InterfazTabContent(viewModel, listeningForButton)
-                    SettingsTab.CARPETAS -> CarpetasTabContent(viewModel)
-                    SettingsTab.EMULADORES -> EmuladoresTabContent(viewModel)
+                // GridPanel's own padding is kept tight for the icon grids (systems/games) — the
+                // settings tabs are text-heavy, so they need extra breathing room on top of that
+                // so content doesn't sit flush against the panel's rounded corners.
+                Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    when (selectedTab) {
+                        SettingsTab.INTERFAZ -> InterfazTabContent(viewModel, listeningForButton)
+                        SettingsTab.CARPETAS -> CarpetasTabContent(viewModel)
+                        SettingsTab.EMULADORES -> EmuladoresTabContent(viewModel)
+                    }
                 }
             }
         }

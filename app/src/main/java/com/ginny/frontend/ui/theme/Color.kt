@@ -21,10 +21,6 @@ object GinnyColors {
     val BarBorder = Color(0xE6FFFFFF) // rgba(255,255,255,0.9)
     val UnfocusedBorder = Color(0xFFFFFFFF)
 
-    val GlowTopBar = Color(0xFFAABCFD)
-    val GlowGridPanel = Color(0xFFFFC0CB) // "pink"
-    val GlowBottomBar = Color(0xFFBAF1AC)
-
     // Aurora background blobs (radial gradient stops), from --shell-bg.
     val AuroraLilac = Color(0x47A88CD6)
     val AuroraGreen = Color(0x4D78C8AF)

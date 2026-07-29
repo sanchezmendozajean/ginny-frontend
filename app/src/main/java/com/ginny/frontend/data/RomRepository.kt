@@ -115,8 +115,4 @@ class RomRepository(
         }
         return (likelyBaseGame.ifEmpty { candidates }).maxByOrNull { it.length() }
     }
-
-    /** True if `<romFolder>/<systemId.folderName>/` exists and contains at least one valid game. */
-    suspend fun hasAnyGames(romFolderUri: Uri, userFolderUri: Uri?, systemId: SystemId): Boolean =
-        listGames(romFolderUri, userFolderUri, systemId).isNotEmpty()
 }

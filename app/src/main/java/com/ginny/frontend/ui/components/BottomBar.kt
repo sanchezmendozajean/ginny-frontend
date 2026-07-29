@@ -16,12 +16,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.theme.GinnyColors
 
+/** Bar is sized to match the height of the pill-shaped buttons that sit next to it. */
+private val BottomBarHeight = ButtonPillHeight
+
 /**
- * Bottom bar: currently-selected item name on the left, action pills on the right. The "B
- * Retroceder" pill only appears inside a games/save-states list (never on the systems screen) and
- * is touch/physical-button only — it deliberately never receives D-Pad focus. The "Y Recargar"
- * pill is opt-in via [onReloadClick] since it only makes sense on the systems and games lists,
- * not on the save-states screen.
+ * Bottom bar: the glass pill wraps only the currently-selected item name. The action pills
+ * ("Y Recargar", "B Retroceder", "A ...") live outside the pill as separate elements, not inside
+ * the bar. The "B Retroceder" pill only appears inside a games/save-states list (never on the
+ * systems screen) and is touch/physical-button only — it deliberately never receives D-Pad focus.
+ * The "Y Recargar" pill is opt-in via [onReloadClick] since it only makes sense on the systems and
+ * games lists, not on the save-states screen.
  */
 @Composable
 fun GinnyBottomBar(
@@ -35,21 +39,28 @@ fun GinnyBottomBar(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .glassGlow(GinnyColors.GlowBottomBar, 999.dp)
-            .then(glassBackgroundModifier(999.dp))
-            .padding(start = 22.dp, end = 10.dp),
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Text(
-            text = selectedName,
-            style = MaterialTheme.typography.titleSmall,
-            color = GinnyColors.TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .weight(1f)
+                .height(BottomBarHeight)
+                .glassShadow(999.dp)
+                .then(glassBackgroundModifier(999.dp))
+                .padding(horizontal = 22.dp),
+        ) {
+            Text(
+                text = selectedName,
+                style = MaterialTheme.typography.titleSmall,
+                color = GinnyColors.TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        Spacer(Modifier.width(14.dp))
 
         onReloadClick?.let { reload ->
             ActionPill(letter = "Y", label = "Recargar", style = BadgeStyle.Y, onClick = reload)

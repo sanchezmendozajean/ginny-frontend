@@ -1,6 +1,5 @@
 package com.ginny.frontend.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,7 +23,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,6 +35,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val TimeFormatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
+
+/** Bar is sized to match the height of the pill-shaped buttons that sit next to it. */
+private val TopBarHeight = ButtonPillHeight
 
 @Composable
 private fun rememberClockText(): String {
@@ -55,8 +57,9 @@ private fun <T> StateFlow<T>.collectAsStateSafely() =
     produceState(initialValue = value, this) { collect { value = it } }
 
 /**
- * Top bar: contextual title on the left (app name on the systems screen, current system name
- * elsewhere), clock + battery + options badge cluster on the right, all right-aligned.
+ * Top bar: the glass pill wraps only the contextual title (app name on the systems screen,
+ * current system name elsewhere), clock and battery indicator. The options (X) badge lives
+ * outside the pill as its own separate element, not inside the bar.
  */
 @Composable
 fun GinnyTopBar(
@@ -78,38 +81,43 @@ fun GinnyTopBar(
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .glassGlow(GinnyColors.GlowTopBar, 999.dp)
-            .then(glassBackgroundModifier(999.dp))
-            .padding(start = 20.dp, end = 16.dp),
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Text(
-            text = contextualTitle,
-            style = MaterialTheme.typography.titleMedium,
-            color = GinnyColors.TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .weight(1f)
+                .height(TopBarHeight)
+                .glassShadow(999.dp)
+                .then(glassBackgroundModifier(999.dp))
+                .padding(start = 20.dp, end = 20.dp),
+        ) {
+            Text(
+                text = contextualTitle,
+                style = MaterialTheme.typography.titleMedium,
+                color = GinnyColors.TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
 
-        Spacer(Modifier.width(16.dp))
-        Text(text = clockText, style = MaterialTheme.typography.bodyLarge, color = GinnyColors.TextPrimary)
-
-        battery?.let { status ->
             Spacer(Modifier.width(16.dp))
-            BatteryIndicator(percent = status.percent, charging = status.isCharging)
+            Text(text = clockText, style = MaterialTheme.typography.bodyLarge, color = GinnyColors.TextPrimary)
+
+            battery?.let { status ->
+                Spacer(Modifier.width(16.dp))
+                BatteryIndicator(percent = status.percent, charging = status.isCharging)
+            }
         }
 
-        Spacer(Modifier.width(16.dp))
-        ButtonBadge(
-            letter = "X",
+        Spacer(Modifier.width(14.dp))
+
+        // Touch/Menu-key only — the D-Pad is scoped exclusively to the grid, never the top bar.
+        IconActionBadge(
+            icon = Icons.Filled.Settings,
+            contentDescription = "Configuración",
             style = BadgeStyle.X,
-            // Touch/Menu-key only — the D-Pad is scoped exclusively to the grid, never the top bar.
-            modifier = Modifier
-                .focusProperties { canFocus = false }
-                .clickable(onClick = onOptionsClick),
+            onClick = onOptionsClick,
         )
     }
 }

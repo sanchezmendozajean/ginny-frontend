@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +31,7 @@ import com.ginny.frontend.ui.theme.GinnyColors
 fun FocusableTile(
     focused: Boolean,
     modifier: Modifier = Modifier,
-    borderWidth: Dp = 8.dp,
+    borderWidth: Dp = 4.dp,
     cornerRadius: Dp = 16.dp,
     contentBox: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
 ) {
@@ -64,7 +65,12 @@ fun FocusableTile(
             ),
         contentAlignment = androidx.compose.ui.Alignment.Center,
     ) {
-        contentBox()
+        // The border above is painted inward from the tile's outer edge, overlapping whatever
+        // sits directly underneath — without this inset, icon artwork gets visibly cropped by the
+        // border itself rather than just bordered.
+        Box(modifier = Modifier.padding(borderWidth), contentAlignment = androidx.compose.ui.Alignment.Center) {
+            contentBox()
+        }
     }
 }
 

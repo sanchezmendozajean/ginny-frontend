@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemDefinition
+import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.di.AppContainer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,6 +32,11 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
     private val _availableSystems = MutableStateFlow<List<SystemDefinition>>(emptyList())
     val availableSystems: StateFlow<List<SystemDefinition>> = _availableSystems
 
+    /** Game count per system, gathered alongside the availability scan so the UI can show
+     * "[Sistema] - N juegos" without re-scanning. */
+    private val _gameCounts = MutableStateFlow<Map<SystemId, Int>>(emptyMap())
+    val gameCounts: StateFlow<Map<SystemId, Int>> = _gameCounts
+
     /** Distinguishes "still scanning" from "scanned, found nothing" for the empty-state message. */
     private val _isScanning = MutableStateFlow(true)
     val isScanning: StateFlow<Boolean> = _isScanning
@@ -50,14 +56,17 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
 
     private suspend fun scan(romUri: String?, userUri: String?) {
         _isScanning.value = true
-        _availableSystems.value = if (romUri != null) {
+        if (romUri != null) {
             val romTreeUri = Uri.parse(romUri)
             val userTreeUri = userUri?.let(Uri::parse)
-            SystemCatalog.allSortedByName.filter { system ->
-                container.romRepository.hasAnyGames(romTreeUri, userTreeUri, system.id)
+            val counts = SystemCatalog.allSortedByName.associate { system ->
+                system.id to container.romRepository.listGames(romTreeUri, userTreeUri, system.id).size
             }
+            _gameCounts.value = counts
+            _availableSystems.value = SystemCatalog.allSortedByName.filter { (counts[it.id] ?: 0) > 0 }
         } else {
-            emptyList()
+            _gameCounts.value = emptyMap()
+            _availableSystems.value = emptyList()
         }
         _isScanning.value = false
         focusedIndex = focusedIndex.coerceIn(0, (_availableSystems.value.size - 1).coerceAtLeast(0))
