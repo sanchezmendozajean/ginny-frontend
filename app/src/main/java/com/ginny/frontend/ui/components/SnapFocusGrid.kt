@@ -1,16 +1,22 @@
 package com.ginny.frontend.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -18,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
@@ -28,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.LogicalButton
+import com.ginny.frontend.ui.theme.GinnyColors
 import kotlin.math.floor
 import kotlin.math.max
 
@@ -71,11 +79,24 @@ fun <T> SnapFocusGrid(
             onFocusedIndexChange(clampedFocus(next))
         }
 
+        // Rounds up to the next row whenever the grid is mid-scroll into one (any nonzero
+        // firstVisibleItemScrollOffset) rather than truncating down to the row that's only
+        // partially out of view — used by both effects below so they agree on "current top row"
+        // whether or not a touch scroll has settled yet. Without this, the D-Pad-driven effect
+        // (which used to read firstVisibleItemIndex directly) could disagree with the settled
+        // post-scroll snap by one row, producing a visible extra shift ("push") on the next D-Pad
+        // press right after a touch scroll.
+        fun currentTopRowRounded(): Int {
+            val cols = columns.coerceAtLeast(1)
+            val approxRow = gridState.firstVisibleItemIndex / cols
+            return if (gridState.firstVisibleItemScrollOffset > 0) approxRow + 1 else approxRow
+        }
+
         // Keep the focused row inside the visible window, moving the scroll window the minimum
         // amount necessary — this is what "centrado" means in practice for keyboard/D-Pad nav.
         LaunchedEffect(focusedIndex, columns, visibleRows, entries.size) {
             if (entries.isEmpty()) return@LaunchedEffect
-            val currentTopRow = gridState.firstVisibleItemIndex / columns.coerceAtLeast(1)
+            val currentTopRow = currentTopRowRounded()
             val targetTopRow = FocusGridMath.nextTopRow(
                 focusedIndex = focusedIndex,
                 currentTopRow = currentTopRow,
@@ -89,17 +110,22 @@ fun <T> SnapFocusGrid(
         }
 
         // Post-fling correction: once a touch-driven scroll settles, snap so exactly [visibleRows]
-        // full rows are shown (never a partially-cut row) rather than wherever momentum left it.
+        // full rows are shown (never a partially-cut row) rather than wherever momentum left it —
+        // and if that scroll left the focused item outside this window, move focus to the nearest
+        // visible row instead of leaving it off-screen (a later D-Pad press would otherwise yank
+        // the view straight back to that stale, invisible focus).
         val isScrolling by remember { derivedStateOf { gridState.isScrollInProgress } }
         LaunchedEffect(isScrolling) {
             if (isScrolling || entries.isEmpty()) return@LaunchedEffect
-            val approxRow = gridState.firstVisibleItemIndex / columns.coerceAtLeast(1)
-            val roundedRow = if (gridState.firstVisibleItemScrollOffset > 0) approxRow + 1 else approxRow
             val lastRow = FocusGridMath.rowCount(entries.size, columns) - 1
             val maxTopRow = (lastRow - visibleRows + 1).coerceAtLeast(0)
-            val snapRow = roundedRow.coerceIn(0, maxTopRow)
+            val snapRow = currentTopRowRounded().coerceIn(0, maxTopRow)
             if (snapRow * columns != gridState.firstVisibleItemIndex || gridState.firstVisibleItemScrollOffset != 0) {
                 gridState.animateScrollToItem(snapRow * columns)
+            }
+            val visibleFocus = FocusGridMath.clampRowToWindow(focusedIndex, snapRow, visibleRows, columns, entries.size)
+            if (visibleFocus != focusedIndex) {
+                onFocusedIndexChange(visibleFocus)
             }
         }
 
@@ -111,12 +137,11 @@ fun <T> SnapFocusGrid(
         val actualRows = FocusGridMath.rowCount(entries.size, columns)
         val needsScroll = actualRows > visibleRows
         val gridWidth = tileSize * columns + gap * (columns - 1).coerceAtLeast(0) + edgePadding * 2
-        val gridHeight = if (needsScroll) {
-            maxHeight
-        } else {
-            (tileSize * actualRows.coerceAtLeast(1) + gap * (actualRows - 1).coerceAtLeast(0) + edgePadding * 2)
-                .coerceAtMost(maxHeight)
-        }
+        // Always exactly [rowsToShow] rows tall — never the full panel — so only the configured
+        // row count is ever visible, even mid-drag before a touch scroll settles and snaps back.
+        val rowsToShow = if (needsScroll) visibleRows else actualRows.coerceAtLeast(1)
+        val gridHeight = (tileSize * rowsToShow + gap * (rowsToShow - 1).coerceAtLeast(0) + edgePadding * 2)
+            .coerceAtMost(maxHeight)
 
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             LazyVerticalGrid(
@@ -164,6 +189,59 @@ fun <T> SnapFocusGrid(
                     itemContent(entries[index], index == focusedIndex, tileSize)
                 }
             }
+
+            if (needsScroll) {
+                // Vertical inset is independent of edgePadding (which sizes tiles) — it just needs
+                // to clear the GridPanel's own rounded corners (GinnyShapes.radiusLarge) so the
+                // track doesn't visually poke into the curve.
+                RowPositionIndicator(
+                    gridState = gridState,
+                    columns = columns,
+                    totalRows = actualRows,
+                    visibleRows = visibleRows,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .padding(vertical = 24.dp),
+                )
+            }
         }
+    }
+}
+
+/**
+ * Visual-only (non-touch) indicator of which row window is currently in view — per spec, a
+ * scrollbar-like affordance for the D-Pad-driven grid, which has no draggable/touch scrollbar.
+ */
+@Composable
+private fun RowPositionIndicator(
+    gridState: LazyGridState,
+    columns: Int,
+    totalRows: Int,
+    visibleRows: Int,
+    modifier: Modifier = Modifier,
+) {
+    val safeColumns = columns.coerceAtLeast(1)
+    val safeTotalRows = totalRows.coerceAtLeast(1)
+    val firstVisibleRow = gridState.firstVisibleItemIndex / safeColumns
+    val maxTopRow = (safeTotalRows - visibleRows).coerceAtLeast(1)
+    val thumbFraction = (visibleRows.toFloat() / safeTotalRows.toFloat()).coerceIn(0.08f, 1f)
+    val progress = (firstVisibleRow.toFloat() / maxTopRow.toFloat()).coerceIn(0f, 1f)
+
+    BoxWithConstraints(
+        modifier = modifier
+            .width(4.dp)
+            .clip(RoundedCornerShape(2.dp))
+            .background(GinnyColors.TextPrimary.copy(alpha = 0.15f)),
+    ) {
+        val thumbHeight = maxHeight * thumbFraction
+        Box(
+            modifier = Modifier
+                .offset(y = (maxHeight - thumbHeight) * progress)
+                .width(4.dp)
+                .height(thumbHeight)
+                .clip(RoundedCornerShape(2.dp))
+                .background(GinnyColors.AccentBlue),
+        )
     }
 }
