@@ -226,6 +226,8 @@ private fun CarpetasTabContent(viewModel: SettingsViewModel) {
     val userFolder by viewModel.settings.userFolderUri.collectAsState(initial = null)
     val romFolder by viewModel.settings.romFolderUri.collectAsState(initial = null)
     val savesFolder by viewModel.settings.retroArchSavesUri.collectAsState(initial = null)
+    val lastScanAt by viewModel.settings.lastScanAt.collectAsState(initial = null)
+    val isScanningLibrary by viewModel.isScanningLibrary.collectAsState()
 
     val pickUserFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let { viewModel.onUserFolderPicked(context, it) }
@@ -240,7 +242,35 @@ private fun CarpetasTabContent(viewModel: SettingsViewModel) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         SectionTitle("Carpetas")
         FolderRow("Carpeta de Usuario (Assets)", userFolder) { pickUserFolder.launch(null) }
-        FolderRow("Carpeta de ROMs", romFolder) { pickRomFolder.launch(null) }
+
+        Column(Modifier.padding(vertical = 6.dp)) {
+            Text("Carpeta de ROMs", style = MaterialTheme.typography.bodyLarge, color = GinnyColors.TextPrimary)
+            Text(
+                romFolder?.let { android.net.Uri.parse(it).path ?: it } ?: "No configurada",
+                style = MaterialTheme.typography.bodyMedium,
+                color = GinnyColors.TextSecondary,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                OutlinedButton(onClick = { pickRomFolder.launch(null) }) { Text("Elegir carpeta") }
+                Button(
+                    onClick = { viewModel.scanLibrary(context) },
+                    enabled = romFolder != null && !isScanningLibrary,
+                ) {
+                    Text(if (isScanningLibrary) "Escaneando…" else "Escanear biblioteca")
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                lastScanAt?.let { "Último escaneo: ${formatScanTimestamp(it)}" }
+                    ?: "Todavía no se escaneó la biblioteca. Usá \"Escanear biblioteca\" después de agregar sistemas o juegos nuevos — la navegación siempre lee de ese último escaneo, no del disco.",
+                style = MaterialTheme.typography.bodySmall,
+                color = GinnyColors.TextSecondary,
+            )
+        }
+
         FolderRow("Estados guardados de RetroArch (opcional)", savesFolder) { pickSavesFolder.launch(null) }
         Text(
             "Activa \"savestate_thumbnail_enable\" en RetroArch para que se generen las miniaturas que esta app necesita.",
@@ -249,6 +279,11 @@ private fun CarpetasTabContent(viewModel: SettingsViewModel) {
         )
         Spacer(Modifier.height(24.dp))
     }
+}
+
+private fun formatScanTimestamp(epochMillis: Long): String {
+    val formatter = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault())
+    return formatter.format(java.util.Date(epochMillis))
 }
 
 @Composable

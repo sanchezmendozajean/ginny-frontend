@@ -1,6 +1,5 @@
 package com.ginny.frontend.ui.screens.systems
 
-import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,7 +13,6 @@ import com.ginny.frontend.di.AppContainer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -28,7 +26,9 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ButtonMapping.DEFAULT)
 
     /** Only systems whose ROM subfolder exists and has at least one valid game — per spec, a
-     * system with nothing to show simply isn't listed rather than appearing empty. */
+     * system with nothing to show simply isn't listed rather than appearing empty. Read from the
+     * Room-backed scan cache (populated from Settings > Carpetas > "Escanear biblioteca"), not a
+     * live filesystem scan — see [com.ginny.frontend.data.GameIndexRepository]. */
     private val _availableSystems = MutableStateFlow<List<SystemDefinition>>(emptyList())
     val availableSystems: StateFlow<List<SystemDefinition>> = _availableSystems
 
@@ -37,7 +37,7 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
     private val _gameCounts = MutableStateFlow<Map<SystemId, Int>>(emptyMap())
     val gameCounts: StateFlow<Map<SystemId, Int>> = _gameCounts
 
-    /** Distinguishes "still scanning" from "scanned, found nothing" for the empty-state message. */
+    /** Distinguishes "still loading the cache" from "loaded, cache is empty" for the empty-state message. */
     private val _isScanning = MutableStateFlow(true)
     val isScanning: StateFlow<Boolean> = _isScanning
 
@@ -45,41 +45,24 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            combine(
-                container.settingsRepository.romFolderUri,
-                container.settingsRepository.userFolderUri,
-            ) { rom, user -> rom to user }.collect { (romUri, userUri) ->
-                scan(romUri, userUri)
-            }
+            container.gameIndexRepository.observeGameCounts().collect { counts -> applyCounts(counts) }
         }
     }
 
-    private suspend fun scan(romUri: String?, userUri: String?) {
-        _isScanning.value = true
-        if (romUri != null) {
-            val romTreeUri = Uri.parse(romUri)
-            val userTreeUri = userUri?.let(Uri::parse)
-            val counts = SystemCatalog.allSortedByName.associate { system ->
-                system.id to container.romRepository.listGames(romTreeUri, userTreeUri, system.id).size
-            }
-            _gameCounts.value = counts
-            _availableSystems.value = SystemCatalog.allSortedByName.filter { (counts[it.id] ?: 0) > 0 }
-        } else {
-            _gameCounts.value = emptyMap()
-            _availableSystems.value = emptyList()
-        }
+    private fun applyCounts(counts: Map<SystemId, Int>) {
+        _gameCounts.value = counts
+        _availableSystems.value = SystemCatalog.allSortedByName.filter { (counts[it.id] ?: 0) > 0 }
         _isScanning.value = false
         focusedIndex = focusedIndex.coerceIn(0, (_availableSystems.value.size - 1).coerceAtLeast(0))
     }
 
-    /** Re-scans the ROM folder for the "Y Recargar" bottom-bar action, without waiting for the
-     * folder settings themselves to change. */
+    /** Manual re-read of the cache for the "Y Recargar" bottom-bar action. The cache is already
+     * live via Flow, so this is a lightweight nudge rather than a real filesystem re-scan — the
+     * actual (slow) scan only runs from Settings' "Escanear biblioteca" button. */
     fun reload() {
+        _isScanning.value = true
         viewModelScope.launch {
-            scan(
-                container.settingsRepository.romFolderUri.first(),
-                container.settingsRepository.userFolderUri.first(),
-            )
+            applyCounts(container.gameIndexRepository.observeGameCounts().first())
         }
     }
 }

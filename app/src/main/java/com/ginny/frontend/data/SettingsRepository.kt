@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.ginny.frontend.data.model.EmulatorTarget
@@ -28,6 +29,7 @@ class SettingsRepository(private val context: Context) {
         val MUSIC_TRACK = stringPreferencesKey("background_music_track")
         val UI_SOUND_VOLUME = floatPreferencesKey("ui_sound_volume")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
+        val LAST_SCAN_AT = longPreferencesKey("last_scan_at")
 
         fun emulatorFor(systemId: SystemId) = stringPreferencesKey("emulator_${systemId.name}")
         fun coreFor(systemId: SystemId) = stringPreferencesKey("core_${systemId.name}")
@@ -67,6 +69,13 @@ class SettingsRepository(private val context: Context) {
     }
 
     val onboardingDone: Flow<Boolean> = context.dataStore.data.map { it[Keys.ONBOARDING_DONE] ?: false }
+
+    /** Timestamp (epoch millis) of the last completed "Escanear biblioteca" run, null if never run. */
+    val lastScanAt: Flow<Long?> = context.dataStore.data.map { it[Keys.LAST_SCAN_AT] }
+
+    suspend fun setLastScanAt(epochMillis: Long) {
+        context.dataStore.edit { it[Keys.LAST_SCAN_AT] = epochMillis }
+    }
 
     suspend fun setGridRows(rows: Int) {
         context.dataStore.edit { it[Keys.GRID_ROWS] = rows.coerceIn(1, 4) }

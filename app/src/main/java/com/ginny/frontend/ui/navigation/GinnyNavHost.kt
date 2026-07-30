@@ -79,6 +79,7 @@ fun GinnyNavHost(
                     selectedSystemDisplayName.value = SystemCatalog.byId.getValue(systemId).displayName
                     navController.navigate(Routes.SAVES)
                 },
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 viewModel = viewModel,
             )
         }
@@ -97,6 +98,7 @@ fun GinnyNavHost(
                     soundManager = soundManager,
                     systemDisplayName = selectedSystemDisplayName.value,
                     onBack = { navController.popBackStack() },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     viewModel = viewModel,
                 )
             }

@@ -40,6 +40,7 @@ fun SaveStatesScreen(
     soundManager: SoundManager,
     systemDisplayName: String,
     onBack: () -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: SaveStatesViewModel,
 ) {
     val entries by viewModel.entries.collectAsState()
@@ -62,7 +63,7 @@ fun SaveStatesScreen(
 
     AuroraBackground {
         Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
-            GinnyTopBar(contextualTitle = systemDisplayName, onOptionsClick = {})
+            GinnyTopBar(contextualTitle = systemDisplayName, onOptionsClick = onOpenSettings)
             Spacer(Modifier.height(14.dp))
             GridPanel(modifier = Modifier.weight(1f)) {
                 SnapFocusGrid(

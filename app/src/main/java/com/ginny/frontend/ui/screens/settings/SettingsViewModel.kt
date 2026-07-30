@@ -14,6 +14,9 @@ import com.ginny.frontend.data.model.MusicSelection
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.di.AppContainer
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(private val container: AppContainer) : ViewModel() {
@@ -24,6 +27,37 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     /** Non-null logical button currently waiting for the next physical key press to bind to it. */
     var listeningForButton by mutableStateOf<LogicalButton?>(null)
+
+    private val _isScanningLibrary = MutableStateFlow(false)
+    val isScanningLibrary: StateFlow<Boolean> = _isScanningLibrary
+
+    /** Walks the whole ROM folder (every system) and replaces the cached library index that
+     * Systems/Games screens read from — the only place this expensive filesystem scan should run. */
+    fun scanLibrary(context: Context) = viewModelScope.launch {
+        val romUri = settings.romFolderUri.first()
+        if (romUri == null) {
+            android.widget.Toast.makeText(
+                context,
+                "Configurá primero la Carpeta de ROMs.",
+                android.widget.Toast.LENGTH_LONG,
+            ).show()
+            return@launch
+        }
+        _isScanningLibrary.value = true
+        try {
+            val userUri = settings.userFolderUri.first()
+            val games = container.romRepository.scanAllSystems(Uri.parse(romUri), userUri?.let(Uri::parse))
+            container.gameIndexRepository.replaceAll(games)
+            settings.setLastScanAt(System.currentTimeMillis())
+            android.widget.Toast.makeText(
+                context,
+                "Biblioteca escaneada: ${games.size} juegos encontrados.",
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
+        } finally {
+            _isScanningLibrary.value = false
+        }
+    }
 
     fun setGridRows(rows: Int) = viewModelScope.launch { settings.setGridRows(rows) }
 

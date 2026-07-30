@@ -38,6 +38,7 @@ fun GamesScreen(
     soundManager: SoundManager,
     onBack: () -> Unit,
     onOpenSaveStates: (GameEntry) -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: GamesViewModel,
 ) {
     val games by viewModel.games.collectAsState()
@@ -69,14 +70,19 @@ fun GamesScreen(
         Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
             GinnyTopBar(
                 contextualTitle = "${viewModel.systemDefinition.displayName} - ${gameCountLabel(games.size)}",
-                onOptionsClick = {},
+                onOptionsClick = onOpenSettings,
             )
             Spacer(Modifier.height(14.dp))
             GridPanel(modifier = Modifier.weight(1f)) {
                 if (games.isEmpty()) {
                     androidx.compose.foundation.layout.Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            if (isScanning) "" else "No se encontraron juegos para ${viewModel.systemDefinition.displayName}.",
+                            if (isScanning) {
+                                ""
+                            } else {
+                                "No se encontraron juegos para ${viewModel.systemDefinition.displayName}. " +
+                                    "Presioná \"Escanear biblioteca\" en Configuración > Carpetas."
+                            },
                         )
                     }
                 } else {

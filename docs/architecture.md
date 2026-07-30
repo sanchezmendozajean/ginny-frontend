@@ -32,6 +32,9 @@ app/src/main/java/com/ginny/frontend/
 │   ├── SettingsRepository.kt  # DataStore Preferences: filas de grilla, carpetas, emulador/core
 │   │                          # por sistema, volumen, mapeo de botones
 │   ├── RomRepository.kt       # Escaneo de ROMs vía SAF (DocumentFile), filtrado por extensión
+│   │                          # (scanAllSystems: corrida completa, solo desde Settings)
+│   ├── GameIndexRepository.kt # Fachada sobre Room: caché de la última corrida de escaneo
+│   ├── db/                    # Room: ScannedGameEntity, ScannedGameDao, GinnyDatabase
 │   ├── AssetRepository.kt     # Íconos y logos desde la carpeta de Usuario (Assets/<sistema>/...)
 │   ├── SaveStateRepository.kt # Detección de miniaturas de save-state de RetroArch
 │   ├── StorageBootstrapper.kt # Crea Assets/<sistema>/{icons/, system.png} en la carpeta de Usuario
@@ -65,8 +68,9 @@ app/src/main/java/com/ginny/frontend/
   de package de PS2, volúmenes, mapeo de botones.
 - El foco del grid (`focusedIndex`) vive en el ViewModel de cada pantalla, no en el componente de
   grid, para sobrevivir recomposiciones y ser reutilizable entre pantallas.
-- Sin Room/SQLite: la lista de juegos se deriva en vivo escaneando la carpeta de ROMs vía SAF cada
-  vez que cambian las URIs configuradas — el catálogo de sistemas es estático (`SystemCatalog`).
+- **Room** (`data/db/`) cachea el resultado del último escaneo de ROMs — el catálogo de sistemas
+  sigue siendo estático (`SystemCatalog`), pero la lista de *juegos* ya no se deriva en vivo. Detalle
+  y motivación en "Caché de biblioteca" más abajo.
 
 ## El componente de grid (`SnapFocusGrid`)
 
@@ -88,6 +92,38 @@ separado del layout):
 - B (retroceder) deliberadamente *nunca* es parte de la navegación por foco del grid — es solo
   táctil/botón físico dedicado, manejado a nivel de `MainActivity.dispatchKeyEvent` para funcionar
   sin importar qué composable tenga el foco en ese momento.
+
+## Caché de biblioteca (Room)
+
+Con muchos sistemas/juegos configurados, escanear la carpeta de ROMs completa vía SAF en cada
+apertura de Sistemas/Juegos (como hacía v1) se vuelve visiblemente lento — SAF/`DocumentFile` es
+mucho más costoso que I/O de archivo normal. Se resolvió así:
+
+- **`RomRepository.scanAllSystems`** hace el walk completo (todos los sistemas) y solo se dispara
+  desde un botón explícito, "Escanear biblioteca", en Settings > Carpetas, al lado del selector de
+  Carpeta de ROMs (`SettingsViewModel.scanLibrary`). No corre en ningún otro momento — ni al cambiar
+  las URIs de carpetas, ni al navegar.
+- El resultado se persiste íntegro en **Room** (`data/db/GinnyDatabase.kt`, tabla `scanned_games`
+  vía `ScannedGameDao`), reemplazando la tabla entera (`replaceAll`: borra + reinserta) en vez de
+  mergear incrementalmente — más simple y evita lidiar con juegos borrados/renombrados en disco desde
+  el último escaneo.
+- **`GameIndexRepository`** es la única fachada de lectura sobre esa tabla; `SystemsViewModel` y
+  `GamesViewModel` la consumen vía `Flow`, así que la UI se actualiza sola apenas termina un escaneo,
+  sin necesidad de recargar la pantalla.
+- **Por qué Room y no un archivo JSON en `filesDir`**: Room es el mecanismo estándar de Android para
+  exactamente este patrón (índice cacheado que la UI observa reactivamente), integra `Flow` de forma
+  nativa sin deserializar todo a memoria en cada lectura, y escala mejor si la biblioteca crece a
+  miles de juegos. El costo es una dependencia nueva (`androidx.room` + plugin `kapt`, agregado a
+  `build.gradle.kts`) que el proyecto no tenía — se evaluó y se consideró que valía la pena frente a
+  la alternativa más liviana (JSON), dado que el propósito explícito de esta caché es evitar
+  relecturas repetidas de disco.
+- El botón "Y Recargar" que ya existía en las pantallas de Sistemas/Juegos se mantuvo, pero ahora es
+  solo una relectura manual de la caché (`ViewModel.reload()`) — no dispara un escaneo de SAF. Es
+  redundante con el `Flow` reactivo en la práctica, pero se dejó funcional (no como no-op) para no
+  repetir el bug de "botón que no hace nada" que motivó esta caché en primer lugar.
+- `SettingsRepository.lastScanAt` (DataStore) guarda el timestamp del último escaneo completado, para
+  mostrarlo en Settings y para que los mensajes de estado vacío en Sistemas/Juegos puedan sugerir
+  "Escaneá la biblioteca" en vez de sonar como que la carpeta de ROMs está mal configurada.
 
 ## Lanzamiento de emuladores
 
@@ -145,6 +181,11 @@ el Kotlin/Compose es correcto; lo único no probado end-to-end en este entorno s
 exactas de AGP 8.4.2/Gradle 8.7 que quedaron configuradas en el proyecto real — deberían compilar
 igual o mejor en Android Studio con JDK 17, pero conviene que la primera sync la corras vos y me
 avises si algo no matchea.
+
+La incorporación de Room + plugin `kapt` (ver "Caché de biblioteca") es posterior a esa verificación
+y **no se compiló** — se agregó sin volver a correr el workaround de JDK/SDK ad-hoc descripto arriba.
+Primera sync/build después de ese cambio conviene hacerla con más atención de lo normal, en particular
+el annotation processing de Room (`kapt`, generación de `GinnyDatabase_Impl`/DAOs).
 
 ## Limitaciones conocidas / seguidas para v2
 

@@ -58,7 +58,7 @@ fun SystemsScreen(
                             when {
                                 isScanning -> ""
                                 romFolderUri == null -> "Configurá la carpeta de ROMs en Configuración (botón X) para empezar."
-                                else -> "No se encontraron juegos en ningún sistema dentro de la carpeta de ROMs configurada."
+                                else -> "No se encontraron juegos. Presioná \"Escanear biblioteca\" en Configuración > Carpetas."
                             },
                         )
                     }

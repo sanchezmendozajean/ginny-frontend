@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -150,7 +149,15 @@ fun <T> SnapFocusGrid(
 
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             LazyVerticalGrid(
-                columns = GridCells.FixedSize(tileSize),
+                // Fixed(columns), not FixedSize(tileSize) — the latter lets Compose independently
+                // decide the column count from its own pixel-rounded math, which can disagree by
+                // one with the [columns] value the D-Pad navigation above assumes (Dp arithmetic
+                // here vs. actual pixel layout there), making "move down" land one item off
+                // diagonally instead of straight down once tiles get small enough (e.g. a 4-row
+                // config) for the rounding to tip the other way. Fixed(columns) makes the two
+                // impossible to disagree, and also centers leftover width evenly instead of
+                // packing columns flush left.
+                columns = GridCells.Fixed(columns),
                 state = gridState,
                 userScrollEnabled = true,
                 contentPadding = PaddingValues(horizontal = edgePadding, vertical = edgePadding),
@@ -200,8 +207,7 @@ fun <T> SnapFocusGrid(
                 // to clear the GridPanel's own rounded corners (GinnyShapes.radiusLarge) so the
                 // track doesn't visually poke into the curve.
                 RowPositionIndicator(
-                    gridState = gridState,
-                    columns = columns,
+                    topRow = currentTopRowRounded(),
                     totalRows = actualRows,
                     visibleRows = visibleRows,
                     modifier = Modifier
@@ -217,21 +223,23 @@ fun <T> SnapFocusGrid(
 /**
  * Visual-only (non-touch) indicator of which row window is currently in view — per spec, a
  * scrollbar-like affordance for the D-Pad-driven grid, which has no draggable/touch scrollbar.
+ * Takes the already-rounded [topRow] (see [SnapFocusGrid]'s `currentTopRowRounded`) rather than
+ * reading raw scroll state itself — `firstVisibleItemIndex` alone rounds down to a row that's
+ * only partially scrolled past, which visibly failed to reach the end of the track once genuinely
+ * on the last row (a nonzero `firstVisibleItemScrollOffset` can persist even once D-Pad nav has
+ * settled there, not just mid-touch-drag).
  */
 @Composable
 private fun RowPositionIndicator(
-    gridState: LazyGridState,
-    columns: Int,
+    topRow: Int,
     totalRows: Int,
     visibleRows: Int,
     modifier: Modifier = Modifier,
 ) {
-    val safeColumns = columns.coerceAtLeast(1)
     val safeTotalRows = totalRows.coerceAtLeast(1)
-    val firstVisibleRow = gridState.firstVisibleItemIndex / safeColumns
     val maxTopRow = (safeTotalRows - visibleRows).coerceAtLeast(1)
     val thumbFraction = (visibleRows.toFloat() / safeTotalRows.toFloat()).coerceIn(0.08f, 1f)
-    val progress = (firstVisibleRow.toFloat() / maxTopRow.toFloat()).coerceIn(0f, 1f)
+    val progress = (topRow.toFloat() / maxTopRow.toFloat()).coerceIn(0f, 1f)
 
     BoxWithConstraints(
         modifier = modifier

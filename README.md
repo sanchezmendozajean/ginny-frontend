@@ -46,19 +46,24 @@ configurá, en este orden:
 
 1. **Carpeta de ROMs**: la carpeta base que contiene una subcarpeta por sistema (`nes/`, `snes/`,
    `gba/`, etc. — ver estructura completa abajo). No hace falta que existan todas.
-2. **Carpeta de Usuario**: una carpeta aparte donde la app crea automáticamente
+2. **Escanear biblioteca**: botón al lado del selector de Carpeta de ROMs, en la misma pestaña
+   Carpetas. La app **no** escanea la carpeta de ROMs sola ni al abrir Sistemas/Juegos — hay que
+   presionar este botón para que indexe sistemas y juegos. Puede tardar unos segundos si hay muchos
+   archivos; una vez que termina, la navegación lee de ese índice y es instantánea. Volvé a
+   presionarlo cada vez que agregues, saques o renombres ROMs/carpetas de sistema.
+3. **Carpeta de Usuario**: una carpeta aparte donde la app crea automáticamente
    `Assets/<sistema>/{icons/, system.png}` la primera vez que la elegís. No pisa íconos que ya
    existan si volvés a seleccionar la misma carpeta.
-3. **Emulador/core por sistema**: casi todo pasa por RetroArch — elegí entre las 3 variantes reales
+4. **Emulador/core por sistema**: casi todo pasa por RetroArch — elegí entre las 3 variantes reales
    de RetroArch para Android según cuál tengas instalada (ver tabla más abajo) y el core; GameCube
    usa Dolphin, PS2 usa AetherSX2/NetherSX2, PSP usa PPSSPP, y Dreamcast te deja elegir entre
    Redream o RetroArch.
-4. **Filas de la grilla** (1 a 4), volúmenes de música/sonidos de interfaz y la pista de música de
+5. **Filas de la grilla** (1 a 4), volúmenes de música/sonidos de interfaz y la pista de música de
    fondo, a gusto.
 
-En la barra inferior de las pantallas de Sistemas y Juegos hay un botón **Y Recargar** que vuelve a
-escanear la Carpeta de ROMs sin esperar a que cambies la configuración — útil si agregaste/sacaste
-juegos con la app abierta.
+El botón **Y Recargar** en la barra inferior de Sistemas/Juegos solo relee ese índice ya escaneado
+(instantáneo) — no vuelve a tocar el disco. Para que aparezcan juegos nuevos hace falta el botón
+"Escanear biblioteca" de Configuración → Carpetas.
 
 ## Estructura de carpetas esperada
 

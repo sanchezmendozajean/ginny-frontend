@@ -2,6 +2,7 @@ package com.ginny.frontend.di
 
 import android.content.Context
 import com.ginny.frontend.data.AssetRepository
+import com.ginny.frontend.data.GameIndexRepository
 import com.ginny.frontend.data.MusicRepository
 import com.ginny.frontend.data.RomRepository
 import com.ginny.frontend.data.SaveStateRepository
@@ -15,6 +16,7 @@ class AppContainer(context: Context) {
     val settingsRepository = SettingsRepository(context)
     val assetRepository = AssetRepository(context)
     val romRepository = RomRepository(context, assetRepository)
+    val gameIndexRepository = GameIndexRepository(context)
     val saveStateRepository = SaveStateRepository(context)
     val storageBootstrapper = StorageBootstrapper(context)
     val musicRepository = MusicRepository(context)

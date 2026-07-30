@@ -36,6 +36,7 @@ class BatteryObserver(
     private var receiver: BroadcastReceiver? = null
     private var receivedAnyEvent = false
     private var lastPercent: Int? = null
+    private var lastCharging: Boolean? = null
     private var lastChangedAtMs: Long = 0L
     private var unreliable = false
 
@@ -76,7 +77,9 @@ class BatteryObserver(
         }
 
         val now = SystemClock.elapsedRealtime()
-        if (lastPercent != percent) {
+        val chargingChanged = lastCharging != null && lastCharging != charging
+        lastCharging = charging
+        if (lastPercent != percent || chargingChanged) {
             lastPercent = percent
             lastChangedAtMs = now
         } else if (!charging && now - lastChangedAtMs > stuckThresholdMs) {
