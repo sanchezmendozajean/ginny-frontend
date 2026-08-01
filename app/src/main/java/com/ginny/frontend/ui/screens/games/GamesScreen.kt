@@ -116,6 +116,7 @@ fun GamesScreen(
             Spacer(Modifier.height(14.dp))
             GinnyBottomBar(
                 selectedName = selected?.displayName.orEmpty(),
+                selectedSecondaryText = selected?.takeIf { it.romFileName != it.displayName }?.romFileName,
                 showBack = true,
                 onBackClick = onBack,
                 onOpenClick = { selected?.let(::activate) },

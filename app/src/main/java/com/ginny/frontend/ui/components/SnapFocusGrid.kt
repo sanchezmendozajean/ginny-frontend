@@ -1,6 +1,8 @@
 package com.ginny.frontend.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -198,7 +200,20 @@ fun <T> SnapFocusGrid(
                     },
             ) {
                 items(entries.size, key = { itemKey(entries[it]) }) { index ->
-                    itemContent(entries[index], index == focusedIndex, tileSize)
+                    val item = entries[index]
+                    Box(
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) {
+                            // First tap on an unfocused tile only selects it; a second tap on the
+                            // already-focused tile is what activates it — mirrors D-Pad's
+                            // move-then-press-A, so touch never activates the wrong item outright.
+                            if (index == focusedIndex) onActivate(item) else onFocusedIndexChange(index)
+                        },
+                    ) {
+                        itemContent(item, index == focusedIndex, tileSize)
+                    }
                 }
             }
 

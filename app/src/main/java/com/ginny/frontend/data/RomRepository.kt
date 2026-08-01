@@ -50,10 +50,11 @@ class RomRepository(
             ?: return@withContext emptyList()
 
         val iconIndex = userFolderUri?.let { assetRepository.loadIconIndex(it, systemId) } ?: emptyMap()
+        val nameIndex = userFolderUri?.let { assetRepository.loadNameIndex(it, systemId) } ?: emptyMap()
 
         when (definition.romOrganization) {
-            RomOrganization.FLAT_FILES -> scanFlatFiles(systemDir, definition, iconIndex)
-            RomOrganization.FOLDER_PER_GAME -> scanFolderPerGame(systemDir, definition, iconIndex)
+            RomOrganization.FLAT_FILES -> scanFlatFiles(systemDir, definition, iconIndex, nameIndex)
+            RomOrganization.FOLDER_PER_GAME -> scanFolderPerGame(systemDir, definition, iconIndex, nameIndex)
         }
     }
 
@@ -61,6 +62,7 @@ class RomRepository(
         systemDir: DocumentFile,
         definition: SystemDefinition,
         iconIndex: Map<String, Uri>,
+        nameIndex: Map<String, String>,
     ): List<GameEntry> =
         systemDir.listFiles()
             .filter { file ->
@@ -69,7 +71,7 @@ class RomRepository(
             }
             .map { file ->
                 val romFileName = file.name!!
-                val displayName = romFileName.substringBeforeLast('.')
+                val displayName = nameIndex[romFileName.lowercase()] ?: romFileName.substringBeforeLast('.')
                 val iconKey = assetRepository.expectedIconFileName(romFileName).lowercase()
                 GameEntry(
                     systemId = definition.id,
@@ -91,17 +93,19 @@ class RomRepository(
         systemDir: DocumentFile,
         definition: SystemDefinition,
         iconIndex: Map<String, Uri>,
+        nameIndex: Map<String, String>,
     ): List<GameEntry> =
         systemDir.listFiles()
             .filter { it.isDirectory && it.name != null }
             .mapNotNull { folder ->
                 val baseFile = pickBaseGameFile(folder, definition.romExtensions) ?: return@mapNotNull null
-                val displayName = folder.name!!
-                val iconKey = assetRepository.expectedIconFileName(displayName).lowercase()
+                val folderName = folder.name!!
+                val displayName = nameIndex[folderName.lowercase()] ?: folderName
+                val iconKey = assetRepository.expectedIconFileName(folderName).lowercase()
                 GameEntry(
                     systemId = definition.id,
                     romUri = baseFile.uri,
-                    romFileName = displayName,
+                    romFileName = folderName,
                     displayName = displayName,
                     iconUri = iconIndex[iconKey],
                 )

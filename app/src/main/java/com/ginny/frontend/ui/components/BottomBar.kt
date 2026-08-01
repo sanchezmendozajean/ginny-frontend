@@ -1,10 +1,12 @@
 package com.ginny.frontend.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -35,20 +37,23 @@ fun GinnyBottomBar(
     onOpenClick: () -> Unit,
     openLabel: String = "Abrir",
     onReloadClick: (() -> Unit)? = null,
+    /** Optional second, smaller line under [selectedName] — e.g. the real ROM file name behind a
+     * [com.ginny.frontend.data.model.GameEntry.displayName] taken from the names.json dictionary. */
+    selectedSecondaryText: String? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth(),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .weight(1f)
-                .height(BottomBarHeight)
+                .heightIn(min = BottomBarHeight)
                 .glassShadow(999.dp)
                 .then(glassBackgroundModifier(999.dp))
-                .padding(horizontal = 22.dp),
+                .padding(horizontal = 22.dp, vertical = 6.dp),
         ) {
             Text(
                 text = selectedName,
@@ -58,6 +63,16 @@ fun GinnyBottomBar(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (!selectedSecondaryText.isNullOrBlank()) {
+                Text(
+                    text = selectedSecondaryText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = GinnyColors.TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
 
         Spacer(Modifier.width(14.dp))

@@ -35,7 +35,8 @@ app/src/main/java/com/ginny/frontend/
 │   │                          # (scanAllSystems: corrida completa, solo desde Settings)
 │   ├── GameIndexRepository.kt # Fachada sobre Room: caché de la última corrida de escaneo
 │   ├── db/                    # Room: ScannedGameEntity, ScannedGameDao, GinnyDatabase
-│   ├── AssetRepository.kt     # Íconos y logos desde la carpeta de Usuario (Assets/<sistema>/...)
+│   ├── AssetRepository.kt     # Íconos, logos y diccionario de nombres (names.json) desde la
+│   │                          # carpeta de Usuario (Assets/<sistema>/...)
 │   ├── SaveStateRepository.kt # Detección de miniaturas de save-state de RetroArch
 │   ├── StorageBootstrapper.kt # Crea Assets/<sistema>/{icons/, system.png} en la carpeta de Usuario
 │   └── ButtonMapping.kt       # Mapeo lógico->keycode físico remapeable
@@ -161,6 +162,37 @@ Patrón Strategy (`LauncherStrategy`), una implementación por emulador:
   (NCA/PFS0/RomFS) con descifrado AES usando las claves propias del usuario (`prod.keys`), al
   estilo de lo que hace la librería LibHac en Ryujinx — un proyecto en sí mismo, fuera del alcance
   de este frontend.
+
+## Diccionario de nombres de juego (`names.json`)
+
+- Muchos sistemas (NeoGeo, MAME, FBNeo, etc.) usan nombres de archivo de ROM en clave arcade
+  (`3countb.zip`) en vez del nombre real del juego. Para mostrar un nombre legible sin depender de
+  scraping externo, cada sistema admite un diccionario **opcional** y de edición manual:
+  `Assets/<sistema>/names.json`, al mismo nivel que `icons/` y `system.png`.
+- Formato: un array JSON de objetos `{"file": "<nombre exacto de archivo o carpeta>", "name":
+  "<nombre a mostrar>"}`. `file` es el nombre completo tal como aparece en la carpeta de ROMs
+  (con extensión para `FLAT_FILES`, nombre de carpeta para `FOLDER_PER_GAME` como Switch) — la
+  comparación contra `GameEntry.romFileName` es case-insensitive (`AssetRepository.loadNameIndex`),
+  igual que la de íconos.
+- Si el archivo no existe, no se puede leer, o el JSON es inválido, se ignora silenciosamente y el
+  sistema completo cae al comportamiento anterior (nombre de archivo sin extensión / nombre de
+  carpeta). Si existe pero un ROM puntual no tiene entrada, ese ROM individual también cae al mismo
+  fallback — el diccionario no necesita cubrir el 100% de los archivos de la carpeta.
+- Esto **solo afecta el nombre mostrado** (`GameEntry.displayName`); `SaveStateRepository` sigue
+  matcheando los thumbnails de save-state de RetroArch contra el nombre de archivo real
+  (`romFileName`, con y sin extensión), no contra el nombre del diccionario, porque RetroArch nombra
+  esos archivos según el contenido cargado, no según ningún alias cosmético.
+- **Nombre de archivo visible junto al nombre bonito (agregado 2026-07-31)**: `GinnyBottomBar`
+  (`ui/components/BottomBar.kt`) admite un `selectedSecondaryText` opcional, una segunda línea más
+  chica (`labelSmall`, color `GinnyColors.TextSecondary`) debajo del nombre seleccionado. En
+  `GamesScreen` se le pasa `romFileName`, pero **solo cuando difiere de `displayName`** — si no hay
+  `names.json` (o el ROM puntual no tiene entrada), `displayName` ya es el nombre de archivo (sin
+  extensión, o la carpeta completa en `FOLDER_PER_GAME`), así que mostrar la segunda línea sería
+  repetir el mismo texto. La condición es la misma razón por la que el equivalente en Ginny Assets
+  Manager muestra el nombre de archivo entre paréntesis solo cuando `displayName !== id`.
+- Es un archivo de texto plano que el usuario coloca/edita a mano en la Carpeta de Usuario — Ginny
+  Assets Manager (la herramienta de escritorio hermana) no lo genera ni lo administra; ver
+  "Fuera de alcance" en `docs/prompt-asset-manager-nwjs.md`.
 
 ## Batería no confiable
 

@@ -6,7 +6,7 @@ que la carpeta del sistema (ver SystemId.folderName en el codigo):
   gb.png
   gbc.png
   gba.png
-  ps1.png
+  ps.png
   genesis.png
   mastersystem.png
   neogeo.png

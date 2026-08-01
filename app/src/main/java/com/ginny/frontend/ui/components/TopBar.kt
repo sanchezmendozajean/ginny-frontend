@@ -8,8 +8,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Battery0Bar
+import androidx.compose.material.icons.filled.Battery1Bar
+import androidx.compose.material.icons.filled.Battery2Bar
+import androidx.compose.material.icons.filled.Battery3Bar
+import androidx.compose.material.icons.filled.Battery4Bar
+import androidx.compose.material.icons.filled.Battery5Bar
+import androidx.compose.material.icons.filled.Battery6Bar
 import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -125,15 +134,24 @@ fun GinnyTopBar(
 @Composable
 private fun BatteryIndicator(percent: Int, charging: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        if (charging) {
-            Icon(
-                imageVector = Icons.Filled.BatteryChargingFull,
-                contentDescription = "Cargando",
-                tint = GinnyColors.AccentBlue,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(4.dp))
-        }
+        Icon(
+            imageVector = if (charging) Icons.Filled.BatteryChargingFull else batteryIconFor(percent),
+            contentDescription = if (charging) "Cargando" else "Batería",
+            tint = if (charging) GinnyColors.AccentBlue else GinnyColors.TextPrimary,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(4.dp))
         Text(text = "$percent%", style = MaterialTheme.typography.bodyMedium, color = GinnyColors.TextPrimary)
     }
+}
+
+private fun batteryIconFor(percent: Int): ImageVector = when {
+    percent >= 95 -> Icons.Filled.BatteryFull
+    percent >= 80 -> Icons.Filled.Battery6Bar
+    percent >= 65 -> Icons.Filled.Battery5Bar
+    percent >= 50 -> Icons.Filled.Battery4Bar
+    percent >= 35 -> Icons.Filled.Battery3Bar
+    percent >= 20 -> Icons.Filled.Battery2Bar
+    percent >= 5 -> Icons.Filled.Battery1Bar
+    else -> Icons.Filled.Battery0Bar
 }

@@ -141,7 +141,7 @@ Se mantiene AetherSX2 como emulador configurado para PS2 según lo solicitado, p
 ## Estructura de almacenamiento (ROMs y Assets)
 
 **Carpeta base de ROMs:**
-- El usuario especifica **una única carpeta base de ROMs** (no una por sistema). Esta carpeta debe seguir la estructura típica usada por frontends de emulación (compatible con la convención de ES-DE), una subcarpeta por sistema, nombrada igual que en la estructura de Assets (`nes`, `snes`, `gb`, `gbc`, `gba`, `ps1`, `genesis`, `mastersystem`, `neogeo`, `fbneo`, `mame`, `gc`, `ps2`, `psp`, `dreamcast`).
+- El usuario especifica **una única carpeta base de ROMs** (no una por sistema). Esta carpeta debe seguir la estructura típica usada por frontends de emulación (compatible con la convención de ES-DE), una subcarpeta por sistema, nombrada igual que en la estructura de Assets (`nes`, `snes`, `gb`, `gbc`, `gba`, `ps`, `genesis`, `mastersystem`, `neogeo`, `fbneo`, `mame`, `gc`, `ps2`, `psp`, `dreamcast`).
 
 ```
 [Carpeta base de ROMs]/
@@ -150,7 +150,7 @@ Se mantiene AetherSX2 como emulador configurado para PS2 según lo solicitado, p
 ├── gb/
 ├── gbc/
 ├── gba/
-├── ps1/
+├── ps/
 ├── genesis/
 ├── mastersystem/
 ├── neogeo/
@@ -193,7 +193,7 @@ Se mantiene AetherSX2 como emulador configurado para PS2 según lo solicitado, p
     ├── gba/
     │   ├── icons/
     │   └── system.png
-    ├── ps1/
+    ├── ps/
     │   ├── icons/
     │   └── system.png
     ├── genesis/
@@ -230,6 +230,7 @@ Se mantiene AetherSX2 como emulador configurado para PS2 según lo solicitado, p
 - **Al crear la estructura por primera vez**, la app debe generar automáticamente los archivos `system.png` de cada sistema con un logotipo por defecto (no debe dejar la app sin logos). Estas imágenes por defecto deben empaquetarse como assets/recursos dentro del propio proyecto Android (ej. `res/drawable` o `assets/`), para luego copiarse físicamente a la carpeta de Usuario al momento de crear la estructura.
 - **Acción para Claude Code**: crear en el repositorio del proyecto una carpeta dedicada (ej. `app/src/main/assets/system-logos/` o similar, a definir según el stack elegido) donde yo depositaré manualmente las imágenes `system.png` de cada sistema (nes.png, snes.png, gc.png, etc.). El código debe leer desde esa carpeta del proyecto al momento de inicializar/crear la estructura en la carpeta de Usuario del dispositivo.
 - Si la carpeta de Usuario ya tiene la estructura (total o parcial) al reconfigurar la ruta, la app no debe sobrescribir `icons/` existentes, pero sí debe crear lo que falte (carpetas o `system.png` ausentes).
+- **Diccionario de nombres opcional (`names.json`, agregado 2026-07-30)**: cada carpeta `Assets/<sistema>/` admite además un archivo `names.json` opcional, **no** creado automáticamente por la app (a diferencia de `icons/` y `system.png`) — el usuario lo coloca/edita a mano cuando quiere mostrar un nombre legible en vez del nombre crudo del archivo/carpeta de ROM (típicamente necesario en sistemas arcade como NeoGeo/MAME/FBNeo, donde el nombre de archivo es una clave corta tipo `3countb.zip`). Formato: array JSON `[{"file": "3countb.zip", "name": "The Three Countdown"}, ...]`, comparación case-insensitive contra el nombre de archivo (o de carpeta, en sistemas "carpeta por juego" como Switch). Si el archivo no existe, no se puede leer, el JSON es inválido, o un ROM puntual no tiene entrada, se muestra el nombre de archivo/carpeta como ya se hacía. Ver detalle en `docs/architecture.md`.
 
 ## Panel de opciones / Configuración
 

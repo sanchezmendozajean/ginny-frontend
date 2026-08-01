@@ -24,7 +24,7 @@ class SaveStateRepository(private val context: Context) {
 
             val candidateBaseNames = setOf(
                 game.romFileName,
-                game.displayName,
+                game.romFileName.substringBeforeLast('.'),
             ).map { Regex.escape(it) }
 
             val pattern = Regex(

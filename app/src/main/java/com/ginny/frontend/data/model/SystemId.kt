@@ -7,7 +7,7 @@ enum class SystemId(val folderName: String) {
     GB("gb"),
     GBC("gbc"),
     GBA("gba"),
-    PS1("ps1"),
+    PS1("ps"),
     GENESIS("genesis"),
     MASTERSYSTEM("mastersystem"),
     NEOGEO("neogeo"),

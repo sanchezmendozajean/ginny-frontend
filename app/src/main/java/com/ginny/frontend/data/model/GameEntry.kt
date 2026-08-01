@@ -9,7 +9,11 @@ data class GameEntry(
     val romUri: Uri,
     /** Full file name including extension, e.g. "BomberMan.nes" — also the key used to look up the icon. */
     val romFileName: String,
-    /** Display name with the extension stripped, used for sorting and UI. */
+    /**
+     * Name shown in the UI and used for sorting: the override from `Assets/<system>/names.json`
+     * when [romFileName] (or, for folder-per-game systems, the folder name) has an entry there,
+     * otherwise the file name with the extension stripped (or the folder name as-is).
+     */
     val displayName: String,
     /** Uri of "<romFileName>.png" inside Assets/<system>/icons/, or null if not found (placeholder is shown). */
     val iconUri: Uri?,

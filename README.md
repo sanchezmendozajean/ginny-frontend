@@ -77,7 +77,7 @@ El botón **Y Recargar** en la barra inferior de Sistemas/Juegos solo relee ese 
 | Game Boy | `gb/` | `.gb` |
 | Game Boy Color | `gbc/` | `.gbc` |
 | Game Boy Advance | `gba/` | `.gba` |
-| PlayStation | `ps1/` | `.iso`, `.bin`, `.cue`, `.chd`, `.pbp` |
+| PlayStation | `ps/` | `.iso`, `.bin`, `.cue`, `.chd`, `.pbp` |
 | Genesis / Mega Drive | `genesis/` | `.md`, `.gen`, `.bin` |
 | Master System | `mastersystem/` | `.sms` |
 | Neo Geo | `neogeo/` | `.zip` |
