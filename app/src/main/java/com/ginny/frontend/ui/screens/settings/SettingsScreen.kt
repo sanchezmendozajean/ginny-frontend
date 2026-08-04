@@ -1,24 +1,30 @@
 package com.ginny.frontend.ui.screens.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -43,14 +49,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
+import coil.compose.AsyncImage
 import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.data.model.BundledMusicTrack
 import com.ginny.frontend.data.model.EmulatorTarget
@@ -58,7 +67,15 @@ import com.ginny.frontend.data.model.MusicSelection
 import com.ginny.frontend.data.model.SystemDefinition
 import com.ginny.frontend.ui.components.AuroraBackground
 import com.ginny.frontend.ui.components.GridPanel
+import com.ginny.frontend.ui.components.TilePlaceholderLabel
 import com.ginny.frontend.ui.theme.GinnyColors
+
+// Explicit height shared by the icon box and the emulator/core/override controls in the
+// Emuladores tab. All three controls are built from the same EmulatorFieldBox rather than
+// Material3's OutlinedTextField, whose animated floating label measures itself differently
+// depending on focus/empty state and fed that variance straight into the field's own height.
+private val EmulatorRowControlHeight = 56.dp
+private val EmulatorRowIconSize = EmulatorRowControlHeight * 1.1f
 
 private enum class SettingsTab(val label: String) {
     INTERFAZ("Interfaz"),
@@ -288,20 +305,15 @@ private fun formatScanTimestamp(epochMillis: Long): String {
 
 @Composable
 private fun EmuladoresTabContent(viewModel: SettingsViewModel) {
+    val userFolderUri by viewModel.settings.userFolderUri.collectAsState(initial = null)
+
+    // Systems are pre-sorted alphabetically by SystemCatalog.allSortedByName so this list doesn't
+    // need to re-sort — it just renders them in that order, one per row.
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         SectionTitle("Emuladores y cores por sistema")
-        viewModel.systems.chunked(2).forEach { pair ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                pair.forEach { system ->
-                    SystemEmulatorRow(system = system, viewModel = viewModel, modifier = Modifier.weight(1f))
-                }
-                if (pair.size == 1) {
-                    Spacer(Modifier.weight(1f))
-                }
-            }
+        viewModel.systems.forEach { system ->
+            SystemEmulatorRow(system = system, viewModel = viewModel, userFolderUri = userFolderUri)
+            Spacer(Modifier.height(18.dp))
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -368,70 +380,171 @@ private fun MusicTrackDropdown(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SystemEmulatorRow(system: SystemDefinition, viewModel: SettingsViewModel, modifier: Modifier = Modifier) {
+private fun SystemEmulatorRow(
+    system: SystemDefinition,
+    viewModel: SettingsViewModel,
+    userFolderUri: String?,
+    modifier: Modifier = Modifier,
+) {
     val emulator by viewModel.settings.emulatorFor(system.id).collectAsState(initial = system.defaultEmulator)
     val coreId by viewModel.settings.retroArchCoreFor(system.id).collectAsState(initial = system.defaultRetroArchCoreId)
 
-    Column(modifier.padding(vertical = 8.dp)) {
-        Text(system.displayName, style = MaterialTheme.typography.bodyLarge, color = GinnyColors.TextPrimary)
-        Spacer(Modifier.height(6.dp))
+    Column(modifier.fillMaxWidth()) {
+        Text(
+            system.displayName,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            color = GinnyColors.TextPrimary,
+        )
+        Spacer(Modifier.height(8.dp))
 
-        // Always shown, even when there's only one possible emulator (PS2, PSP, GameCube...) —
-        // it's still useful to see at a glance which one a system is wired to.
-        var emulatorExpanded by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(expanded = emulatorExpanded, onExpandedChange = { emulatorExpanded = it }) {
-            OutlinedTextField(
-                value = emulator.displayName,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Emulador") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = emulatorExpanded) },
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SystemIconBox(
+                system = system,
+                userFolderUri = userFolderUri,
+                viewModel = viewModel,
+                modifier = Modifier.size(EmulatorRowIconSize),
             )
-            ExposedDropdownMenu(expanded = emulatorExpanded, onDismissRequest = { emulatorExpanded = false }) {
-                system.availableEmulators.forEach { option ->
+
+            Box(modifier = Modifier.weight(1f)) {
+                EmulatorDropdown(system = system, selected = emulator, viewModel = viewModel)
+            }
+
+            Box(modifier = Modifier.weight(1f)) {
+                CoreOrOverrideField(system = system, emulator = emulator, coreId = coreId, viewModel = viewModel)
+            }
+        }
+
+        // Kept out of the Row above on purpose: this optional caption only applies to the third
+        // column, but including it inside that column's Box would make that Box taller than its
+        // siblings, which in turn stretches the whole Row's height and pushes the (shorter) sibling
+        // controls down when centered — exactly the misalignment this avoids.
+        CoreOrOverrideHelperText(system = system, emulator = emulator, iconSize = EmulatorRowIconSize)
+    }
+}
+
+@Composable
+private fun SystemIconBox(
+    system: SystemDefinition,
+    userFolderUri: String?,
+    viewModel: SettingsViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val logoUri by produceState<android.net.Uri?>(initialValue = null, userFolderUri, system.id) {
+        value = userFolderUri?.let { uriString ->
+            runCatching {
+                viewModel.assetRepository.systemLogoUri(android.net.Uri.parse(uriString), system.id)
+            }.getOrNull()
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(GinnyColors.CardBg)
+            .border(1.dp, GinnyColors.TextSecondary.copy(alpha = 0.35f), RoundedCornerShape(10.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (logoUri != null) {
+            AsyncImage(
+                model = logoUri,
+                contentDescription = system.displayName,
+                modifier = Modifier.fillMaxSize().padding(8.dp),
+            )
+        } else {
+            val colorIndex = system.id.ordinal % GinnyColors.SystemColors.size
+            TilePlaceholderLabel(text = system.displayName, color = GinnyColors.SystemColors[colorIndex])
+        }
+    }
+}
+
+// Always shown, even when there's only one possible emulator (PS2, PSP, GameCube...) — it's still
+// useful to see at a glance which one a system is wired to.
+@Composable
+private fun EmulatorDropdown(system: SystemDefinition, selected: EmulatorTarget, viewModel: SettingsViewModel) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.fillMaxWidth()) {
+        EmulatorFieldBox(label = "Aplicación de Emulación", onClick = { expanded = true }) {
+            Text(
+                selected.displayName,
+                style = MaterialTheme.typography.bodyLarge,
+                color = GinnyColors.TextPrimary,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = GinnyColors.TextSecondary)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            system.availableEmulators.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.displayName) },
+                    onClick = { viewModel.setEmulator(system.id, option); expanded = false },
+                )
+            }
+        }
+    }
+}
+
+// Mutually exclusive per system: RetroArch systems offer a core picker, systems with more than one
+// real-world app/fork (PS2, Switch...) offer a package override instead.
+@Composable
+private fun CoreOrOverrideField(
+    system: SystemDefinition,
+    emulator: EmulatorTarget,
+    coreId: String?,
+    viewModel: SettingsViewModel,
+) {
+    if (emulator in EmulatorTarget.RETROARCH_VARIANTS && system.retroArchCores.isNotEmpty()) {
+        var expanded by remember { mutableStateOf(false) }
+        val selectedCore = system.retroArchCores.firstOrNull { it.id == coreId } ?: system.retroArchCores.first()
+        Box(modifier = Modifier.fillMaxWidth()) {
+            EmulatorFieldBox(label = "Core", onClick = { expanded = true }) {
+                Text(
+                    selectedCore.label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = GinnyColors.TextPrimary,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = GinnyColors.TextSecondary)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                system.retroArchCores.forEach { core ->
                     DropdownMenuItem(
-                        text = { Text(option.displayName) },
-                        onClick = { viewModel.setEmulator(system.id, option); emulatorExpanded = false },
+                        text = { Text(core.label) },
+                        onClick = { viewModel.setCore(system.id, core.id); expanded = false },
                     )
                 }
             }
         }
-
-        if (emulator in EmulatorTarget.RETROARCH_VARIANTS && system.retroArchCores.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            var coreExpanded by remember { mutableStateOf(false) }
-            val selectedCore = system.retroArchCores.firstOrNull { it.id == coreId } ?: system.retroArchCores.first()
-            ExposedDropdownMenuBox(expanded = coreExpanded, onExpandedChange = { coreExpanded = it }) {
-                OutlinedTextField(
-                    value = selectedCore.label,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Core") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = coreExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                )
-                ExposedDropdownMenu(expanded = coreExpanded, onDismissRequest = { coreExpanded = false }) {
-                    system.retroArchCores.forEach { core ->
-                        DropdownMenuItem(
-                            text = { Text(core.label) },
-                            onClick = { viewModel.setCore(system.id, core.id); coreExpanded = false },
-                        )
-                    }
-                }
-            }
-        }
-
-        if (system.supportsPackageOverride) {
-            Spacer(Modifier.height(8.dp))
-            val packageOverride by viewModel.settings.packageOverrideFor(system.id).collectAsState(initial = null)
-            OutlinedTextField(
+    } else if (system.supportsPackageOverride) {
+        val packageOverride by viewModel.settings.packageOverrideFor(system.id).collectAsState(initial = null)
+        EmulatorFieldBox(label = "Override") {
+            BasicTextField(
                 value = packageOverride.orEmpty(),
                 onValueChange = { viewModel.setPackageOverride(system.id, it) },
-                label = { Text("Package override" + if (emulator.packageName.isBlank()) "" else " (opcional)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = GinnyColors.TextPrimary),
+                cursorBrush = SolidColor(GinnyColors.AccentBlue),
+                modifier = Modifier.weight(1f),
             )
+        }
+    }
+}
+
+// Companion to CoreOrOverrideField's package-override branch — rendered outside the control Row
+// (see the comment at its call site) so its two-line text never affects that Row's height.
+@Composable
+private fun CoreOrOverrideHelperText(system: SystemDefinition, emulator: EmulatorTarget, iconSize: Dp) {
+    val showsCoreDropdown = emulator in EmulatorTarget.RETROARCH_VARIANTS && system.retroArchCores.isNotEmpty()
+    if (!showsCoreDropdown && system.supportsPackageOverride) {
+        Spacer(Modifier.height(4.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Spacer(Modifier.width(iconSize + 12.dp))
+            Box(modifier = Modifier.weight(1f))
+            Spacer(Modifier.width(12.dp))
             Text(
                 if (emulator.packageName.isBlank()) {
                     "No hay un package por defecto conocido para ${emulator.displayName} — completalo para poder abrirlo."
@@ -440,6 +553,44 @@ private fun SystemEmulatorRow(system: SystemDefinition, viewModel: SettingsViewM
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = if (emulator.packageName.isBlank()) GinnyColors.AccentRed else GinnyColors.TextSecondary,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+// Shared shell for all three row controls (Aplicación/Core/Override) — deliberately not built on
+// Material3's OutlinedTextField. Its animated floating label measures itself at a different size
+// depending on focus/empty state, and that measurement feeds directly into the field's own height,
+// so a fixed Modifier.height() on it gets silently overridden and the box grows/shrinks depending
+// on state. A plain box with a permanent (non-animated) label sidesteps that: since all three
+// controls share this exact composable, they're guaranteed to measure identically instead of just
+// approximately matching.
+@Composable
+private fun EmulatorFieldBox(
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable RowScope.() -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(EmulatorRowControlHeight)
+            .clip(RoundedCornerShape(4.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 14.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxHeight(),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = GinnyColors.TextSecondary)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                content = content,
             )
         }
     }

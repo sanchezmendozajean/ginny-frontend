@@ -96,10 +96,6 @@ fun SystemsScreen(
                         onOpenSystem(it)
                     }
                 },
-                onReloadClick = {
-                    soundManager.playActivateSound()
-                    viewModel.reload()
-                },
             )
         }
     }

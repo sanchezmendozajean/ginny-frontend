@@ -17,6 +17,7 @@ que la carpeta del sistema (ver SystemId.folderName en el codigo):
   psp.png
   dreamcast.png
   switch.png
+  pico8.png
 
 Estas imagenes se empaquetan en la APK y se copian a
 "<Carpeta de Usuario>/Assets/<sistema>/system.png" la primera vez que el usuario

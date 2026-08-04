@@ -23,6 +23,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     val settings = container.settingsRepository
     val musicRepository = container.musicRepository
+    val assetRepository = container.assetRepository
     val systems = SystemCatalog.allSortedByName
 
     /** Non-null logical button currently waiting for the next physical key press to bind to it. */

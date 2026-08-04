@@ -15,6 +15,23 @@ import kotlinx.coroutines.withContext
 /** Filename fragments that mark a Switch dump as an update/DLC rather than the base game. */
 private val UPDATE_OR_DLC_MARKERS = listOf("update", "upd", "dlc", "patch", "[v")
 
+/** Matches by filename suffix rather than "extension after the last dot" — needed for compound
+ * extensions like PICO-8's `"p8.png"` (`substringAfterLast('.', "")` would only ever see `"png"`
+ * for those). Behaves the same as the old last-dot comparison for single-part extensions. */
+private fun matchesExtension(fileName: String, extensions: Set<String>): Boolean {
+    val lower = fileName.lowercase()
+    return extensions.any { lower.endsWith(".$it") }
+}
+
+/** Strips the ROM's matched extension from its file name for the fallback display name — plain
+ * `substringBeforeLast('.')` would leave a stray ".p8" behind for compound extensions like PICO-8's
+ * "p8.png" (picks the longest matching suffix in case more than one extension would match). */
+private fun stripRomExtension(fileName: String, extensions: Set<String>): String {
+    val lower = fileName.lowercase()
+    val matched = extensions.filter { lower.endsWith(".$it") }.maxByOrNull { it.length }
+    return if (matched != null) fileName.dropLast(matched.length + 1) else fileName.substringBeforeLast('.', fileName)
+}
+
 /** Scans the user-selected ROM folder for valid ROM files, per system. */
 class RomRepository(
     private val context: Context,
@@ -67,18 +84,24 @@ class RomRepository(
         systemDir.listFiles()
             .filter { file ->
                 file.isFile && file.name != null &&
-                    file.name!!.substringAfterLast('.', "").lowercase() in definition.romExtensions
+                    matchesExtension(file.name!!, definition.romExtensions) &&
+                    file.name!!.lowercase() !in definition.excludedFileNames
             }
             .map { file ->
                 val romFileName = file.name!!
-                val displayName = nameIndex[romFileName.lowercase()] ?: romFileName.substringBeforeLast('.')
+                val displayName = nameIndex[romFileName.lowercase()]
+                    ?: stripRomExtension(romFileName, definition.romExtensions)
                 val iconKey = assetRepository.expectedIconFileName(romFileName).lowercase()
+                // Si no hay un ícono propio en Assets/<sistema>/icons/, algunos sistemas (PICO-8:
+                // los carts ".p8.png") ya traen una imagen válida embebida en el propio archivo de
+                // ROM — se usa esa como fallback en vez del placeholder genérico.
+                val embeddedIconUri = file.uri.takeIf { matchesExtension(romFileName, definition.embeddedIconExtensions) }
                 GameEntry(
                     systemId = definition.id,
                     romUri = file.uri,
                     romFileName = romFileName,
                     displayName = displayName,
-                    iconUri = iconIndex[iconKey],
+                    iconUri = iconIndex[iconKey] ?: embeddedIconUri,
                 )
             }
             .sortedBy { it.displayName.lowercase() }
@@ -119,8 +142,7 @@ class RomRepository(
      */
     private fun pickBaseGameFile(folder: DocumentFile, extensions: Set<String>): DocumentFile? {
         val candidates = folder.listFiles().filter { file ->
-            file.isFile && file.name != null &&
-                file.name!!.substringAfterLast('.', "").lowercase() in extensions
+            file.isFile && file.name != null && matchesExtension(file.name!!, extensions)
         }
         if (candidates.isEmpty()) return null
 

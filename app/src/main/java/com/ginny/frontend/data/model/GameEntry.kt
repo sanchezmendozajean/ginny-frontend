@@ -15,6 +15,10 @@ data class GameEntry(
      * otherwise the file name with the extension stripped (or the folder name as-is).
      */
     val displayName: String,
-    /** Uri of "<romFileName>.png" inside Assets/<system>/icons/, or null if not found (placeholder is shown). */
+    /**
+     * Uri of "<romFileName>.png" inside Assets/<system>/icons/ if present; otherwise, for systems
+     * where the ROM itself is a valid image (see [SystemDefinition.embeddedIconExtensions] — e.g.
+     * PICO-8's ".p8.png" carts), [romUri] again; otherwise null (placeholder is shown).
+     */
     val iconUri: Uri?,
 )

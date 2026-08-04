@@ -61,16 +61,6 @@ class GamesViewModel(
         focusedIndex = focusedIndex.coerceIn(0, (_games.value.size - 1).coerceAtLeast(0))
     }
 
-    /** Manual re-read of the cache for the "Y Recargar" bottom-bar action. The cache is already
-     * live via Flow, so this is a lightweight nudge rather than a real filesystem re-scan — the
-     * actual (slow) scan only runs from Settings' "Escanear biblioteca" button. */
-    fun reload() {
-        _isScanning.value = true
-        viewModelScope.launch {
-            applyGames(container.gameIndexRepository.observeGames(systemId).first())
-        }
-    }
-
     /** Per spec: skip straight to launching when the game has no detected save states. */
     suspend fun onGameSelected(game: GameEntry): GameSelectionOutcome {
         val savesUri = container.settingsRepository.retroArchSavesUri.first()?.let(Uri::parse)

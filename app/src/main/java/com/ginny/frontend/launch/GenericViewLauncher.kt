@@ -72,3 +72,13 @@ class EdenLauncher : GenericViewLauncher(
     emulator = EmulatorTarget.EDEN,
     storeUrlValue = null,
 )
+
+/**
+ * WiiU, via Cemu's Android port. Package name confirmed via adb against a real install, but the
+ * port itself is still "early and experimental" upstream (see [EmulatorTarget.CEMU]) — the
+ * "Package override" in Settings stays available in case a different fork/build is used.
+ */
+class CemuLauncher : GenericViewLauncher(
+    emulator = EmulatorTarget.CEMU,
+    storeUrlValue = "https://github.com/SSimco/Cemu",
+)

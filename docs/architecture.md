@@ -162,6 +162,23 @@ Patrón Strategy (`LauncherStrategy`), una implementación por emulador:
   (NCA/PFS0/RomFS) con descifrado AES usando las claves propias del usuario (`prod.keys`), al
   estilo de lo que hace la librería LibHac en Ryujinx — un proyecto en sí mismo, fuera del alcance
   de este frontend.
+- **PICO-8 (agregado 2026-08-01), extensiones compuestas**: el formato de cart "visual" de PICO-8
+  es `.p8.png` — un PNG real (visible como screenshot/label del juego) con el código y los datos del
+  cart esteganografiados en los bits menos significativos de los píxeles; el `.p8` a secas es el cart
+  de texto plano, sin imagen. Como `.p8.png` tiene dos puntos, `RomRepository` matchea extensiones
+  por sufijo (`matchesExtension`, `endsWith(".$ext")`) en vez de "lo que sigue al último punto"
+  (`substringAfterLast`), que solo hubiera visto `"png"`. `SystemCatalog.kt` juega con el core libretro
+  **fake-08** (reimplementación open-source compatible con PICO-8, no el runtime oficial de
+  Lexaloffle) vía RetroArch, igual que el resto de los sistemas RetroArch.
+- **Ícono embebido en el propio ROM (agregado 2026-08-01)**: `SystemDefinition.embeddedIconExtensions`
+  marca qué extensiones (compuestas o no) ya son, en sí mismas, una imagen válida — solo PICO-8
+  (`.p8.png`) por ahora. `RomRepository.scanFlatFiles` usa el ícono propio de
+  `Assets/<sistema>/icons/` cuando existe, y si no, cae al `Uri` del ROM mismo (`GameEntry.iconUri
+  = romUri`) en vez del placeholder genérico. Como el cart `.p8.png` es **portrait** (no cuadrado) y
+  `AsyncImage` en `GamesScreen.kt` no fija `contentScale` (default de Coil: `ContentScale.Fit`) sobre
+  un `FocusableTile` con fondo blanco (`GinnyColors.CardBg`), el resultado ya sale redimensionado
+  para entrar en el cuadrado sin recortar y con el sobrante en blanco — **sin ningún procesamiento de
+  bitmap adicional**, es consecuencia directa de cómo ya se renderizaban todos los íconos.
 
 ## Diccionario de nombres de juego (`names.json`)
 
@@ -190,9 +207,13 @@ Patrón Strategy (`LauncherStrategy`), una implementación por emulador:
   extensión, o la carpeta completa en `FOLDER_PER_GAME`), así que mostrar la segunda línea sería
   repetir el mismo texto. La condición es la misma razón por la que el equivalente en Ginny Assets
   Manager muestra el nombre de archivo entre paréntesis solo cuando `displayName !== id`.
-- Es un archivo de texto plano que el usuario coloca/edita a mano en la Carpeta de Usuario — Ginny
-  Assets Manager (la herramienta de escritorio hermana) no lo genera ni lo administra; ver
-  "Fuera de alcance" en `docs/prompt-asset-manager-nwjs.md`.
+- Es un archivo de texto plano en la Carpeta de Usuario. El usuario puede editarlo directamente a
+  mano, **o** desde Ginny Assets Manager (la herramienta de escritorio hermana): agregado
+  2026-08-01, ahora administra `names.json` para MAME/NeoGeo/FBNeo vía el escaneo automático y para
+  cualquier sistema vía "Buscar opciones" o "Editar metadatos" — ver
+  `docs/ginny-assets-manager.md#diccionario-de-nombres-namesjson` para el detalle completo (ya no
+  aplica la nota de "fuera de alcance" de `docs/prompt-asset-manager-nwjs.md`, desactualizada desde
+  ese agregado).
 
 ## Batería no confiable
 

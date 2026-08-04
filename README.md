@@ -88,6 +88,7 @@ El botón **Y Recargar** en la barra inferior de Sistemas/Juegos solo relee ese 
 | PSP | `psp/` | `.iso`, `.cso`, `.pbp` |
 | Dreamcast | `dreamcast/` | `.chd`, `.gdi`, `.cdi` |
 | Nintendo Switch | `switch/` | `.nsp`, `.xci`, `.nsz`, `.xcz` (ver más abajo, organización distinta) |
+| PICO-8 | `pico8/` | `.p8`, `.p8.png` (ver más abajo, ícono embebido) |
 
 Esta tabla es una propuesta inicial (marcada como tal en el documento de especificación, sección
 "Cosas a definir" #3) — si tus ROMs usan otras extensiones, avisame y ajusto
@@ -112,6 +113,14 @@ elige automáticamente el archivo base para lanzar: descarta los que tengan "upd
 **Solo se listan los sistemas con juegos.** Si `<carpeta de ROMs>/<sistema>/` no existe o no tiene
 ningún archivo (o carpeta, para Switch) válido, ese sistema simplemente no aparece en la pantalla de
 sistemas — no hace falta ocultarlo a mano.
+
+**PICO-8 usa el propio cart como ícono cuando no le pusiste uno propio.** El formato `.p8.png` es un
+PNG real (normalmente un screenshot/label del juego) con el código y los datos del cart
+esteganografiados en los píxeles — la app simplemente muestra esa imagen tal cual. Como es *portrait*
+y no cuadrada, se redimensiona para entrar en la tarjeta cuadrada sin recortarse, con el sobrante en
+blanco (mismo comportamiento que cualquier ícono no cuadrado en la grilla). Los carts `.p8` a secas
+(texto plano, sin imagen) no tienen esta opción y muestran el placeholder de siempre hasta que le
+pongas un ícono en `Assets/pico8/icons/`.
 
 **Carpeta de Usuario** (se genera sola al configurarla, o al volver a seleccionarla si agregamos
 algo nuevo a la estructura después):
@@ -151,7 +160,7 @@ Nintendo/Sega/Sony — el spec pide una identidad visual original.
 
 | Sistema | Emulador | Package |
 |---|---|---|
-| NES/SNES/GB/GBC/GBA/PS1/Genesis/Master System/Neo Geo/FBNeo/MAME/Dreamcast | RetroArch (3 variantes, elegibles en Settings) | `com.retroarch` (universal), `com.retroarch.aarch64` (64-bit), `com.retroarch.ra32` (32-bit) |
+| NES/SNES/GB/GBC/GBA/PS1/Genesis/Master System/Neo Geo/FBNeo/MAME/Dreamcast/PICO-8 | RetroArch (3 variantes, elegibles en Settings) | `com.retroarch` (universal), `com.retroarch.aarch64` (64-bit), `com.retroarch.ra32` (32-bit) |
 | GameCube | Dolphin | `org.dolphinemu.dolphinemu` |
 | PlayStation 2 | AetherSX2 o NetherSX2 (fork activo — AetherSX2 fue descontinuado en 2023/2024) | `xyz.aethersx2.android` (mismo package para ambos — no podés tener los dos instalados a la vez) |
 | PSP | PPSSPP | `org.ppsspp.ppsspp` |
@@ -190,6 +199,11 @@ den error de "CRC mismatch" — es una limitación del romset, no de la app.
 
 **NES**: además de FCEUmm (por defecto), QuickNES y Nestopia UE, también está disponible el core
 Mesen, elegible en Settings.
+
+**PICO-8**: usa el core **fake-08** (`fake08_libretro_android.so`) — una reimplementación
+open-source compatible con PICO-8, no el runtime oficial de Lexaloffle (que no tiene build para
+Android). Soporta tanto los carts de texto plano (`.p8`) como los "visuales" (`.p8.png`, un PNG real
+con el código embebido en los píxeles — ver la sección de íconos más arriba).
 
 ## Save states
 

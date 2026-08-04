@@ -120,10 +120,6 @@ fun GamesScreen(
                 showBack = true,
                 onBackClick = onBack,
                 onOpenClick = { selected?.let(::activate) },
-                onReloadClick = {
-                    soundManager.playActivateSound()
-                    viewModel.reload()
-                },
             )
         }
     }

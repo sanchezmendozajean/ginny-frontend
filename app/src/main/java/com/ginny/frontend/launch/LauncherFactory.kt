@@ -13,6 +13,7 @@ object LauncherFactory {
         EmulatorTarget.NETHERSX2 to NetherSX2Launcher(),
         EmulatorTarget.REDREAM to RedreamLauncher(),
         EmulatorTarget.EDEN to EdenLauncher(),
+        EmulatorTarget.CEMU to CemuLauncher(),
     )
 
     fun forEmulator(emulator: EmulatorTarget): LauncherStrategy =

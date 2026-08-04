@@ -26,7 +26,6 @@ enum class BadgeStyle(val brush: @Composable () -> Brush) {
     A({ Brush.linearGradient(listOf(GinnyColors.AccentCeleste, GinnyColors.AccentBlue)) }),
     B({ Brush.linearGradient(listOf(GinnyColors.AccentRedSoft, GinnyColors.AccentRed)) }),
     X({ Brush.linearGradient(listOf(Color(0xFFB8C2CC), Color(0xFF8B98A4))) }),
-    Y({ Brush.linearGradient(listOf(GinnyColors.AccentYellowSoft, GinnyColors.AccentYellow)) }),
 }
 
 private val DefaultBadgeSize = 26.dp

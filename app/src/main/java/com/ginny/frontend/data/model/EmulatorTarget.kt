@@ -23,7 +23,14 @@ enum class EmulatorTarget(val displayName: String, val packageName: String) {
     NETHERSX2("NetherSX2", "xyz.aethersx2.android"),
     REDREAM("Redream", "io.recompiled.redream"),
     // Confirmed via `adb shell pm list packages` against a real install.
-    EDEN("Eden", "dev.eden.eden_emulator");
+    EDEN("Eden", "dev.eden.eden_emulator"),
+    // WiiU, via Cemu's Android port (github.com/SSimco/Cemu and forks — still "early and
+    // experimental" upstream, no Play Store release). Confirmed via `adb shell pm list packages`
+    // against a real install (`info.cemu.cemu`, versionName 0.5) — same as every other package
+    // name in this enum, not a guess. supportsPackageOverride is still on for this system (see
+    // SystemCatalog.WII_U) because the Android port ecosystem is young and forked, same reasoning
+    // as Switch/EDEN.
+    CEMU("Cemu", "info.cemu.cemu");
 
     companion object {
         /** Every RetroArch build variant — the three are separate installable apps, but share one

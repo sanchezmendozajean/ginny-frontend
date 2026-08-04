@@ -13,7 +13,6 @@ import com.ginny.frontend.di.AppContainer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -54,15 +53,5 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
         _availableSystems.value = SystemCatalog.allSortedByName.filter { (counts[it.id] ?: 0) > 0 }
         _isScanning.value = false
         focusedIndex = focusedIndex.coerceIn(0, (_availableSystems.value.size - 1).coerceAtLeast(0))
-    }
-
-    /** Manual re-read of the cache for the "Y Recargar" bottom-bar action. The cache is already
-     * live via Flow, so this is a lightweight nudge rather than a real filesystem re-scan — the
-     * actual (slow) scan only runs from Settings' "Escanear biblioteca" button. */
-    fun reload() {
-        _isScanning.value = true
-        viewModelScope.launch {
-            applyCounts(container.gameIndexRepository.observeGameCounts().first())
-        }
     }
 }
