@@ -55,7 +55,7 @@ fun <T> SnapFocusGrid(
     onActivate: (T) -> Unit,
     buttonMapping: ButtonMapping,
     modifier: Modifier = Modifier,
-    gap: Dp = 10.dp,
+    gap: Dp = 6.dp,
     itemKey: (T) -> Any,
     itemContent: @Composable (item: T, focused: Boolean, tileSize: Dp) -> Unit,
 ) {
@@ -218,9 +218,7 @@ fun <T> SnapFocusGrid(
             }
 
             if (needsScroll) {
-                // Vertical inset is independent of edgePadding (which sizes tiles) — it just needs
-                // to clear the GridPanel's own rounded corners (GinnyShapes.radiusLarge) so the
-                // track doesn't visually poke into the curve.
+                // Vertical inset is independent of edgePadding (which sizes tiles).
                 RowPositionIndicator(
                     topRow = currentTopRowRounded(),
                     totalRows = actualRows,

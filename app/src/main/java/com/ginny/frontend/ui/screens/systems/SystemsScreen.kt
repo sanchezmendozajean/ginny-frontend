@@ -2,7 +2,6 @@ package com.ginny.frontend.ui.screens.systems
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -50,7 +49,6 @@ fun SystemsScreen(
     AuroraBackground {
         Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
             GinnyTopBar(contextualTitle = "Ginny Frontend", onOptionsClick = onOpenSettings)
-            Spacer(Modifier.height(14.dp))
             GridPanel(modifier = Modifier.weight(1f)) {
                 if (systems.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -85,7 +83,6 @@ fun SystemsScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(14.dp))
             GinnyBottomBar(
                 selectedName = selected?.let { "${it.displayName} - ${gameCountLabel(gameCounts[it.id] ?: 0)}" }.orEmpty(),
                 showBack = false,

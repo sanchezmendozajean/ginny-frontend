@@ -63,7 +63,6 @@ fun ActionPill(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .focusProperties { canFocus = false }
-            .glassShadow(999.dp)
             .background(Color.White, RoundedCornerShape(999.dp))
             .let { base -> if (onClick != null) base.clickable(onClick = onClick) else base }
             .padding(start = PillPadding, end = 14.dp, top = PillPadding, bottom = PillPadding),
@@ -90,7 +89,6 @@ fun IconActionBadge(
     Box(
         modifier = modifier
             .focusProperties { canFocus = false }
-            .glassShadow(999.dp)
             .background(Color.White, CircleShape)
             .let { base -> if (onClick != null) base.clickable(onClick = onClick) else base }
             .padding(PillPadding),

@@ -1,7 +1,6 @@
 package com.ginny.frontend.ui.screens.games
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -72,7 +71,6 @@ fun GamesScreen(
                 contextualTitle = "${viewModel.systemDefinition.displayName} - ${gameCountLabel(games.size)}",
                 onOptionsClick = onOpenSettings,
             )
-            Spacer(Modifier.height(14.dp))
             GridPanel(modifier = Modifier.weight(1f)) {
                 if (games.isEmpty()) {
                     androidx.compose.foundation.layout.Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -113,7 +111,6 @@ fun GamesScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(14.dp))
             GinnyBottomBar(
                 selectedName = selected?.displayName.orEmpty(),
                 selectedSecondaryText = selected?.takeIf { it.romFileName != it.displayName }?.romFileName,

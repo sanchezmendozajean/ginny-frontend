@@ -2,7 +2,6 @@ package com.ginny.frontend.ui.screens.savestates
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -64,7 +63,6 @@ fun SaveStatesScreen(
     AuroraBackground {
         Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
             GinnyTopBar(contextualTitle = systemDisplayName, onOptionsClick = onOpenSettings)
-            Spacer(Modifier.height(14.dp))
             GridPanel(modifier = Modifier.weight(1f)) {
                 SnapFocusGrid(
                     entries = entries,
@@ -89,7 +87,6 @@ fun SaveStatesScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(14.dp))
             GinnyBottomBar(
                 selectedName = selected.label(),
                 showBack = true,

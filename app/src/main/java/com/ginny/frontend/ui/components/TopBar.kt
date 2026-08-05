@@ -97,8 +97,6 @@ fun GinnyTopBar(
             modifier = Modifier
                 .weight(1f)
                 .height(TopBarHeight)
-                .glassShadow(999.dp)
-                .then(glassBackgroundModifier(999.dp))
                 .padding(start = 20.dp, end = 20.dp),
         ) {
             Text(

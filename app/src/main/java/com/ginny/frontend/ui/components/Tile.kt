@@ -1,6 +1,11 @@
 package com.ginny.frontend.ui.components
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,12 +16,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -32,37 +39,24 @@ fun FocusableTile(
     focused: Boolean,
     modifier: Modifier = Modifier,
     borderWidth: Dp = 4.dp,
-    cornerRadius: Dp = 16.dp,
+    cornerRadius: Dp = 8.dp,
     contentBox: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
 ) {
     val scale by animateFloatAsState(if (focused) 1.04f else 1f, animationSpec = tween(150), label = "tileScale")
-    val glowAlpha by animateFloatAsState(if (focused) 1f else 0f, animationSpec = tween(150), label = "tileGlow")
     val shape = RoundedCornerShape(cornerRadius)
+    val borderBrush = if (focused) {
+        rememberAnimatedFocusBorderBrush()
+    } else {
+        remember { Brush.linearGradient(listOf(GinnyColors.UnfocusedBorder, GinnyColors.UnfocusedBorder)) }
+    }
 
     Box(
         modifier = modifier
             .scale(scale)
-            .then(
-                if (glowAlpha > 0f) {
-                    Modifier.shadow(
-                        elevation = 14.dp * glowAlpha,
-                        shape = shape,
-                        ambientColor = GinnyColors.AccentBlue.copy(alpha = 0.45f * glowAlpha),
-                        spotColor = GinnyColors.AccentBlue.copy(alpha = 0.45f * glowAlpha),
-                    )
-                } else Modifier,
-            )
+            .shadow(elevation = 6.dp, shape = shape, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(shape)
             .background(GinnyColors.CardBg, shape)
-            .border(
-                width = borderWidth,
-                brush = if (focused) {
-                    Brush.linearGradient(listOf(GinnyColors.AccentCeleste, GinnyColors.AccentBlue))
-                } else {
-                    Brush.linearGradient(listOf(GinnyColors.UnfocusedBorder, GinnyColors.UnfocusedBorder))
-                },
-                shape = shape,
-            ),
+            .border(width = borderWidth, brush = borderBrush, shape = shape),
         contentAlignment = androidx.compose.ui.Alignment.Center,
     ) {
         // The border above is painted inward from the tile's outer edge, overlapping whatever
@@ -72,6 +66,27 @@ fun FocusableTile(
             contentBox()
         }
     }
+}
+
+/** Slow, smooth, endlessly looping sweep between the two focus-gradient stops. */
+@Composable
+private fun rememberAnimatedFocusBorderBrush(): Brush {
+    val infiniteTransition = rememberInfiniteTransition(label = "tileBorderGradient")
+    val shift by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "tileBorderGradientShift",
+    )
+    return Brush.linearGradient(
+        listOf(
+            lerp(GinnyColors.AccentCeleste, GinnyColors.AccentBlue, shift),
+            lerp(GinnyColors.AccentBlue, GinnyColors.AccentCeleste, shift),
+        ),
+    )
 }
 
 @Composable

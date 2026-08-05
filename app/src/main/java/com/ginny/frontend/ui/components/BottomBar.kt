@@ -49,8 +49,6 @@ fun GinnyBottomBar(
             modifier = Modifier
                 .weight(1f)
                 .heightIn(min = BottomBarHeight)
-                .glassShadow(999.dp)
-                .then(glassBackgroundModifier(999.dp))
                 .padding(horizontal = 22.dp, vertical = 3.dp),
         ) {
             Text(
