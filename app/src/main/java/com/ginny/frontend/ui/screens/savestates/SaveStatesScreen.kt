@@ -61,7 +61,7 @@ fun SaveStatesScreen(
     }
 
     AuroraBackground {
-        Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 6.dp)) {
             GinnyTopBar(contextualTitle = systemDisplayName, onOptionsClick = onOpenSettings)
             GridPanel(modifier = Modifier.weight(1f)) {
                 SnapFocusGrid(

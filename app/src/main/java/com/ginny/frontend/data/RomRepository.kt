@@ -48,10 +48,16 @@ class RomRepository(
     /** Full library scan across every system, for the Settings "Escanear biblioteca" button — the
      * only place this expensive SAF walk should run; everywhere else reads the Room-backed cache
      * that this populates (see [com.ginny.frontend.data.GameIndexRepository]). */
-    suspend fun scanAllSystems(romFolderUri: Uri, userFolderUri: Uri?): List<GameEntry> {
+    suspend fun scanAllSystems(
+        romFolderUri: Uri,
+        userFolderUri: Uri?,
+        onSystemScanned: suspend (SystemDefinition, List<GameEntry>) -> Unit = { _, _ -> },
+    ): List<GameEntry> {
         val result = mutableListOf<GameEntry>()
         for (definition in SystemCatalog.all) {
-            result += listGames(romFolderUri, userFolderUri, definition.id)
+            val games = listGames(romFolderUri, userFolderUri, definition.id)
+            result += games
+            onSystemScanned(definition, games)
         }
         return result
     }

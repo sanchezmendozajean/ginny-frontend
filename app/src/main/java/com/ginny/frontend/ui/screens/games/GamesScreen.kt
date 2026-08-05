@@ -66,7 +66,7 @@ fun GamesScreen(
     }
 
     AuroraBackground {
-        Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 6.dp)) {
             GinnyTopBar(
                 contextualTitle = "${viewModel.systemDefinition.displayName} - ${gameCountLabel(games.size)}",
                 onOptionsClick = onOpenSettings,

@@ -65,6 +65,7 @@ import com.ginny.frontend.data.model.BundledMusicTrack
 import com.ginny.frontend.data.model.EmulatorTarget
 import com.ginny.frontend.data.model.MusicSelection
 import com.ginny.frontend.data.model.SystemDefinition
+import com.ginny.frontend.ui.common.ScanProgressDialog
 import com.ginny.frontend.ui.components.AuroraBackground
 import com.ginny.frontend.ui.components.GridPanel
 import com.ginny.frontend.ui.components.TilePlaceholderLabel
@@ -245,6 +246,8 @@ private fun CarpetasTabContent(viewModel: SettingsViewModel) {
     val savesFolder by viewModel.settings.retroArchSavesUri.collectAsState(initial = null)
     val lastScanAt by viewModel.settings.lastScanAt.collectAsState(initial = null)
     val isScanningLibrary by viewModel.isScanningLibrary.collectAsState()
+    val scanProgress by viewModel.scanProgress.collectAsState()
+    var showScanDialog by remember { mutableStateOf(false) }
 
     val pickUserFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let { viewModel.onUserFolderPicked(context, it) }
@@ -273,7 +276,10 @@ private fun CarpetasTabContent(viewModel: SettingsViewModel) {
             ) {
                 OutlinedButton(onClick = { pickRomFolder.launch(null) }) { Text("Elegir carpeta") }
                 Button(
-                    onClick = { viewModel.scanLibrary(context) },
+                    onClick = {
+                        showScanDialog = true
+                        viewModel.scanLibrary(context)
+                    },
                     enabled = romFolder != null && !isScanningLibrary,
                 ) {
                     Text(if (isScanningLibrary) "Escaneando…" else "Escanear biblioteca")
@@ -295,6 +301,14 @@ private fun CarpetasTabContent(viewModel: SettingsViewModel) {
             color = GinnyColors.TextSecondary,
         )
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (showScanDialog) {
+        ScanProgressDialog(
+            scanning = isScanningLibrary,
+            entries = scanProgress,
+            onDismiss = { showScanDialog = false },
+        )
     }
 }
 

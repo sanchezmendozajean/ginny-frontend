@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+/** One line of the scan-progress modal: a system that finished scanning and how many games it had. */
+data class ScanProgressEntry(val systemDisplayName: String, val gameCount: Int)
+
 class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     val settings = container.settingsRepository
@@ -31,6 +34,10 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     private val _isScanningLibrary = MutableStateFlow(false)
     val isScanningLibrary: StateFlow<Boolean> = _isScanningLibrary
+
+    private val _scanProgress = MutableStateFlow<List<ScanProgressEntry>>(emptyList())
+    /** Grows one entry at a time as each system finishes scanning — drives the progress modal. */
+    val scanProgress: StateFlow<List<ScanProgressEntry>> = _scanProgress
 
     /** Walks the whole ROM folder (every system) and replaces the cached library index that
      * Systems/Games screens read from — the only place this expensive filesystem scan should run. */
@@ -45,9 +52,14 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
             return@launch
         }
         _isScanningLibrary.value = true
+        _scanProgress.value = emptyList()
         try {
             val userUri = settings.userFolderUri.first()
-            val games = container.romRepository.scanAllSystems(Uri.parse(romUri), userUri?.let(Uri::parse))
+            val games = container.romRepository.scanAllSystems(Uri.parse(romUri), userUri?.let(Uri::parse)) { definition, systemGames ->
+                if (systemGames.isNotEmpty()) {
+                    _scanProgress.value = _scanProgress.value + ScanProgressEntry(definition.displayName, systemGames.size)
+                }
+            }
             container.gameIndexRepository.replaceAll(games)
             settings.setLastScanAt(System.currentTimeMillis())
             android.widget.Toast.makeText(

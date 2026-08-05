@@ -47,7 +47,7 @@ fun SystemsScreen(
     val selected = systems.getOrNull(viewModel.focusedIndex)
 
     AuroraBackground {
-        Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 6.dp)) {
             GinnyTopBar(contextualTitle = "Ginny Frontend", onOptionsClick = onOpenSettings)
             GridPanel(modifier = Modifier.weight(1f)) {
                 if (systems.isEmpty()) {

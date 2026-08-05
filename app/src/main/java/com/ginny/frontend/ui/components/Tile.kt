@@ -53,7 +53,7 @@ fun FocusableTile(
     Box(
         modifier = modifier
             .scale(scale)
-            .shadow(elevation = 6.dp, shape = shape, ambientColor = Color.Black, spotColor = Color.Black)
+            .shadow(elevation = 4.dp, shape = shape, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(shape)
             .background(GinnyColors.CardBg, shape)
             .border(width = borderWidth, brush = borderBrush, shape = shape),
