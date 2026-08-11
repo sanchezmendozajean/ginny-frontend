@@ -3,6 +3,7 @@ package com.ginny.frontend.ui.screens.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +49,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -92,18 +96,28 @@ fun SettingsScreen(
 ) {
     val listeningForButton = viewModel.listeningForButton
     var selectedTab by remember { mutableStateOf(SettingsTab.INTERFAZ) }
+    val keyCaptureFocusRequester = remember { FocusRequester() }
+
+    // Tapping "Presiona un botón…" doesn't grant this subtree Compose focus (clickable() only
+    // becomes focusable in non-touch/D-pad navigation mode), so without an explicit focus
+    // request the onKeyEvent below never has a focused node to bubble the key press from.
+    LaunchedEffect(listeningForButton) {
+        if (listeningForButton != null) keyCaptureFocusRequester.requestFocus()
+    }
 
     AuroraBackground {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(18.dp)
+                .focusRequester(keyCaptureFocusRequester)
                 .onKeyEvent { event ->
                     if (listeningForButton != null && event.type == KeyEventType.KeyDown) {
                         viewModel.onKeyCaptured(event.nativeKeyEvent.keyCode)
                         true
                     } else false
-                },
+                }
+                .focusable(),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
