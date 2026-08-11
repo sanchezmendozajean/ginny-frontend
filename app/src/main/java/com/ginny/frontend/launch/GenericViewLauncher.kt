@@ -6,11 +6,13 @@ import com.ginny.frontend.data.model.EmulatorTarget
 
 /**
  * Generic "send the ROM Uri via ACTION_VIEW to a specific package" launcher, used for standalone
- * emulators whose exact internal intent-extras scheme isn't stable/confirmed (Dolphin, PPSSPP,
+ * emulators whose exact internal intent-extras scheme isn't stable/confirmed (PPSSPP,
  * AetherSX2/NetherSX2, Redream). This is the most portable option: it doesn't depend on guessing
  * an internal Activity class name, only on the target app registering itself as a file viewer,
- * which all four do. Swap in a more specific [LauncherStrategy] per emulator if/when its exact
- * intent-extras contract is verified (see README).
+ * which all three do. Swap in a more specific [LauncherStrategy] per emulator if/when its exact
+ * intent-extras contract is verified (see README) — [DolphinLauncher] is the example: Dolphin
+ * doesn't register a file-viewer intent-filter at all, so this generic approach throws
+ * ActivityNotFoundException for it.
  */
 abstract class GenericViewLauncher(
     override val emulator: EmulatorTarget,
@@ -27,11 +29,6 @@ abstract class GenericViewLauncher(
 
     override fun storeUrl(): String? = storeUrlValue
 }
-
-class DolphinLauncher : GenericViewLauncher(
-    emulator = EmulatorTarget.DOLPHIN,
-    storeUrlValue = "https://dolphin-emu.org/download/",
-)
 
 class PpssppLauncher : GenericViewLauncher(
     emulator = EmulatorTarget.PPSSPP,
@@ -81,11 +78,6 @@ class EdenLauncher : GenericViewLauncher(
 class CemuLauncher : GenericViewLauncher(
     emulator = EmulatorTarget.CEMU,
     storeUrlValue = "https://github.com/SSimco/Cemu",
-)
-
-class MelonDSLauncher : GenericViewLauncher(
-    emulator = EmulatorTarget.MELONDS,
-    storeUrlValue = "https://melonds-ds.github.io/",
 )
 
 /**

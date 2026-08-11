@@ -191,7 +191,7 @@ object SystemCatalog {
         SystemDefinition(
             id = SystemId.GC,
             displayName = "GameCube",
-            romExtensions = setOf("iso", "gcm", "rvz"),
+            romExtensions = setOf("iso", "gcm", "rvz", "gcz"),
             availableEmulators = listOf(EmulatorTarget.DOLPHIN),
             defaultEmulator = EmulatorTarget.DOLPHIN,
         ),
