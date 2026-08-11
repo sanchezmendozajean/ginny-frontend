@@ -166,6 +166,8 @@ Nintendo/Sega/Sony — el spec pide una identidad visual original.
 | PSP | PPSSPP | `org.ppsspp.ppsspp` |
 | Dreamcast | Redream (por defecto) o RetroArch, elegible en Settings | `io.recompiled.redream` |
 | Nintendo Switch | Eden | `dev.eden.eden_emulator` |
+| Nintendo DS | melonDS DS | `me.magnum.melonds` |
+| Nintendo 3DS | Azahar | `io.github.lime3ds.android` (Azahar absorbió el proyecto Lime3DS y mantuvo su applicationId de Android; AzaharPlus, en su variante "Replace", reusa el mismo id a propósito) |
 
 **RetroArch para Android se distribuye en 3 builds instalables por separado** (universal, 64-bit y
 32-bit — ver `buildbot.libretro.com`, o `pkg/android/phoenix/build.gradle` en el repo oficial de

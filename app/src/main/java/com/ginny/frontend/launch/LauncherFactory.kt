@@ -14,6 +14,8 @@ object LauncherFactory {
         EmulatorTarget.REDREAM to RedreamLauncher(),
         EmulatorTarget.EDEN to EdenLauncher(),
         EmulatorTarget.CEMU to CemuLauncher(),
+        EmulatorTarget.MELONDS to MelonDSLauncher(),
+        EmulatorTarget.AZAHAR to AzaharLauncher(),
     )
 
     fun forEmulator(emulator: EmulatorTarget): LauncherStrategy =

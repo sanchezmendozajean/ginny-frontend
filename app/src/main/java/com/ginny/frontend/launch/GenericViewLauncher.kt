@@ -82,3 +82,16 @@ class CemuLauncher : GenericViewLauncher(
     emulator = EmulatorTarget.CEMU,
     storeUrlValue = "https://github.com/SSimco/Cemu",
 )
+
+class MelonDSLauncher : GenericViewLauncher(
+    emulator = EmulatorTarget.MELONDS,
+    storeUrlValue = "https://melonds-ds.github.io/",
+)
+
+/**
+ * 3DS, via Azahar (see [EmulatorTarget.AZAHAR] re: the AzaharPlus/Lime3DS applicationId history).
+ */
+class AzaharLauncher : GenericViewLauncher(
+    emulator = EmulatorTarget.AZAHAR,
+    storeUrlValue = "https://azahar-emu.org/",
+)

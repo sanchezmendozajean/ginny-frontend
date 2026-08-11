@@ -20,6 +20,9 @@
         <package android:name="xyz.aethersx2.android" />
         <package android:name="io.recompiled.redream" />
         <package android:name="dev.eden.eden_emulator" />
+        <package android:name="info.cemu.cemu" />
+        <package android:name="me.magnum.melonds" />
+        <package android:name="io.github.lime3ds.android" />
     </queries>
 
     <application

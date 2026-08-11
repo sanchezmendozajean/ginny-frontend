@@ -413,6 +413,20 @@ object SystemCatalog {
             // termina usando un fork distinto al confirmado acá.
             supportsPackageOverride = true,
         ),
+        SystemDefinition(
+            id = SystemId.NDS,
+            displayName = "Nintendo DS",
+            romExtensions = setOf("nds", "zip"),
+            availableEmulators = listOf(EmulatorTarget.MELONDS),
+            defaultEmulator = EmulatorTarget.MELONDS,
+        ),
+        SystemDefinition(
+            id = SystemId.N3DS,
+            displayName = "Nintendo 3DS",
+            romExtensions = setOf("3ds", "cci", "cxi", "zip"),
+            availableEmulators = listOf(EmulatorTarget.AZAHAR),
+            defaultEmulator = EmulatorTarget.AZAHAR,
+        ),
     )
 
     val byId: Map<SystemId, SystemDefinition> = all.associateBy { it.id }

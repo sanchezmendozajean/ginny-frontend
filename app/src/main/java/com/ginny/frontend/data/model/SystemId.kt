@@ -28,4 +28,6 @@ enum class SystemId(val folderName: String) {
     GAMEGEAR("gamegear"),
     WII("wii"),
     WIIU("wiiu"),
+    NDS("nds"),
+    N3DS("n3ds"),
 }

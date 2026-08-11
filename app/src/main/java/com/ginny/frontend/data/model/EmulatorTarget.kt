@@ -30,7 +30,15 @@ enum class EmulatorTarget(val displayName: String, val packageName: String) {
     // name in this enum, not a guess. supportsPackageOverride is still on for this system (see
     // SystemCatalog.WII_U) because the Android port ecosystem is young and forked, same reasoning
     // as Switch/EDEN.
-    CEMU("Cemu", "info.cemu.cemu");
+    CEMU("Cemu", "info.cemu.cemu"),
+    // Confirmed via `adb shell pm list packages` against a real install.
+    MELONDS("melonDS DS", "me.magnum.melonds"),
+    // Azahar merged the former Lime3DS project and kept its Android applicationId — confirmed via
+    // `adb shell pm list packages` against a real install (the app shows up as "AzaharPlus", the
+    // "Replace" build flavor of https://github.com/AzaharPlus/AzaharPlus, which intentionally reuses
+    // this id so frontends built against Azahar keep working; official Play Store listing "Azahar
+    // Emulator" also ships under this id).
+    AZAHAR("Azahar", "io.github.lime3ds.android");
 
     companion object {
         /** Every RetroArch build variant — the three are separate installable apps, but share one
