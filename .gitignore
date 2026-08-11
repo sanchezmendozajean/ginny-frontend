@@ -11,3 +11,8 @@ local.properties
 /app/build
 /app/release
 *.hprof
+
+# Release signing (see README "Generar tu propio APK") — never commit real keystores/credentials.
+/keystore.properties
+*.jks
+*.keystore

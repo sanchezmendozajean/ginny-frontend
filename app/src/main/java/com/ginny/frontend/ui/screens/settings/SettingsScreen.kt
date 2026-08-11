@@ -201,9 +201,9 @@ private fun InterfazTabContent(viewModel: SettingsViewModel, listeningForButton:
         )
         Text(
             if (userFolder != null) {
-                "Para agregar más pistas, colocá archivos de audio en Interface/Background Music dentro de la Carpeta de Usuario."
+                "Para agregar más pistas, coloca archivos de audio en Interface/Background Music dentro de la Carpeta de Usuario."
             } else {
-                "Configurá la Carpeta de Usuario (pestaña Carpetas) para poder agregar tus propias pistas."
+                "Configura la Carpeta de Usuario (pestaña Carpetas) para poder agregar tus propias pistas."
             },
             style = MaterialTheme.typography.bodySmall,
             color = GinnyColors.TextSecondary,

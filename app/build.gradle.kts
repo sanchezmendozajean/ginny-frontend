@@ -1,7 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.kapt")
+}
+
+// Release signing is optional and opt-in via a local, gitignored `keystore.properties` (see
+// README "Generar tu propio APK") — without it, `assembleRelease` still works exactly as before
+// (unsigned output), so this doesn't change behavior for anyone who hasn't set one up.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -16,10 +28,24 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
@@ -43,6 +69,22 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+}
+
+// Names the release APK "GinnyFrontend-<versionName>.apk" instead of the default
+// "app-release.apk" — reads versionName from defaultConfig, so bumping it for a new release (see
+// README "Generar tu propio APK") automatically renames the next build's output too.
+// AGP 8's new Variant API (androidComponents/onVariants) dropped a public, non-internal way to set
+// this (VariantOutput only exposes versionCode/versionName, verified against the real AGP 8.4.2
+// jars with javap) — the old applicationVariants API is still functional for this in 8.4.2 and is
+// what's used here, cast to the internal impl class to reach the outputFileName setter.
+android.applicationVariants.all {
+    if (buildType.name == "release") {
+        val apkFileName = "GinnyFrontend-$versionName.apk"
+        outputs.all {
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName = apkFileName
         }
     }
 }

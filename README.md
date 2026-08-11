@@ -17,7 +17,12 @@ construirla en NW.js, todavía no implementada.
 - Un dispositivo o retroconsola Android con al menos uno de los emuladores soportados instalado
   (ver tabla más abajo) — la app no emula nada por sí misma.
 
-## Build
+## Generar tu propio APK
+
+### Opción rápida: APK de debug
+
+Sirve para instalar y probar en tu dispositivo/retroconsola sin configurar nada extra — Android
+Studio (o Gradle) lo firma solo con un keystore de debug generado automáticamente.
 
 Abrí la carpeta del proyecto en Android Studio y dejá que sincronice Gradle, o por línea de
 comandos:
@@ -38,6 +43,93 @@ dispositivo conectado por ADB:
 > podía correr JDK 17 (ver docs/architecture.md, sección "Verificación de build"). La primera vez
 > que lo abras en Android Studio con JDK 17 debería sincronizar sin problemas, pero si ves algún
 > error de versión de Gradle/AGP, es el punto a revisar primero.
+
+### Opción recomendada para uso diario: APK de release, firmado con tu propia key
+
+Un APK de debug funciona, pero su keystore es genérico (el mismo para cualquiera que compile el
+proyecto) y puede expirar. Para un APK "tuyo" que reinstalás/actualizás con confianza en tu
+retroconsola a largo plazo, generá tu propia key de firma una sola vez:
+
+1. **Generá el keystore** (pide un JDK con `keytool` — el que trae Android Studio alcanza; en
+   Windows usá el `keytool.exe` que viene con Android Studio si no tenés uno en el `PATH`):
+
+   ```bash
+   keytool -genkeypair -v -keystore ginny-release.jks -alias ginny -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+   Te va a pedir una contraseña para el keystore y otra (o la misma) para la key — anotalas, las
+   vas a necesitar cada vez que compiles un release y para cualquier actualización futura sobre el
+   mismo APK instalado (Android rechaza instalar un update firmado con una key distinta). Guardá
+   `ginny-release.jks` en un lugar seguro fuera del control de versiones — si lo perdés, no vas a
+   poder actualizar ese mismo APK nunca más, solo desinstalar y reinstalar de cero.
+
+2. **Creá `keystore.properties`** en la raíz del proyecto (`Ginny Frontend/keystore.properties`,
+   al lado de `settings.gradle.kts`) — ya está en `.gitignore`, nunca se commitea:
+
+   ```properties
+   storeFile=../ginny-release.jks
+   storePassword=TU_CONTRASEÑA_DE_KEYSTORE
+   keyAlias=ginny
+   keyPassword=TU_CONTRASEÑA_DE_KEY
+   ```
+
+   `storeFile` es relativo a la carpeta `app/`, así que si dejaste el `.jks` en la raíz del
+   proyecto (un nivel arriba de `app/`) el valor `../ginny-release.jks` de arriba es correcto;
+   ajustalo si lo pusiste en otro lado. Sin este archivo, `assembleRelease` sigue compilando igual
+   que antes pero el APK queda **sin firmar** (no instalable directamente).
+
+3. **Compilá el release**:
+
+   > **Si corrés `./gradlew` desde una terminal suelta (PowerShell, cmd) y no desde Android
+   > Studio**, puede tirarte `ERROR: JAVA_HOME is not set and no 'java' command could be found in
+   > your PATH`. Android Studio trae su propio Java incluido (no hace falta instalar nada aparte),
+   > pero una terminal externa no sabe dónde está a menos que se lo digas. Solución permanente
+   > (una sola vez, para tu usuario de Windows — sobrevive a reinicios y aplica a toda ventana
+   > *nueva* que abras de ahí en adelante):
+   >
+   > ```powershell
+   > setx JAVA_HOME "C:\Program Files\Android\Android Studio\jbr"
+   > ```
+   >
+   > Después de correrlo, **cerrá esa ventana y abrí una nueva** (`setx` no actualiza la ventana
+   > donde lo ejecutaste, solo las que abras después) y confirmá con `echo $env:JAVA_HOME`. La
+   > alternativa es abrir la Terminal integrada de Android Studio (View → Tool Windows → Terminal),
+   > que ya viene configurada sola sin este paso.
+
+   ```bash
+   ./gradlew assembleRelease
+   ```
+
+   El APK firmado queda en `app/build/outputs/apk/release/GinnyFrontend-<versionName>.apk` (por
+   ejemplo `GinnyFrontend-0.1.0.apk` — el nombre se arma solo a partir de `versionName`, ver punto
+   4). Instalalo con:
+
+   ```bash
+   adb install -r app/build/outputs/apk/release/GinnyFrontend-0.1.0.apk
+   ```
+
+   (`-r` reinstala/actualiza si ya tenías una versión anterior instalada, siempre que esté firmada
+   con la misma key y el `versionCode` nuevo sea mayor o igual al instalado — ver punto 4.)
+
+4. **Actualizá la versión antes de cada release nuevo.** Vive en
+   [app/build.gradle.kts](app/build.gradle.kts), sección `defaultConfig`:
+
+   ```kotlin
+   defaultConfig {
+       versionCode = 1
+       versionName = "0.1.0"
+   }
+   ```
+
+   - **`versionCode`**: un entero que tenés que subir en cada release (`1` → `2` → `3`...). No es
+     cosmético — Android lo usa para decidir si un APK nuevo puede instalarse "encima" del que ya
+     tenés. Si compilás un release con el mismo `versionCode` (o uno menor) que el ya instalado,
+     `adb install -r` falla con `INSTALL_FAILED_VERSION_DOWNGRADE` y hay que desinstalar primero.
+   - **`versionName`**: el string libre que ves en la app y que también nombra el APK (punto 3) —
+     usá lo que quieras, por ejemplo `"0.2.0"` para el próximo cambio.
+
+   Subí ambos valores, guardá el archivo, y recién ahí corré `./gradlew assembleRelease` — el APK
+   nuevo sale nombrado con el `versionName` actualizado automáticamente, sin tocar nada más.
 
 ## Primera configuración (dentro de la app)
 
@@ -83,12 +175,14 @@ El botón **Y Recargar** en la barra inferior de Sistemas/Juegos solo relee ese 
 | Neo Geo | `neogeo/` | `.zip` |
 | FinalBurn Neo | `fbneo/` | `.zip` |
 | MAME | `mame/` | `.zip` |
-| GameCube | `gc/` | `.iso`, `.gcm`, `.rvz` |
+| GameCube | `gc/` | `.iso`, `.gcm`, `.rvz`, `.gcz` |
 | PlayStation 2 | `ps2/` | `.iso`, `.chd`, `.bin` |
 | PSP | `psp/` | `.iso`, `.cso`, `.pbp` |
 | Dreamcast | `dreamcast/` | `.chd`, `.gdi`, `.cdi` |
 | Nintendo Switch | `switch/` | `.nsp`, `.xci`, `.nsz`, `.xcz` (ver más abajo, organización distinta) |
 | PICO-8 | `pico8/` | `.p8`, `.p8.png` (ver más abajo, ícono embebido) |
+| Nintendo DS | `nds/` | `.nds` |
+| Nintendo 3DS | `n3ds/` | `.3ds`, `.cci`, `.cxi` |
 
 Esta tabla es una propuesta inicial (marcada como tal en el documento de especificación, sección
 "Cosas a definir" #3) — si tus ROMs usan otras extensiones, avisame y ajusto
@@ -194,6 +288,18 @@ dos puede estar instalado a la vez: para pasar de uno al otro hay que desinstala
 (Android rechaza la instalación con "conflicts with an existing package" si no). El selector de
 emulador en Settings ya trae ese package cargado por defecto para ambas opciones; el campo de
 override solo hace falta si tu build en particular usa un package distinto.
+
+**GameCube/Wii (Dolphin) y Nintendo DS (melonDS DS)** no aceptan el mecanismo genérico de "mandar
+el ROM por `ACTION_VIEW`" que usa el resto de emuladores standalone (verificado con
+`adb shell dumpsys package` contra instalaciones reales: ninguno de los dos registra un
+intent-filter de apertura de archivos). Cada uno usa su propio contrato de lanzamiento explícito
+documentado por su proyecto (`AutoStartFile` para Dolphin, `Intent.data` a `EmulatorActivity` para
+melonDS DS) — ver [DolphinLauncher.kt](app/src/main/java/com/ginny/frontend/launch/DolphinLauncher.kt)
+y [MelonDSLauncher.kt](app/src/main/java/com/ginny/frontend/launch/MelonDSLauncher.kt). Si en el
+futuro una versión nueva de cualquiera de los dos cambia ese contrato, el síntoma **no** es el
+diálogo de "emulador no instalado" — es que no pasa nada visible al tocar el juego (v1 ignora
+`LaunchResult.Failed` en silencio, ver `GamesScreen.kt`), aunque el emulador esté instalado y
+detectado correctamente.
 
 **MAME**: el core por defecto (`mame2010_libretro_android.so`) es sensible a la versión del romset
 (funciona con romsets de MAME ~0.139). ROMs de versiones más nuevas o viejas de MAME probablemente
