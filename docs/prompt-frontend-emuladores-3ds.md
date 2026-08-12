@@ -22,7 +22,7 @@ Requisitos técnicos base:
   - Si el usuario está en la **pantalla de sistemas**: muestra el nombre de la app, **"Ginny Frontend"**.
   - Si el usuario está en la **pantalla de juegos** o en la **pantalla de estados guardados** de un sistema: muestra el **nombre del sistema actual** (ej. "Super Nintendo").
 - **Lado derecho — cluster alineado**: hora actual (actualizada cada minuto) + indicador de batería (ícono + porcentaje, con estados de carga) + botón de opciones, en ese orden, todos alineados a la derecha.
-- **Botón de opciones (X)**: se movió aquí desde la barra inferior. Es un botón circular (badge) ubicado al final del cluster derecho, después del indicador de batería. Abre el panel de opciones/Configuración (ver sección correspondiente).
+- **Botón de opciones (X)**: se movió aquí desde la barra inferior. Es un botón circular (badge) ubicado al final del cluster derecho, después del indicador de batería. Abre el panel de opciones/Configuración (ver sección correspondiente). **Actualizado (2026-08-11)**: el ícono pasó de un engranaje a tres puntos verticales (⋮) y, en vez de navegar directo a Configuración, despliega un menú desplegable con dos opciones — "Configuración" (abre el panel de opciones, comportamiento igual que antes) y, tras un separador, "Salir" (cierra la app). El botón físico **Menú** sigue yendo directo a Configuración sin pasar por este menú (ver sección "Navegación entre pantallas").
 - **Detección de batería no confiable**: si `BatteryManager` no reporta datos fiables (ej. valores fijos como -1, 50% constante que nunca cambia durante un período razonable de uso, o ausencia de evento `ACTION_BATTERY_CHANGED`), el indicador de batería debe **ocultarse completamente** en vez de mostrar un dato posiblemente incorrecto. Definir una heurística simple (ej. si el valor no cambia en X minutos de uso activo con pantalla encendida, o si el nivel reportado es un valor inválido/fuera de rango) para decidir cuándo ocultarlo.
 - Estilo visual acorde a la dirección estética definida más abajo (ver sección "Dirección estética").
 
@@ -135,6 +135,7 @@ Se mantiene AetherSX2 como emulador configurado para PS2 según lo solicitado, p
 **Manejo de emulador no instalado:**
 - Antes de lanzar el intent, verificar si el paquete del emulador correspondiente está instalado.
 - Si no lo está, mostrar un aviso claro indicando qué emulador falta y, de ser posible, un enlace a su página de descarga/Play Store.
+- **Actualizado (2026-08-11)**: en vez de un aviso pasivo con solo un link de descarga, se muestra un modal ("Emulador no encontrado") que deja reconfigurar ahí mismo el emulador/core (o el override de package) del sistema afectado, sin tener que ir a Configuración por separado. El modal ofrece tres acciones: "Guardar y Lanzar la ROM" (persiste la nueva selección y reintenta el lanzamiento del mismo juego/estado guardado), "Guardar y Cerrar" (persiste sin lanzar) y "Cancelar" (descarta los cambios). Reemplaza el diálogo original de solo-aviso; el link a la página de descarga ya no se muestra, dado que el flujo esperado ahora es reasignar el emulador correcto en vez de instalar el que falta.
 
 **Panel de opciones del elemento:** definir qué contiene (ver sección de omisiones, punto correspondiente). Para sistemas basados en RetroArch, este panel es también el lugar natural para exponer el selector de core.
 
@@ -234,7 +235,7 @@ Se mantiene AetherSX2 como emulador configurado para PS2 según lo solicitado, p
 
 ## Panel de opciones / Configuración
 
-El botón **X** de la barra superior (o el botón físico **Menú**) abre esta pantalla, que funciona como la configuración general de la app. Contiene:
+El botón **X** de la barra superior (opción "Configuración" de su menú desplegable, ver sección "Barra superior") o el botón físico **Menú** (directo, sin menú intermedio) abre esta pantalla, que funciona como la configuración general de la app. Contiene:
 
 - **Cantidad de filas de la grilla** (1–4).
 - **Ruta del folder de Usuario** (ver sección "Estructura de almacenamiento").

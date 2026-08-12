@@ -55,6 +55,8 @@ app/src/main/java/com/ginny/frontend/
     ├── theme/                 # Paleta 1:1 con el mockup, tipografía Baloo2 (variable font, OFL)
     ├── components/            # SnapFocusGrid (grid reutilizable), Tile, TopBar, BottomBar,
     │                          # GlassSurface (glow), AuroraBackground, ButtonBadge
+    ├── common/                # Modales compartidos entre pantallas: EmulatorConfigDialog,
+    │                          # ScanProgressDialog
     ├── navigation/GinnyNavHost.kt  # systems -> games -> saves, + settings
     └── screens/{systems,games,savestates,settings}/  # Screen + ViewModel por pantalla
 ```
@@ -125,6 +127,16 @@ mucho más costoso que I/O de archivo normal. Se resolvió así:
 - `SettingsRepository.lastScanAt` (DataStore) guarda el timestamp del último escaneo completado, para
   mostrarlo en Settings y para que los mensajes de estado vacío en Sistemas/Juegos puedan sugerir
   "Escaneá la biblioteca" en vez de sonar como que la carpeta de ROMs está mal configurada.
+- **`ScanProgressDialog` con alto fijo y cancelación (agregado 2026-08-11)**: el modal original dejaba
+  crecer la lista de sistemas escaneados sin límite, así que con muchos sistemas terminaba más alto
+  que la pantalla. Ahora la lista vive en un `Column` de alto fijo (`EntriesBoxHeight = 260.dp`) con
+  su propio `verticalScroll`, dentro de una caja con borde punteado (dibujado a mano vía
+  `Modifier.drawWithContent` + `PathEffect.dashPathEffect`, Compose no trae uno nativo). El título
+  muestra el `CircularProgressIndicator` junto al texto en vez de metido en la lista. El botón de
+  acción mientras escanea dice "Detener" y ahora cancela de verdad: `SettingsViewModel.scanLibrary`
+  guarda el `Job` del `viewModelScope.launch` y `stopScanning()` lo cancela — como
+  `GameIndexRepository.replaceAll` recién corre al final del escaneo, cancelar a mitad de camino no
+  deja resultados parciales persistidos.
 
 ## Lanzamiento de emuladores
 
@@ -142,6 +154,17 @@ Patrón Strategy (`LauncherStrategy`), una implementación por emulador:
   vía una clave genérica por sistema en `SettingsRepository.packageOverrideFor` — no hardcodeados,
   porque en ambos casos el ecosistema de apps es inestable (forks, o directamente sin emulador
   Android confirmado todavía en el caso de Switch).
+- **Emulador no instalado → reconfigurar en el momento (agregado 2026-08-11)**: cuando
+  `LaunchResult.EmulatorNotInstalled` llega hasta `GamesScreen`/`SaveStatesScreen`, ya no se muestra
+  un aviso de solo lectura (`EmulatorMissingDialog`, eliminado) — se abre
+  `ui/common/EmulatorConfigDialog.kt`, que deja elegir un emulador/core (o override de package)
+  distinto para ese sistema sin salir de la pantalla. La selección se mantiene en estado local del
+  diálogo (no se persiste hasta confirmar) y se escribe a `SettingsRepository` recién al tocar
+  "Guardar y Lanzar la ROM" (persiste y reintenta el mismo `GameEntry`/`SaveStateEntry` que había
+  fallado) o "Guardar y Cerrar" (persiste sin relanzar). Para esto, `GamesViewModel` y
+  `SaveStatesViewModel` exponen ahora `settingsRepository`/`assetRepository` directamente (mismo
+  patrón que ya usaba `SettingsViewModel`), en vez de mantenerlos encapsulados detrás de métodos
+  específicos.
 
 ## Sistemas mostrados y organización de ROMs
 
