@@ -66,6 +66,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                 }
                 container.gameIndexRepository.replaceAll(games)
                 settings.setLastScanAt(System.currentTimeMillis())
+                container.configRepository.requestSync()
                 android.widget.Toast.makeText(
                     context,
                     "Biblioteca escaneada: ${games.size} juegos encontrados.",
@@ -85,7 +86,10 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         _isScanningLibrary.value = false
     }
 
-    fun setGridRows(rows: Int) = viewModelScope.launch { settings.setGridRows(rows) }
+    fun setGridRows(rows: Int) = viewModelScope.launch {
+        settings.setGridRows(rows)
+        container.configRepository.requestSync()
+    }
 
     fun onUserFolderPicked(context: Context, uri: Uri) = viewModelScope.launch {
         context.contentResolver.takePersistableUriPermission(
@@ -101,32 +105,59 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                 android.widget.Toast.LENGTH_LONG,
             ).show()
         }
+        // Lee ginny.cfg si ya existe en la carpeta (y aplica su configuración), o lo crea con los
+        // valores actuales si es la primera vez que se usa esta carpeta.
+        val configResult = container.configRepository.ensureConfigFile(uri)
+        if (configResult.isFailure) {
+            android.widget.Toast.makeText(
+                context,
+                "No se pudo leer/crear ginny.cfg: ${configResult.exceptionOrNull()?.message}",
+                android.widget.Toast.LENGTH_LONG,
+            ).show()
+        }
     }
 
     fun onRomFolderPicked(context: Context, uri: Uri) = viewModelScope.launch {
         context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         settings.setRomFolderUri(uri.toString())
+        container.configRepository.requestSync()
     }
 
     fun onSavesFolderPicked(context: Context, uri: Uri) = viewModelScope.launch {
         context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         settings.setRetroArchSavesUri(uri.toString())
+        container.configRepository.requestSync()
     }
 
-    fun setPackageOverride(systemId: SystemId, pkg: String) =
-        viewModelScope.launch { settings.setPackageOverride(systemId, pkg) }
+    fun setPackageOverride(systemId: SystemId, pkg: String) = viewModelScope.launch {
+        settings.setPackageOverride(systemId, pkg)
+        container.configRepository.requestSync()
+    }
 
-    fun setMusicVolume(v: Float) = viewModelScope.launch { settings.setMusicVolume(v) }
-    fun setUiSoundVolume(v: Float) = viewModelScope.launch { settings.setUiSoundVolume(v) }
+    fun setMusicVolume(v: Float) = viewModelScope.launch {
+        settings.setMusicVolume(v)
+        container.configRepository.requestSync()
+    }
 
-    fun setBackgroundMusicTrack(selection: MusicSelection) =
-        viewModelScope.launch { settings.setBackgroundMusicTrack(MusicSelection.encode(selection)) }
+    fun setUiSoundVolume(v: Float) = viewModelScope.launch {
+        settings.setUiSoundVolume(v)
+        container.configRepository.requestSync()
+    }
 
-    fun setEmulator(systemId: SystemId, emulator: EmulatorTarget) =
-        viewModelScope.launch { settings.setEmulatorFor(systemId, emulator) }
+    fun setBackgroundMusicTrack(selection: MusicSelection) = viewModelScope.launch {
+        settings.setBackgroundMusicTrack(MusicSelection.encode(selection))
+        container.configRepository.requestSync()
+    }
 
-    fun setCore(systemId: SystemId, coreId: String) =
-        viewModelScope.launch { settings.setRetroArchCoreFor(systemId, coreId) }
+    fun setEmulator(systemId: SystemId, emulator: EmulatorTarget) = viewModelScope.launch {
+        settings.setEmulatorFor(systemId, emulator)
+        container.configRepository.requestSync()
+    }
+
+    fun setCore(systemId: SystemId, coreId: String) = viewModelScope.launch {
+        settings.setRetroArchCoreFor(systemId, coreId)
+        container.configRepository.requestSync()
+    }
 
     fun startListeningForButton(button: LogicalButton) {
         listeningForButton = button
@@ -135,12 +166,18 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun onKeyCaptured(keyCode: Int) {
         val button = listeningForButton ?: return
         listeningForButton = null
-        viewModelScope.launch { settings.setButtonKeyCode(button, keyCode) }
+        viewModelScope.launch {
+            settings.setButtonKeyCode(button, keyCode)
+            container.configRepository.requestSync()
+        }
     }
 
     fun cancelListening() {
         listeningForButton = null
     }
 
-    fun resetButtonMapping() = viewModelScope.launch { settings.resetButtonMapping() }
+    fun resetButtonMapping() = viewModelScope.launch {
+        settings.resetButtonMapping()
+        container.configRepository.requestSync()
+    }
 }
