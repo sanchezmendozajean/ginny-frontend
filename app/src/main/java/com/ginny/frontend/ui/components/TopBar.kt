@@ -1,5 +1,6 @@
 package com.ginny.frontend.ui.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,8 +18,11 @@ import androidx.compose.material.icons.filled.Battery5Bar
 import androidx.compose.material.icons.filled.Battery6Bar
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BatteryFull
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -87,6 +91,7 @@ fun GinnyTopBar(
     }
 
     val clockText = rememberClockText()
+    var menuExpanded by remember { mutableStateOf(false) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -120,12 +125,31 @@ fun GinnyTopBar(
         Spacer(Modifier.width(14.dp))
 
         // Touch/Menu-key only — the D-Pad is scoped exclusively to the grid, never the top bar.
-        IconActionBadge(
-            icon = Icons.Filled.Settings,
-            contentDescription = "Configuración",
-            style = BadgeStyle.X,
-            onClick = onOptionsClick,
-        )
+        Box {
+            IconActionBadge(
+                icon = Icons.Filled.MoreVert,
+                contentDescription = "Menú",
+                style = BadgeStyle.X,
+                onClick = { menuExpanded = true },
+            )
+            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                DropdownMenuItem(
+                    text = { Text("Configuración") },
+                    onClick = {
+                        menuExpanded = false
+                        onOptionsClick()
+                    },
+                )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("Salir") },
+                    onClick = {
+                        menuExpanded = false
+                        (context as? android.app.Activity)?.finish()
+                    },
+                )
+            }
+        }
     }
 }
 

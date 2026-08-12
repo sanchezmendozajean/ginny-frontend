@@ -321,6 +321,10 @@ private fun CarpetasTabContent(viewModel: SettingsViewModel) {
         ScanProgressDialog(
             scanning = isScanningLibrary,
             entries = scanProgress,
+            onStop = {
+                viewModel.stopScanning()
+                showScanDialog = false
+            },
             onDismiss = { showScanDialog = false },
         )
     }

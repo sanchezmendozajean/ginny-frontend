@@ -30,6 +30,8 @@ class GamesViewModel(
 ) : ViewModel() {
 
     val systemDefinition = SystemCatalog.byId.getValue(systemId)
+    val settingsRepository = container.settingsRepository
+    val assetRepository = container.assetRepository
 
     val gridRows: StateFlow<Int> = container.settingsRepository.gridRows
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)

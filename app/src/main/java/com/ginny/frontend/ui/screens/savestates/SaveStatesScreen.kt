@@ -21,10 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ginny.frontend.audio.SoundManager
-import com.ginny.frontend.data.model.EmulatorTarget
 import com.ginny.frontend.data.model.SaveStateEntry
 import com.ginny.frontend.launch.LaunchResult
-import com.ginny.frontend.ui.common.EmulatorMissingDialog
+import com.ginny.frontend.ui.common.EmulatorConfigDialog
 import com.ginny.frontend.ui.components.AuroraBackground
 import com.ginny.frontend.ui.components.FocusableTile
 import com.ginny.frontend.ui.components.GinnyBottomBar
@@ -46,7 +45,7 @@ fun SaveStatesScreen(
     val gridRows by viewModel.gridRows.collectAsState()
     val buttonMapping by viewModel.buttonMapping.collectAsState()
     val scope = rememberCoroutineScope()
-    var missingEmulatorDialog by remember { mutableStateOf<Pair<EmulatorTarget, String?>?>(null) }
+    var emulatorConfigEntry by remember { mutableStateOf<SaveStateEntry?>(null) }
 
     val selected = entries.getOrNull(viewModel.focusedIndex)
 
@@ -54,7 +53,7 @@ fun SaveStatesScreen(
         soundManager.playActivateSound()
         scope.launch {
             when (val result = viewModel.launch(entry)) {
-                is LaunchResult.EmulatorNotInstalled -> missingEmulatorDialog = result.emulator to result.storeUrl
+                is LaunchResult.EmulatorNotInstalled -> emulatorConfigEntry = entry
                 is LaunchResult.Failed, LaunchResult.Launched -> Unit
             }
         }
@@ -97,8 +96,41 @@ fun SaveStatesScreen(
         }
     }
 
-    missingEmulatorDialog?.let { (emulator, storeUrl) ->
-        EmulatorMissingDialog(emulator = emulator, storeUrl = storeUrl, onDismiss = { missingEmulatorDialog = null })
+    emulatorConfigEntry?.let { entry ->
+        val currentEmulator by viewModel.settingsRepository.emulatorFor(viewModel.systemDefinition.id)
+            .collectAsState(initial = viewModel.systemDefinition.defaultEmulator)
+        val currentCoreId by viewModel.settingsRepository.retroArchCoreFor(viewModel.systemDefinition.id)
+            .collectAsState(initial = viewModel.systemDefinition.defaultRetroArchCoreId)
+        val currentPackageOverride by viewModel.settingsRepository.packageOverrideFor(viewModel.systemDefinition.id)
+            .collectAsState(initial = null)
+        val userFolderUri by viewModel.settingsRepository.userFolderUri.collectAsState(initial = null)
+
+        EmulatorConfigDialog(
+            system = viewModel.systemDefinition,
+            assetRepository = viewModel.assetRepository,
+            userFolderUri = userFolderUri,
+            initialEmulator = currentEmulator,
+            initialCoreId = currentCoreId,
+            initialPackageOverride = currentPackageOverride,
+            onSaveAndLaunch = { emulator, coreId, packageOverride ->
+                scope.launch {
+                    viewModel.settingsRepository.setEmulatorFor(viewModel.systemDefinition.id, emulator)
+                    coreId?.let { viewModel.settingsRepository.setRetroArchCoreFor(viewModel.systemDefinition.id, it) }
+                    packageOverride?.let { viewModel.settingsRepository.setPackageOverride(viewModel.systemDefinition.id, it) }
+                    emulatorConfigEntry = null
+                    activate(entry)
+                }
+            },
+            onSaveAndClose = { emulator, coreId, packageOverride ->
+                scope.launch {
+                    viewModel.settingsRepository.setEmulatorFor(viewModel.systemDefinition.id, emulator)
+                    coreId?.let { viewModel.settingsRepository.setRetroArchCoreFor(viewModel.systemDefinition.id, it) }
+                    packageOverride?.let { viewModel.settingsRepository.setPackageOverride(viewModel.systemDefinition.id, it) }
+                    emulatorConfigEntry = null
+                }
+            },
+            onCancel = { emulatorConfigEntry = null },
+        )
     }
 }
 

@@ -14,6 +14,7 @@ import com.ginny.frontend.data.model.MusicSelection
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.di.AppContainer
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -39,37 +40,49 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     /** Grows one entry at a time as each system finishes scanning — drives the progress modal. */
     val scanProgress: StateFlow<List<ScanProgressEntry>> = _scanProgress
 
+    private var scanJob: Job? = null
+
     /** Walks the whole ROM folder (every system) and replaces the cached library index that
      * Systems/Games screens read from — the only place this expensive filesystem scan should run. */
-    fun scanLibrary(context: Context) = viewModelScope.launch {
-        val romUri = settings.romFolderUri.first()
-        if (romUri == null) {
-            android.widget.Toast.makeText(
-                context,
-                "Configurá primero la Carpeta de ROMs.",
-                android.widget.Toast.LENGTH_LONG,
-            ).show()
-            return@launch
-        }
-        _isScanningLibrary.value = true
-        _scanProgress.value = emptyList()
-        try {
-            val userUri = settings.userFolderUri.first()
-            val games = container.romRepository.scanAllSystems(Uri.parse(romUri), userUri?.let(Uri::parse)) { definition, systemGames ->
-                if (systemGames.isNotEmpty()) {
-                    _scanProgress.value = _scanProgress.value + ScanProgressEntry(definition.displayName, systemGames.size)
-                }
+    fun scanLibrary(context: Context) {
+        scanJob = viewModelScope.launch {
+            val romUri = settings.romFolderUri.first()
+            if (romUri == null) {
+                android.widget.Toast.makeText(
+                    context,
+                    "Configurá primero la Carpeta de ROMs.",
+                    android.widget.Toast.LENGTH_LONG,
+                ).show()
+                return@launch
             }
-            container.gameIndexRepository.replaceAll(games)
-            settings.setLastScanAt(System.currentTimeMillis())
-            android.widget.Toast.makeText(
-                context,
-                "Biblioteca escaneada: ${games.size} juegos encontrados.",
-                android.widget.Toast.LENGTH_SHORT,
-            ).show()
-        } finally {
-            _isScanningLibrary.value = false
+            _isScanningLibrary.value = true
+            _scanProgress.value = emptyList()
+            try {
+                val userUri = settings.userFolderUri.first()
+                val games = container.romRepository.scanAllSystems(Uri.parse(romUri), userUri?.let(Uri::parse)) { definition, systemGames ->
+                    if (systemGames.isNotEmpty()) {
+                        _scanProgress.value = _scanProgress.value + ScanProgressEntry(definition.displayName, systemGames.size)
+                    }
+                }
+                container.gameIndexRepository.replaceAll(games)
+                settings.setLastScanAt(System.currentTimeMillis())
+                android.widget.Toast.makeText(
+                    context,
+                    "Biblioteca escaneada: ${games.size} juegos encontrados.",
+                    android.widget.Toast.LENGTH_SHORT,
+                ).show()
+            } finally {
+                _isScanningLibrary.value = false
+            }
         }
+    }
+
+    /** Cancels an in-progress [scanLibrary] run — cooperative cancellation means the scan abandons
+     * before its final game-index write, so nothing partial is persisted. */
+    fun stopScanning() {
+        scanJob?.cancel()
+        scanJob = null
+        _isScanningLibrary.value = false
     }
 
     fun setGridRows(rows: Int) = viewModelScope.launch { settings.setGridRows(rows) }

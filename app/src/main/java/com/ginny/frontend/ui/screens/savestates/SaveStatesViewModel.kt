@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.data.model.SaveStateEntry
+import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.di.AppContainer
 import com.ginny.frontend.launch.LaunchResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,10 @@ class SaveStatesViewModel(
     private val container: AppContainer,
     val game: GameEntry,
 ) : ViewModel() {
+
+    val systemDefinition = SystemCatalog.byId.getValue(game.systemId)
+    val settingsRepository = container.settingsRepository
+    val assetRepository = container.assetRepository
 
     val gridRows: StateFlow<Int> = container.settingsRepository.gridRows
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)

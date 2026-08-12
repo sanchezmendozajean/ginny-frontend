@@ -21,7 +21,7 @@ import coil.compose.AsyncImage
 import com.ginny.frontend.audio.SoundManager
 import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.launch.LaunchResult
-import com.ginny.frontend.ui.common.EmulatorMissingDialog
+import com.ginny.frontend.ui.common.EmulatorConfigDialog
 import com.ginny.frontend.ui.common.gameCountLabel
 import com.ginny.frontend.ui.components.AuroraBackground
 import com.ginny.frontend.ui.components.FocusableTile
@@ -46,7 +46,7 @@ fun GamesScreen(
     val buttonMapping by viewModel.buttonMapping.collectAsState()
     val scope = rememberCoroutineScope()
 
-    var missingEmulatorDialog by remember { mutableStateOf<Pair<com.ginny.frontend.data.model.EmulatorTarget, String?>?>(null) }
+    var emulatorConfigGame by remember { mutableStateOf<GameEntry?>(null) }
 
     val selected = games.getOrNull(viewModel.focusedIndex)
 
@@ -56,8 +56,7 @@ fun GamesScreen(
             when (val outcome = viewModel.onGameSelected(game)) {
                 is GameSelectionOutcome.NavigateToSaveStates -> onOpenSaveStates(outcome.game)
                 is GameSelectionOutcome.Launched -> when (val result = outcome.result) {
-                    is LaunchResult.EmulatorNotInstalled ->
-                        missingEmulatorDialog = result.emulator to result.storeUrl
+                    is LaunchResult.EmulatorNotInstalled -> emulatorConfigGame = game
                     is LaunchResult.Failed -> Unit // best-effort v1: silently ignore, ROM likely malformed
                     LaunchResult.Launched -> Unit
                 }
@@ -121,7 +120,40 @@ fun GamesScreen(
         }
     }
 
-    missingEmulatorDialog?.let { (emulator, storeUrl) ->
-        EmulatorMissingDialog(emulator = emulator, storeUrl = storeUrl, onDismiss = { missingEmulatorDialog = null })
+    emulatorConfigGame?.let { game ->
+        val currentEmulator by viewModel.settingsRepository.emulatorFor(viewModel.systemId)
+            .collectAsState(initial = viewModel.systemDefinition.defaultEmulator)
+        val currentCoreId by viewModel.settingsRepository.retroArchCoreFor(viewModel.systemId)
+            .collectAsState(initial = viewModel.systemDefinition.defaultRetroArchCoreId)
+        val currentPackageOverride by viewModel.settingsRepository.packageOverrideFor(viewModel.systemId)
+            .collectAsState(initial = null)
+        val userFolderUri by viewModel.settingsRepository.userFolderUri.collectAsState(initial = null)
+
+        EmulatorConfigDialog(
+            system = viewModel.systemDefinition,
+            assetRepository = viewModel.assetRepository,
+            userFolderUri = userFolderUri,
+            initialEmulator = currentEmulator,
+            initialCoreId = currentCoreId,
+            initialPackageOverride = currentPackageOverride,
+            onSaveAndLaunch = { emulator, coreId, packageOverride ->
+                scope.launch {
+                    viewModel.settingsRepository.setEmulatorFor(viewModel.systemId, emulator)
+                    coreId?.let { viewModel.settingsRepository.setRetroArchCoreFor(viewModel.systemId, it) }
+                    packageOverride?.let { viewModel.settingsRepository.setPackageOverride(viewModel.systemId, it) }
+                    emulatorConfigGame = null
+                    activate(game)
+                }
+            },
+            onSaveAndClose = { emulator, coreId, packageOverride ->
+                scope.launch {
+                    viewModel.settingsRepository.setEmulatorFor(viewModel.systemId, emulator)
+                    coreId?.let { viewModel.settingsRepository.setRetroArchCoreFor(viewModel.systemId, it) }
+                    packageOverride?.let { viewModel.settingsRepository.setPackageOverride(viewModel.systemId, it) }
+                    emulatorConfigGame = null
+                }
+            },
+            onCancel = { emulatorConfigGame = null },
+        )
     }
 }
