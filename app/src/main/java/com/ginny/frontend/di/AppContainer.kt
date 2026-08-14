@@ -2,6 +2,9 @@ package com.ginny.frontend.di
 
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.ginny.frontend.data.AssetRepository
 import com.ginny.frontend.data.GameIndexRepository
 import com.ginny.frontend.data.GinnyConfigRepository
@@ -41,5 +44,14 @@ class AppContainer(context: Context) {
                 configRepository.ensureConfigFile(Uri.parse(uri))
             }
         }
+        // Flush ginny.cfg immediately whenever the app leaves the foreground, instead of relying
+        // on the debounced writer: a device shutdown/reboot kills this process with no guarantee
+        // the debounce fired, which otherwise lets a stale ginny.cfg revert the last-changed
+        // setting on the next launch.
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStop(owner: LifecycleOwner) {
+                configRepository.flushNow(applicationScope)
+            }
+        })
     }
 }

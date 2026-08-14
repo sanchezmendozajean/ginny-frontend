@@ -40,7 +40,8 @@ private const val AUTO_SYNC_DEBOUNCE_MS = 500L
  * already configured) and right after the user (re)picks one. It reads and applies an existing
  * file, or creates one from the current settings if none exists yet. Afterwards, [requestSync]
  * (wired into every settings mutation in SettingsViewModel) keeps the file up to date; writes are
- * debounced so dragging a volume slider doesn't hammer the SAF provider.
+ * debounced so dragging a volume slider doesn't hammer the SAF provider. [flushNow] bypasses
+ * that debounce — see its doc for why that matters.
  */
 class GinnyConfigRepository(
     private val context: Context,
@@ -59,6 +60,15 @@ class GinnyConfigRepository(
      * if no user folder is configured yet or the write fails (e.g. permission revoked). */
     fun requestSync() {
         syncRequests.tryEmit(Unit)
+    }
+
+    /** Writes `ginny.cfg` immediately, bypassing [AUTO_SYNC_DEBOUNCE_MS]. Call this whenever the
+     * app leaves the foreground (e.g. `ProcessLifecycleOwner` ON_STOP), since a device shutdown
+     * kills the process with no guarantee the debounced writer from [requestSync] got to run —
+     * without this, a setting changed right before power-off can revert to whatever `ginny.cfg`
+     * last had once [ensureConfigFile] re-applies it on the next launch. */
+    fun flushNow(scope: CoroutineScope) {
+        scope.launch { writeCurrentConfig() }
     }
 
     /**
