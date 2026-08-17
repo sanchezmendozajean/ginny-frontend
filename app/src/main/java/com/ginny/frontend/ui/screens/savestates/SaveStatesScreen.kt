@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +40,7 @@ fun SaveStatesScreen(
     systemDisplayName: String,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
+    menuExpanded: MutableState<Boolean>,
     viewModel: SaveStatesViewModel,
 ) {
     val entries by viewModel.entries.collectAsState()
@@ -61,7 +63,12 @@ fun SaveStatesScreen(
 
     AuroraBackground {
         Column(modifier = Modifier.fillMaxSize().padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 6.dp)) {
-            GinnyTopBar(contextualTitle = systemDisplayName, onOptionsClick = onOpenSettings)
+            GinnyTopBar(
+                contextualTitle = systemDisplayName,
+                onOptionsClick = onOpenSettings,
+                menuExpanded = menuExpanded,
+                buttonMapping = buttonMapping,
+            )
             GridPanel(modifier = Modifier.weight(1f)) {
                 SnapFocusGrid(
                     entries = entries,

@@ -23,6 +23,14 @@ Requisitos técnicos base:
   - Si el usuario está en la **pantalla de juegos** o en la **pantalla de estados guardados** de un sistema: muestra el **nombre del sistema actual** (ej. "Super Nintendo").
 - **Lado derecho — cluster alineado**: hora actual (actualizada cada minuto) + indicador de batería (ícono + porcentaje, con estados de carga) + botón de opciones, en ese orden, todos alineados a la derecha.
 - **Botón de opciones (X)**: se movió aquí desde la barra inferior. Es un botón circular (badge) ubicado al final del cluster derecho, después del indicador de batería. Abre el panel de opciones/Configuración (ver sección correspondiente). **Actualizado (2026-08-11)**: el ícono pasó de un engranaje a tres puntos verticales (⋮) y, en vez de navegar directo a Configuración, despliega un menú desplegable con dos opciones — "Configuración" (abre el panel de opciones, comportamiento igual que antes) y, tras un separador, "Salir" (cierra la app). El botón físico **Menú** sigue yendo directo a Configuración sin pasar por este menú (ver sección "Navegación entre pantallas").
+- **Actualizado (2026-08-17)**: el botón físico **Menú** ya **no** va directo a Configuración — ahora abre el mismo menú desplegable que el botón X (toggle: un segundo Menú lo cierra), y una vez abierto es **navegable por cruceta** (Arriba/Abajo mueve un resaltado entre las opciones, A confirma la resaltada, B lo cierra sin navegar hacia atrás). El botón X sigue siendo solo táctil, como el resto de la barra superior. El menú además creció con opciones nuevas, agrupadas y en este orden (los grupos separados por un divisor):
+  1. **Seleccionar emulador** — solo dentro del listado de juegos de un sistema y con un juego seleccionado. Abre el mismo modal de elección de emulador/core que aparece cuando falla un lanzamiento (ver "Manejo de emulador no instalado"), pero con copy neutro ("Seleccionar emulador" en vez de "Emulador no encontrado") porque acá se abre a propósito, no por un error.
+  2. **Reescanear este sistema** — solo dentro del listado de juegos de un sistema (no requiere selección). Vuelve a escanear vía SAF únicamente ese sistema y reemplaza su porción de la caché (ver "Caché de biblioteca" en `docs/architecture.md`), sin tocar el resto de sistemas ya indexados — más rápido que "Escanear biblioteca" completo cuando solo cambiaron los ROMs de un sistema puntual.
+  3. **Eliminar juego** — solo con un juego seleccionado. Muestra un modal de confirmación (irreversible, sin backup) y, al confirmar, borra físicamente el archivo de ROM del dispositivo (la carpeta completa con base+updates+DLC, en sistemas `FOLDER_PER_GAME` como Switch), su ícono en `Assets/<sistema>/icons/` si existe, y la entrada cacheada — la biblioteca se actualiza sola sin necesidad de reescanear. Requiere permiso de **escritura** persistido sobre la carpeta de ROMs, no solo lectura (ver README).
+  4. **Configuración** (siempre presente, todas las pantallas).
+  5. **Salir de Ginny** (renombrado desde "Salir"; siempre presente, todas las pantallas).
+
+  En la pantalla de sistemas y en la de estados guardados, donde no aplican las opciones 1–3, el menú queda reducido a Configuración / Salir de Ginny, igual que antes.
 - **Detección de batería no confiable**: si `BatteryManager` no reporta datos fiables (ej. valores fijos como -1, 50% constante que nunca cambia durante un período razonable de uso, o ausencia de evento `ACTION_BATTERY_CHANGED`), el indicador de batería debe **ocultarse completamente** en vez de mostrar un dato posiblemente incorrecto. Definir una heurística simple (ej. si el valor no cambia en X minutos de uso activo con pantalla encendida, o si el nivel reportado es un valor inválido/fuera de rango) para decidir cuándo ocultarlo.
 - Estilo visual acorde a la dirección estética definida más abajo (ver sección "Dirección estética").
 
@@ -72,7 +80,7 @@ Este es el componente más complejo. Debe respetar:
 - Al abrir un sistema (botón A), se navega a la pantalla de juegos de ese sistema (reemplaza la pantalla completa).
 - El botón físico **B** regresa un nivel: desde la pantalla de juegos de un sistema, vuelve a la pantalla de sistemas. Equivale a tocar el botón "B Retroceder" de la barra inferior.
 - **No existe salto directo entre sistemas** (ej. no hay atajo para pasar del listado de juegos de NES al de SNES sin volver primero a la pantalla de sistemas) — comportamiento definido intencionalmente así.
-- El botón físico **Menú** (presente en la mayoría de consolas Android) abre el panel de opciones — es el equivalente físico al botón X de la barra superior.
+- El botón físico **Menú** (presente en la mayoría de consolas Android) abre el mismo menú desplegable que el botón X de la barra superior, navegable por cruceta una vez abierto — **actualizado (2026-08-17)**, ver sección "Barra superior" para el detalle completo (antes iba directo a Configuración sin menú intermedio).
 
 **Estilo de los elementos:**
 - Elementos cuadrados con ícono/carátula del juego o emulador.
@@ -137,7 +145,7 @@ Se mantiene AetherSX2 como emulador configurado para PS2 según lo solicitado, p
 - Si no lo está, mostrar un aviso claro indicando qué emulador falta y, de ser posible, un enlace a su página de descarga/Play Store.
 - **Actualizado (2026-08-11)**: en vez de un aviso pasivo con solo un link de descarga, se muestra un modal ("Emulador no encontrado") que deja reconfigurar ahí mismo el emulador/core (o el override de package) del sistema afectado, sin tener que ir a Configuración por separado. El modal ofrece tres acciones: "Guardar y Lanzar la ROM" (persiste la nueva selección y reintenta el lanzamiento del mismo juego/estado guardado), "Guardar y Cerrar" (persiste sin lanzar) y "Cancelar" (descarta los cambios). Reemplaza el diálogo original de solo-aviso; el link a la página de descarga ya no se muestra, dado que el flujo esperado ahora es reasignar el emulador correcto en vez de instalar el que falta.
 
-**Panel de opciones del elemento:** definir qué contiene (ver sección de omisiones, punto correspondiente). Para sistemas basados en RetroArch, este panel es también el lugar natural para exponer el selector de core.
+**Panel de opciones del elemento:** definir qué contiene (ver sección de omisiones, punto correspondiente). Para sistemas basados en RetroArch, este panel es también el lugar natural para exponer el selector de core. **Resuelto (2026-08-17)**: no es un panel aparte por elemento, sino el mismo menú desplegable de la barra superior (botón X / físico Menú) — con un juego seleccionado, gana las opciones "Seleccionar emulador" (incluye el selector de core) y "Eliminar juego"; dentro de un sistema gana además "Reescanear este sistema". Ver el detalle completo en la sección "Barra superior".
 
 ## Estructura de almacenamiento (ROMs y Assets)
 
@@ -235,7 +243,7 @@ Se mantiene AetherSX2 como emulador configurado para PS2 según lo solicitado, p
 
 ## Panel de opciones / Configuración
 
-El botón **X** de la barra superior (opción "Configuración" de su menú desplegable, ver sección "Barra superior") o el botón físico **Menú** (directo, sin menú intermedio) abre esta pantalla, que funciona como la configuración general de la app. Contiene:
+El botón **X** de la barra superior o el botón físico **Menú** (ambos abren el mismo menú desplegable, ver sección "Barra superior") con la opción "Configuración" abren esta pantalla, que funciona como la configuración general de la app. Contiene:
 
 - **Cantidad de filas de la grilla** (1–4).
 - **Ruta del folder de Usuario** (ver sección "Estructura de almacenamiento").
@@ -337,7 +345,7 @@ Estos son puntos que noté ambiguos u omitidos en tu descripción original. Te r
 
 7. ~~Navegación entre sistemas y juegos~~ **Resuelto**: B retrocede un nivel (también botón táctil "B Retroceder" en la barra inferior, solo dentro del listado de juegos, no navegable por cruceta). Sin saltos directos entre sistemas.
 
-8. ~~Botón dedicado para abrir el panel de opciones~~ **Resuelto**: botón físico Menú (equivalente a X).
+8. ~~Botón dedicado para abrir el panel de opciones~~ **Resuelto**: botón físico Menú (equivalente a X). **Actualizado (2026-08-17)**: ambos abren el mismo menú desplegable navegable por cruceta, no solo Configuración directo — ver sección "Barra superior".
 
 9. ~~Guardado de progreso/estados~~ **Resuelto**: ver sección "Estados guardados" — pantalla de saves reutilizando el grid, con "Juego nuevo" como primer elemento; se omite si el juego no tiene saves.
 

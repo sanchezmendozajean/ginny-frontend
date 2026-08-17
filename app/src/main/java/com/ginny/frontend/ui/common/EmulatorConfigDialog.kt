@@ -59,6 +59,9 @@ fun EmulatorConfigDialog(
     onSaveAndLaunch: (EmulatorTarget, String?, String?) -> Unit,
     onSaveAndClose: (EmulatorTarget, String?, String?) -> Unit,
     onCancel: () -> Unit,
+    title: String = "Emulador no encontrado",
+    description: String = "El emulador seleccionado no se encuentra instalado en el dispositivo. " +
+        "Selecciona un emulador diferente.",
 ) {
     var emulator by remember { mutableStateOf(initialEmulator) }
     var coreId by remember { mutableStateOf(initialCoreId) }
@@ -74,12 +77,11 @@ fun EmulatorConfigDialog(
 
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text("Emulador no encontrado") },
+        title = { Text(title) },
         text = {
             Column {
                 Text(
-                    "El emulador seleccionado no se encuentra instalado en el dispositivo. " +
-                        "Selecciona un emulador diferente.",
+                    description,
                     style = MaterialTheme.typography.bodyMedium,
                     color = GinnyColors.TextSecondary,
                 )

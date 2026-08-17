@@ -32,6 +32,15 @@ class GameIndexRepository(context: Context) {
     suspend fun replaceAll(games: List<GameEntry>) {
         dao.replaceAll(games.map { it.toEntity() })
     }
+
+    /** Used by "Reescanear este sistema" — replaces only the cached rows for [systemId]. */
+    suspend fun replaceForSystem(systemId: SystemId, games: List<GameEntry>) {
+        dao.replaceForSystem(systemId.name, games.map { it.toEntity() })
+    }
+
+    suspend fun deleteGame(game: GameEntry) {
+        dao.deleteByRomUri(game.systemId.name, game.romUri.toString())
+    }
 }
 
 private fun ScannedGameEntity.toGameEntry() = GameEntry(

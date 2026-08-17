@@ -6,6 +6,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.MutableState
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var soundManager: SoundManager
     private var navController: NavHostController? = null
+    private var menuExpanded: MutableState<Boolean>? = null
     private var buttonMapping: ButtonMapping = ButtonMapping.DEFAULT
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,6 +52,7 @@ class MainActivity : ComponentActivity() {
                     container = container,
                     soundManager = soundManager,
                     onNavControllerReady = { navController = it },
+                    onMenuStateReady = { menuExpanded = it },
                 )
             }
         }
@@ -85,16 +88,26 @@ class MainActivity : ComponentActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN) {
             val nav = navController
+            val menu = menuExpanded
             when (buttonMapping.buttonForKeyCode(event.keyCode)) {
                 LogicalButton.B -> {
+                    // Closing an open overflow menu takes priority over navigating back — this
+                    // intercept runs before the event ever reaches the menu's own Compose focus
+                    // handling, so it's the only place that can do this.
+                    if (menu != null && menu.value) {
+                        menu.value = false
+                        return true
+                    }
                     if (nav != null && nav.previousBackStackEntry != null) {
                         nav.popBackStack()
                         return true
                     }
                 }
                 LogicalButton.MENU -> {
-                    if (nav != null && nav.currentDestination?.route != Routes.SETTINGS) {
-                        nav.navigate(Routes.SETTINGS)
+                    // Opens the overflow ("...") menu implemented by GinnyTopBar, D-Pad-navigable
+                    // once open, instead of jumping straight to Settings.
+                    if (menu != null && nav != null && nav.currentDestination?.route != Routes.SETTINGS) {
+                        menu.value = !menu.value
                         return true
                     }
                 }

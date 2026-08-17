@@ -1,6 +1,8 @@
 package com.ginny.frontend.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +30,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -36,9 +40,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ginny.frontend.data.ButtonMapping
+import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.system.BatteryObserver
 import com.ginny.frontend.ui.theme.GinnyColors
 import kotlinx.coroutines.delay
@@ -46,6 +59,9 @@ import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+
+/** One entry in the overflow ("...") menu beyond the always-present "Configuración"/"Salir de Ginny". */
+data class MenuAction(val label: String, val onClick: () -> Unit)
 
 private val TimeFormatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
 
@@ -78,7 +94,13 @@ private fun <T> StateFlow<T>.collectAsStateSafely() =
 fun GinnyTopBar(
     contextualTitle: String,
     onOptionsClick: () -> Unit,
+    menuExpanded: MutableState<Boolean>,
+    buttonMapping: ButtonMapping,
     modifier: Modifier = Modifier,
+    /** Extra groups shown above "Configuración"/"Salir de Ginny", each rendered as its own
+     * divider-separated block (in order) — empty groups are dropped, so a caller can pass e.g. a
+     * "Seleccionar emulador"-only group that only applies with a game selected. */
+    extraMenuGroups: List<List<MenuAction>> = emptyList(),
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -90,8 +112,14 @@ fun GinnyTopBar(
         onDispose { batteryObserver.stop() }
     }
 
+    // The menu-open state is hoisted up to MainActivity (see GinnyNavHost/MainActivity), since the
+    // hardware Menu/Back keys are handled globally there rather than by this composable — reset it
+    // on the way out so a freshly-entered screen never inherits an already-open menu.
+    DisposableEffect(Unit) {
+        onDispose { menuExpanded.value = false }
+    }
+
     val clockText = rememberClockText()
-    var menuExpanded by remember { mutableStateOf(false) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -124,30 +152,99 @@ fun GinnyTopBar(
 
         Spacer(Modifier.width(14.dp))
 
-        // Touch/Menu-key only — the D-Pad is scoped exclusively to the grid, never the top bar.
+        // The trigger badge itself stays touch-only (never part of D-Pad focus traversal, same as
+        // the rest of this bar) — the hardware Menu key opens the dropdown directly via
+        // [menuExpanded] instead of moving focus here. Once open, the dropdown's own content
+        // below owns D-Pad Up/Down/A navigation.
         Box {
             IconActionBadge(
                 icon = Icons.Filled.MoreVert,
                 contentDescription = "Menú",
                 style = BadgeStyle.X,
-                onClick = { menuExpanded = true },
+                onClick = { menuExpanded.value = true },
             )
-            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                DropdownMenuItem(
-                    text = { Text("Configuración") },
-                    onClick = {
-                        menuExpanded = false
-                        onOptionsClick()
-                    },
-                )
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text("Salir") },
-                    onClick = {
-                        menuExpanded = false
-                        (context as? android.app.Activity)?.finish()
-                    },
-                )
+            OverflowMenu(
+                expanded = menuExpanded.value,
+                onExpandedChange = { menuExpanded.value = it },
+                buttonMapping = buttonMapping,
+                groups = buildList {
+                    addAll(extraMenuGroups.filter { it.isNotEmpty() })
+                    add(listOf(MenuAction("Configuración", onOptionsClick)))
+                    add(listOf(MenuAction("Salir de Ginny") { (context as? android.app.Activity)?.finish() }))
+                },
+            )
+        }
+    }
+}
+
+/**
+ * The dropdown's content, with explicit D-Pad Up/Down/A navigation instead of relying on the
+ * platform's implicit keyboard focus search — same manual-key-handling approach used by
+ * [SnapFocusGrid] elsewhere in this app, for consistency and to not depend on undocumented
+ * default DropdownMenu keyboard behavior. A single [FocusRequester] on the container (not one per
+ * item) drives a locally tracked [highlightedIndex], matching that grid's pattern. [groups] are
+ * rendered in order, each separated by a divider from the next non-empty one.
+ */
+@Composable
+private fun OverflowMenu(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    buttonMapping: ButtonMapping,
+    groups: List<List<MenuAction>>,
+) {
+    val actions = remember(groups) { groups.flatten() }
+    var highlightedIndex by remember(expanded) { mutableStateOf(0) }
+    val focusRequester = remember { FocusRequester() }
+
+    DropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChange(false) }) {
+        LaunchedEffect(expanded) {
+            if (expanded) focusRequester.requestFocus()
+        }
+        Column(
+            modifier = Modifier
+                .focusRequester(focusRequester)
+                .focusTarget()
+                .onKeyEvent { keyEvent ->
+                    if (keyEvent.type != KeyEventType.KeyDown) return@onKeyEvent false
+                    when (buttonMapping.buttonForKeyCode(keyEvent.nativeKeyEvent.keyCode)) {
+                        LogicalButton.DPAD_UP -> {
+                            highlightedIndex = (highlightedIndex - 1 + actions.size) % actions.size
+                            true
+                        }
+                        LogicalButton.DPAD_DOWN -> {
+                            highlightedIndex = (highlightedIndex + 1) % actions.size
+                            true
+                        }
+                        LogicalButton.A -> {
+                            onExpandedChange(false)
+                            actions.getOrNull(highlightedIndex)?.onClick?.invoke()
+                            true
+                        }
+                        else -> false
+                    }
+                },
+        ) {
+            var itemIndex = 0
+            groups.forEachIndexed { groupIndex, group ->
+                if (groupIndex > 0 && group.isNotEmpty()) HorizontalDivider()
+                group.forEach { action ->
+                    val currentIndex = itemIndex
+                    DropdownMenuItem(
+                        text = { Text(action.label) },
+                        onClick = {
+                            onExpandedChange(false)
+                            action.onClick()
+                        },
+                        modifier = Modifier.background(
+                            if (currentIndex == highlightedIndex) {
+                                GinnyColors.AccentBlue.copy(alpha = 0.12f)
+                            } else {
+                                Color.Transparent
+                            },
+                        ),
+                    )
+                    itemIndex++
+                }
             }
         }
     }

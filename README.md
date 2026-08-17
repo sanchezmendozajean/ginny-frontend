@@ -133,11 +133,14 @@ retroconsola a largo plazo, generá tu propia key de firma una sola vez:
 
 ## Primera configuración (dentro de la app)
 
-Abrí el panel de Configuración (botón **X** en la barra superior, o botón físico **Menú**) y
-configurá, en este orden:
+Abrí el menú (botón **⋮** en la barra superior, o botón físico **Menú**) y elegí **Configuración**.
+Configurá, en este orden:
 
 1. **Carpeta de ROMs**: la carpeta base que contiene una subcarpeta por sistema (`nes/`, `snes/`,
-   `gba/`, etc. — ver estructura completa abajo). No hace falta que existan todas.
+   `gba/`, etc. — ver estructura completa abajo). No hace falta que existan todas. La app pide
+   permiso de **lectura y escritura** sobre esta carpeta (la escritura la usa "Eliminar juego", ver
+   más abajo) — si la habías configurado antes de esa función, volvé a seleccionarla una vez para
+   que se actualice el permiso, o "Eliminar juego" va a fallar con "No se pudo eliminar".
 2. **Escanear biblioteca**: botón al lado del selector de Carpeta de ROMs, en la misma pestaña
    Carpetas. La app **no** escanea la carpeta de ROMs sola ni al abrir Sistemas/Juegos — hay que
    presionar este botón para que indexe sistemas y juegos. Puede tardar unos segundos si hay muchos
@@ -156,6 +159,28 @@ configurá, en este orden:
 El botón **Y Recargar** en la barra inferior de Sistemas/Juegos solo relee ese índice ya escaneado
 (instantáneo) — no vuelve a tocar el disco. Para que aparezcan juegos nuevos hace falta el botón
 "Escanear biblioteca" de Configuración → Carpetas.
+
+## Menú de opciones (⋮)
+
+Se abre tocando el ícono de tres puntos de la barra superior, o con el botón físico **Menú** (un
+segundo toque/press lo cierra). Una vez abierto es navegable con la cruceta: Arriba/Abajo mueve el
+resaltado entre las opciones, **A** confirma la resaltada, **B** lo cierra sin retroceder de
+pantalla.
+
+En Sistemas y en Estados guardados solo tiene **Configuración** y **Salir de Ginny**. Dentro del
+listado de juegos de un sistema aparecen además, en este orden:
+
+1. **Seleccionar emulador** *(con un juego seleccionado)* — abre el mismo modal para elegir
+   emulador/core que aparece cuando falla un lanzamiento por emulador no instalado, pero para
+   cambiarlo de una vez sin tener que ir a Configuración ni esperar a que falle un lanzamiento.
+2. **Reescanear este sistema** — vuelve a escanear vía SAF solo el sistema actual y actualiza su
+   parte de la biblioteca, sin tocar el resto de sistemas ya indexados. Más rápido que "Escanear
+   biblioteca" completo cuando solo cambiaron ROMs de un sistema puntual.
+3. **Eliminar juego** *(con un juego seleccionado)* — pide confirmación y, al aceptar, borra
+   físicamente el juego del dispositivo (la carpeta completa con base+updates+DLC en Switch), su
+   ícono en `Assets/<sistema>/icons/` si tenía uno, y su entrada en el índice — la lista se
+   actualiza sola, sin reescanear. **Es irreversible: no se hace ningún backup.** Necesita permiso
+   de escritura sobre la Carpeta de ROMs (ver paso 1 de "Primera configuración" más arriba).
 
 ## Estructura de carpetas esperada
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -34,6 +35,7 @@ fun SystemsScreen(
     soundManager: SoundManager,
     onOpenSystem: (SystemDefinition) -> Unit,
     onOpenSettings: () -> Unit,
+    menuExpanded: MutableState<Boolean>,
     viewModel: SystemsViewModel,
 ) {
     val gridRows by viewModel.gridRows.collectAsState()
@@ -48,7 +50,12 @@ fun SystemsScreen(
 
     AuroraBackground {
         Column(modifier = Modifier.fillMaxSize().padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 6.dp)) {
-            GinnyTopBar(contextualTitle = "Ginny Frontend", onOptionsClick = onOpenSettings)
+            GinnyTopBar(
+                contextualTitle = "Ginny Frontend",
+                onOptionsClick = onOpenSettings,
+                menuExpanded = menuExpanded,
+                buttonMapping = buttonMapping,
+            )
             GridPanel(modifier = Modifier.weight(1f)) {
                 if (systems.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

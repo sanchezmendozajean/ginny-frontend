@@ -1,6 +1,7 @@
 package com.ginny.frontend.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,11 +43,16 @@ fun GinnyNavHost(
     soundManager: SoundManager,
     navController: NavHostController = rememberNavController(),
     onNavControllerReady: (NavHostController) -> Unit = {},
+    onMenuStateReady: (MutableState<Boolean>) -> Unit = {},
 ) {
     val selectedGameForSaves = remember { mutableStateOf<GameEntry?>(null) }
     val selectedSystemDisplayName = remember { mutableStateOf("") }
+    // Hoisted here (rather than local to GinnyTopBar) so MainActivity's hardware Menu/Back key
+    // handling can open/close the overflow menu regardless of which screen currently owns it.
+    val menuExpanded = remember { mutableStateOf(false) }
 
     SideEffect { onNavControllerReady(navController) }
+    SideEffect { onMenuStateReady(menuExpanded) }
 
     NavHost(navController = navController, startDestination = Routes.SYSTEMS) {
         composable(Routes.SYSTEMS) {
@@ -58,6 +64,7 @@ fun GinnyNavHost(
                 soundManager = soundManager,
                 onOpenSystem = { system -> navController.navigate(Routes.games(system.id)) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                menuExpanded = menuExpanded,
                 viewModel = viewModel,
             )
         }
@@ -80,6 +87,7 @@ fun GinnyNavHost(
                     navController.navigate(Routes.SAVES)
                 },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                menuExpanded = menuExpanded,
                 viewModel = viewModel,
             )
         }
@@ -99,6 +107,7 @@ fun GinnyNavHost(
                     systemDisplayName = selectedSystemDisplayName.value,
                     onBack = { navController.popBackStack() },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    menuExpanded = menuExpanded,
                     viewModel = viewModel,
                 )
             }

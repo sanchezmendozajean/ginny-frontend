@@ -53,10 +53,11 @@ app/src/main/java/com/ginny/frontend/
 ├── system/BatteryObserver.kt # Heurística de batería no confiable (ver sección abajo)
 └── ui/
     ├── theme/                 # Paleta 1:1 con el mockup, tipografía Baloo2 (variable font, OFL)
-    ├── components/            # SnapFocusGrid (grid reutilizable), Tile, TopBar, BottomBar,
-    │                          # GlassSurface (glow), AuroraBackground, ButtonBadge
+    ├── components/            # SnapFocusGrid (grid reutilizable), Tile, TopBar (menú de opciones ⋮
+    │                          # con D-Pad, ver sección propia abajo), BottomBar, GlassSurface (glow),
+    │                          # AuroraBackground, ButtonBadge
     ├── common/                # Modales compartidos entre pantallas: EmulatorConfigDialog,
-    │                          # ScanProgressDialog
+    │                          # DeleteGameDialog, ScanProgressDialog
     ├── navigation/GinnyNavHost.kt  # systems -> games -> saves, + settings
     └── screens/{systems,games,savestates,settings}/  # Screen + ViewModel por pantalla
 ```
@@ -165,6 +166,83 @@ Patrón Strategy (`LauncherStrategy`), una implementación por emulador:
   `SaveStatesViewModel` exponen ahora `settingsRepository`/`assetRepository` directamente (mismo
   patrón que ya usaba `SettingsViewModel`), en vez de mantenerlos encapsulados detrás de métodos
   específicos.
+
+## Menú de opciones (⋮) y gestión de juegos (agregado 2026-08-17)
+
+**De botón físico Menú → Configuración directo, a menú desplegable D-Pad-navegable.** El botón
+físico Menú abría antes `Routes.SETTINGS` directamente (`MainActivity.dispatchKeyEvent`), sin pasar
+por el menú desplegable que ya usaba el botón táctil X. Ahora ambos abren el mismo menú:
+
+- El estado `menuExpanded: MutableState<Boolean>` se crea en `GinnyNavHost` (no local a
+  `GinnyTopBar`) y se expone hacia `MainActivity` vía `onMenuStateReady`, el mismo patrón ya usado
+  para `onNavControllerReady`/`NavHostController` — necesario porque `MainActivity.dispatchKeyEvent`
+  corre fuera de Compose y necesita poder togglear el menú sin importar qué pantalla esté activa en
+  ese momento. `GinnyTopBar` resetea el estado a `false` en su `DisposableEffect(Unit) { onDispose
+  { ... } }`, así una pantalla recién entrada nunca hereda un menú que quedó abierto en la anterior.
+- Con el menú abierto, **B** ahora lo cierra en vez de navegar hacia atrás — chequeado primero en
+  `MainActivity.dispatchKeyEvent` (`if (menu.value) { menu.value = false; return true }`), antes del
+  chequeo de `popBackStack()`, porque el intercept de teclado a nivel Activity corre *antes* que
+  cualquier `onKeyEvent` de Compose y por lo tanto antes que el propio menú pudiera reaccionar a B.
+- **Navegación por cruceta dentro del menú** (`OverflowMenu`, privado en `TopBar.kt`): en vez de
+  confiar en que `DropdownMenu` soporte flechas de teclado de forma implícita (no está documentado
+  que lo haga de forma confiable), se reutiliza el mismo patrón manual ya probado en
+  `SnapFocusGrid`/`FocusGridMath` — un único `FocusRequester` a nivel contenedor (no uno por ítem) +
+  un índice `highlightedIndex` local que Arriba/Abajo mueve y A dispara, leyendo el keycode físico a
+  través del `ButtonMapping` remapeable (no hardcodea `KEYCODE_DPAD_*`), igual que el grid.
+- **Opciones agrupadas** (`GinnyTopBar(extraMenuGroups: List<List<MenuAction>>)`): cada pantalla
+  arma sus propios grupos, cada uno separado del siguiente por un divisor; grupos vacíos se
+  descartan antes de renderizar (así "Seleccionar emulador"/"Eliminar juego" desaparecen limpio
+  cuando no hay juego seleccionado, sin dejar un separador huérfano). `SystemsScreen`/
+  `SaveStatesScreen` no pasan ningún grupo extra (queda solo Configuración/Salir de Ginny);
+  `GamesScreen` arma dos grupos: `[Seleccionar emulador (si hay selección), Reescanear este
+  sistema]` y `[Eliminar juego (si hay selección)]`.
+
+**Reescanear un solo sistema** (`GamesViewModel.rescanSystem`): mismo escaneo SAF que
+`SettingsViewModel.scanLibrary`, pero acotado a un `systemId` en vez de `SystemCatalog.all` —
+reutiliza `RomRepository.listGames` (ya existía, usado internamente por `scanAllSystems`) y escribe
+con el nuevo `GameIndexRepository.replaceForSystem`/`ScannedGameDao.replaceForSystem`
+(`DELETE FROM scanned_games WHERE systemId = :id` + insert, en vez del `clearAll` sin filtro que usa
+`replaceAll`). Evita re-escanear toda la biblioteca cuando el usuario solo tocó los ROMs de un
+sistema puntual.
+
+**Eliminar juego** (`GamesViewModel.deleteGame`, `ui/common/DeleteGameDialog.kt`): irreversible, sin
+backup, confirmado con un modal antes de ejecutar (mismo patrón que `EmulatorConfigDialog`: estado
+`gameToDelete: GameEntry?` en `GamesScreen`, mostrado condicionalmente). Tres pasos:
+
+1. **`RomRepository.deleteGame`** — resuelve el `DocumentFile` a borrar buscándolo *por nombre*
+   dentro de `<carpeta ROMs>/<sistema>/` (`SafUtils.findChild`), no reconstruyéndolo a partir del
+   `romUri` guardado en el `GameEntry`. La razón: en sistemas `FOLDER_PER_GAME` (Switch), ese
+   `romUri` apunta solo al archivo base que `pickBaseGameFile` eligió como lanzable, adentro de la
+   carpeta del juego — borrar únicamente ese archivo dejaría atrás los updates/DLC de la misma
+   carpeta. Buscar por `romFileName` (que para esos sistemas *es* el nombre de la carpeta) encuentra
+   y borra la carpeta completa de una. `DocumentFile.delete()` sobre un directorio es recursivo
+   (`DocumentsContract.deleteDocument` está documentado como tal), así que no hace falta vaciarla a
+   mano primero.
+2. **`AssetRepository.deleteIcon`** — borra `Assets/<sistema>/icons/<romFileName>.png` si existe.
+   No toca `names.json` (la entrada del juego borrado queda huérfana ahí, pero es un diccionario de
+   edición manual y no afecta nada si sobra una entrada sin ROM correspondiente).
+3. **`GameIndexRepository.deleteGame`** (`ScannedGameDao.deleteByRomUri`) — saca la fila cacheada.
+   Como `GamesViewModel` observa `observeGames(systemId)` vía `Flow`, la grilla se actualiza sola;
+   no hace falta releer nada explícitamente tras el borrado.
+
+**Permiso de escritura sobre la Carpeta de ROMs (fix de bug retroactivo).** Antes de esto,
+`SettingsViewModel.onRomFolderPicked` solo persistía `FLAG_GRANT_READ_URI_PERMISSION` — suficiente
+mientras la carpeta solo se leía (escaneo). Con "Eliminar juego" necesitando escritura, se agregó
+`FLAG_GRANT_WRITE_URI_PERMISSION` a esa llamada. **Esto no es retroactivo**: una Carpeta de ROMs ya
+configurada por un usuario antes de este cambio conserva el grant de solo lectura que el sistema le
+dio en su momento — `takePersistableUriPermission` solo puede formalizar flags presentes en un grant
+de Intent vigente, y ese grant expiró hace rato. El único arreglo es que el usuario vuelva a
+seleccionar la misma carpeta una vez desde Configuración; hasta entonces, `DocumentFile.delete()`
+falla en silencio (`RomRepository.deleteGame` devuelve `false`, no lanza excepción) y
+`GamesViewModel.deleteGame` lo traduce al toast "No se pudo eliminar \"<juego>\"." — documentado en
+el `README.md`.
+
+**"Seleccionar emulador" reutiliza `EmulatorConfigDialog`** en vez de un modal nuevo — es el mismo
+diálogo que ya aparecía cuando fallaba un lanzamiento por `LaunchResult.EmulatorNotInstalled`. Como
+ahora también se abre a propósito (el emulador puede estar perfectamente instalado, el usuario solo
+quiere cambiarlo), el diálogo ganó parámetros `title`/`description` para no mostrar el copy de
+"Emulador no encontrado" fuera de contexto: `GamesScreen` distingue el motivo con un
+`EmulatorConfigRequest(game, manual: Boolean)` local en vez del `GameEntry?` suelto que había antes.
 
 ## Sistemas mostrados y organización de ROMs
 

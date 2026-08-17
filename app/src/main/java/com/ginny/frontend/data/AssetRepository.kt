@@ -68,4 +68,16 @@ class AssetRepository(private val context: Context) {
 
     /** Expected icon file name for a given ROM file name, per the "<romFileName>.png" convention. */
     fun expectedIconFileName(romFileName: String): String = "$romFileName.png"
+
+    /** Deletes the icon (if any) for a game being removed via "Eliminar juego". Returns false if
+     * there's no User folder, no Assets subtree for [systemId], or no icon file to delete. */
+    suspend fun deleteIcon(userTreeUri: Uri, systemId: SystemId, romFileName: String): Boolean =
+        withContext(Dispatchers.IO) {
+            val systemDir = systemAssetsDir(userTreeUri, systemId) ?: return@withContext false
+            val iconsDir = SafUtils.findChild(systemDir, ICONS_DIR_NAME)?.takeIf { it.isDirectory }
+                ?: return@withContext false
+            val iconFile = SafUtils.findChildFileIgnoreCase(iconsDir, expectedIconFileName(romFileName))
+                ?: return@withContext false
+            iconFile.delete()
+        }
 }

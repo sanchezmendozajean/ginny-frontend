@@ -142,6 +142,22 @@ class RomRepository(
             .sortedBy { it.displayName.lowercase() }
 
     /**
+     * Deletes a game physically from the ROM folder: for [RomOrganization.FLAT_FILES] this is just
+     * the ROM file, but for [RomOrganization.FOLDER_PER_GAME] (Switch) [GameEntry.romUri] only
+     * points at the base file picked by [pickBaseGameFile] inside the game's folder — deleting only
+     * that would leave its updates/DLC behind, so the lookup is re-done by name (romFileName is the
+     * folder name for those systems) to find and remove the whole thing. Returns false if the ROM
+     * folder, the system subfolder, or the game itself can't be found.
+     */
+    suspend fun deleteGame(romFolderUri: Uri, game: GameEntry): Boolean = withContext(Dispatchers.IO) {
+        val romRoot = SafUtils.treeDocument(context, romFolderUri) ?: return@withContext false
+        val systemDir = SafUtils.findChild(romRoot, game.systemId.folderName)?.takeIf { it.isDirectory }
+            ?: return@withContext false
+        val target = SafUtils.findChild(systemDir, game.romFileName) ?: return@withContext false
+        target.delete()
+    }
+
+    /**
      * Prefers a file whose name doesn't look like an update/DLC; if every candidate is
      * ambiguously named (or there's a tie), falls back to the largest file, which in practice is
      * almost always the base game rather than a patch.

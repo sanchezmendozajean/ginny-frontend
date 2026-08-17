@@ -1,5 +1,6 @@
 package com.ginny.frontend.ui.screens.games
 
+import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +72,77 @@ class GamesViewModel(
             GameSelectionOutcome.NavigateToSaveStates(game)
         } else {
             GameSelectionOutcome.Launched(container.gameLauncher.launch(container.applicationContext, game))
+        }
+    }
+
+    /** Guards against a second tap re-entering [rescanSystem] while one is already in flight —
+     * not surfaced to the UI, since the menu item itself isn't disabled while scanning. */
+    private var isRescanning = false
+
+    /** "Reescanear este sistema" from the overflow menu — same SAF walk as the Settings full
+     * library scan, but scoped to just [systemId] so it doesn't touch every other system's cache. */
+    fun rescanSystem(context: Context) {
+        if (isRescanning) return
+        viewModelScope.launch {
+            val romUri = settingsRepository.romFolderUri.first()
+            if (romUri == null) {
+                android.widget.Toast.makeText(
+                    context,
+                    "Configurá primero la Carpeta de ROMs.",
+                    android.widget.Toast.LENGTH_LONG,
+                ).show()
+                return@launch
+            }
+            isRescanning = true
+            try {
+                val userUri = settingsRepository.userFolderUri.first()
+                val games = container.romRepository.listGames(Uri.parse(romUri), userUri?.let(Uri::parse), systemId)
+                container.gameIndexRepository.replaceForSystem(systemId, games)
+                container.configRepository.requestSync()
+                android.widget.Toast.makeText(
+                    context,
+                    "${systemDefinition.displayName}: ${games.size} juegos encontrados.",
+                    android.widget.Toast.LENGTH_SHORT,
+                ).show()
+            } finally {
+                isRescanning = false
+            }
+        }
+    }
+
+    /**
+     * "Eliminar juego": removes the ROM physically from the ROM folder, its icon from the Assets
+     * folder (if any), and the cached Room row — irreversible, no backup, per the confirmation
+     * dialog shown before this is called.
+     */
+    suspend fun deleteGame(context: Context, game: GameEntry) {
+        val romUri = settingsRepository.romFolderUri.first()?.let(Uri::parse)
+        if (romUri == null) {
+            android.widget.Toast.makeText(
+                context,
+                "Configurá primero la Carpeta de ROMs.",
+                android.widget.Toast.LENGTH_LONG,
+            ).show()
+            return
+        }
+        val deleted = container.romRepository.deleteGame(romUri, game)
+        if (deleted) {
+            settingsRepository.userFolderUri.first()?.let(Uri::parse)?.let { userUri ->
+                container.assetRepository.deleteIcon(userUri, game.systemId, game.romFileName)
+            }
+            container.gameIndexRepository.deleteGame(game)
+            container.configRepository.requestSync()
+            android.widget.Toast.makeText(
+                context,
+                "\"${game.displayName}\" eliminado.",
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
+        } else {
+            android.widget.Toast.makeText(
+                context,
+                "No se pudo eliminar \"${game.displayName}\".",
+                android.widget.Toast.LENGTH_LONG,
+            ).show()
         }
     }
 }

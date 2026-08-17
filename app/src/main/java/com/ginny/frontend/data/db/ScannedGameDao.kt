@@ -24,11 +24,24 @@ interface ScannedGameDao {
     @Query("DELETE FROM scanned_games")
     suspend fun clearAll()
 
+    @Query("DELETE FROM scanned_games WHERE systemId = :systemId")
+    suspend fun clearForSystem(systemId: String)
+
+    @Query("DELETE FROM scanned_games WHERE systemId = :systemId AND romUri = :romUri")
+    suspend fun deleteByRomUri(systemId: String, romUri: String)
+
     /** Wholesale replace, used by the Settings "Escanear biblioteca" scan — the cache always
      * reflects the most recent full scan rather than being incrementally merged. */
     @Transaction
     suspend fun replaceAll(games: List<ScannedGameEntity>) {
         clearAll()
+        insertAll(games)
+    }
+
+    /** Same as [replaceAll] but scoped to a single system, used by "Reescanear este sistema". */
+    @Transaction
+    suspend fun replaceForSystem(systemId: String, games: List<ScannedGameEntity>) {
+        clearForSystem(systemId)
         insertAll(games)
     }
 }

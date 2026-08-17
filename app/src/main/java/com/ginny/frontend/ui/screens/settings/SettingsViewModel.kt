@@ -118,7 +118,12 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onRomFolderPicked(context: Context, uri: Uri) = viewModelScope.launch {
-        context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        // Write access is needed here too, not just read — "Eliminar juego" deletes the ROM file
+        // physically from this tree (see RomRepository.deleteGame), which fails silently without it.
+        context.contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+        )
         settings.setRomFolderUri(uri.toString())
         container.configRepository.requestSync()
     }
