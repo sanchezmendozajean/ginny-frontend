@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;font-family:"M PLUS Rounded 1c",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}a:hover{opacity:.8}
+select option{font-family:"M PLUS Rounded 1c",sans-serif}
+</style>
+</helmet>
+<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:{{ c.outer }}">
+<div data-screen-label="Frontend" style="position:relative;flex:none;width:1280px;height:720px;overflow:hidden;transform:scale({{ scale }});color:{{ c.ink }};background:radial-gradient(circle at 1px 1px, {{ c.dot }} 1.2px, transparent 1.7px) 0 0/18px 18px, radial-gradient(110% 90% at 0% 0%, {{ c.bg1 }}, transparent 62%), radial-gradient(90% 90% at 100% 100%, {{ c.bg2 }}, transparent 60%), {{ c.bg0 }}">
+
+  <div style="position:absolute;left:40px;right:40px;top:20px;height:52px;display:flex;align-items:center;gap:12px;z-index:5">
+    <sc-if value="{{ isSystems }}" hint-placeholder-val="{{ true }}">
+      <div style="height:52px;padding:0 22px 0 12px;border-radius:26px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.95);box-shadow:0 6px 20px {{ c.shadow }}, inset 0 1px 0 #fff">
+        <div style="width:32px;height:32px;border-radius:10px;background:{{ c.grad }};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px">G</div>
+        <div style="font-weight:900;font-size:23px;letter-spacing:-0.01em;color:{{ c.accentInk }}">Ginny</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isGames }}">
+      <div onClick="{{ back }}" style="height:52px;padding:0 22px 0 8px;border-radius:26px;display:flex;align-items:center;gap:12px;cursor:pointer;background:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.95);box-shadow:0 6px 20px {{ c.shadow }}, inset 0 1px 0 #fff">
+        <div style="width:36px;height:36px;border-radius:18px;background:{{ c.chip }};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:{{ c.accentInk }}">←</div>
+        <div style="width:28px;height:28px;border-radius:9px;background:{{ sysFrame }}"></div>
+        <div style="font-weight:900;font-size:21px">{{ sysName }}</div>
+      </div>
+    </sc-if>
+    <div style="flex:1"></div>
+    <div style="height:52px;padding:0 22px;border-radius:26px;display:flex;align-items:center;gap:16px;font-weight:800;font-size:19px;background:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.95);box-shadow:0 6px 20px {{ c.shadow }}, inset 0 1px 0 #fff">
+      <span>{{ time }}</span>
+      <span style="width:2px;height:20px;border-radius:1px;background:{{ c.line }}"></span>
+      <span style="color:{{ c.muted }}">{{ date }}</span>
+      <span style="display:flex;align-items:center;gap:2px">
+        <span style="width:30px;height:15px;border-radius:5px;border:2px solid {{ c.ink }};padding:2px;box-sizing:border-box;display:flex"><span style="flex:1;border-radius:2px;background:{{ c.ink }}"></span></span>
+        <span style="width:3px;height:7px;border-radius:0 2px 2px 0;background:{{ c.ink }}"></span>
+      </span>
+    </div>
+    <div onClick="{{ openSettings }}" style="width:52px;height:52px;border-radius:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;background:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.95);box-shadow:0 6px 20px {{ c.shadow }}, inset 0 1px 0 #fff">
+      <span style="width:20px;height:3px;border-radius:2px;background:{{ c.ink }}"></span>
+      <span style="width:20px;height:3px;border-radius:2px;background:{{ c.ink }}"></span>
+      <span style="width:20px;height:3px;border-radius:2px;background:{{ c.ink }}"></span>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;top:72px;height:572px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg, transparent 0, #000 100px, #000 calc(100% - 100px), transparent 100%);mask-image:linear-gradient(90deg, transparent 0, #000 100px, #000 calc(100% - 100px), transparent 100%)">
+    <div style="width:{{ gridW }}px;margin:0 auto;padding-top:26px;display:flex;gap:200px;transform:translateX(-{{ offset }}px);transition:transform .5s cubic-bezier(.2,.8,.2,1)">
+      <sc-for list="{{ pages }}" as="pg" hint-placeholder-count="1">
+      <div style="flex:none;width:{{ gridW }}px;display:grid;grid-template-columns:repeat({{ cols }}, {{ size }}px);align-content:start;gap:20px">
+        <sc-for list="{{ pg.tiles }}" as="item" hint-placeholder-count="18">
+          <div onClick="{{ item.onClick }}" onMouseEnter="{{ item.onHover }}" style="width:{{ item.size }}px;height:{{ item.size }}px;box-sizing:border-box;border-radius:{{ item.radius }}px;padding:{{ item.pad }}px;background:{{ item.frame }};box-shadow:{{ item.shadow }};transform:{{ item.transform }};transition:transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s;cursor:pointer;position:relative;z-index:{{ item.z }}">
+            <div style="width:100%;height:100%;border-radius:{{ item.innerRadius }}px;background:{{ item.fill }};overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center">
+              <sc-if value="{{ item.isSys }}">
+                <div style="font-size:{{ item.fs }}px;font-weight:900;letter-spacing:-0.03em;color:{{ item.ink }}">{{ item.short }}</div>
+                <sc-if value="{{ item.showName }}">
+                  <div style="position:absolute;left:0;right:0;bottom:{{ item.nameBottom }}px;text-align:center;font-size:12px;font-weight:700;color:{{ item.sub }}">{{ item.name }}</div>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ item.isGame }}">
+                <div style="position:absolute;top:10px;left:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:{{ item.sub }}">portada</div>
+                <sc-if value="{{ item.fav }}">
+                  <div style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:14px;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:15px;color:{{ c.accent }}">★</div>
+                </sc-if>
+                <sc-if value="{{ item.showName }}">
+                  <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 12px 10px;background:linear-gradient(transparent, {{ item.shade }});color:#fff;font-weight:800;font-size:14px;line-height:1.2;text-wrap:pretty">{{ item.name }}</div>
+                </sc-if>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <sc-if value="{{ multiPage }}">
+    <div onClick="{{ prevPage }}" style="position:absolute;left:30px;top:322px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;opacity:{{ prevOpacity }};transition:opacity .25s">
+      <div style="width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.95);box-shadow:0 8px 24px {{ c.shadow }}, inset 0 1px 0 #fff">
+        <div style="width:13px;height:13px;margin-left:6px;border-left:3.5px solid {{ c.accentInk }};border-bottom:3.5px solid {{ c.accentInk }};border-radius:0 0 0 3px;transform:rotate(45deg)"></div>
+      </div>
+      <div style="height:22px;min-width:22px;padding:0 7px;box-sizing:border-box;border-radius:11px;background:{{ c.ink }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px">L</div>
+    </div>
+    <div onClick="{{ nextPage }}" style="position:absolute;right:30px;top:322px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;opacity:{{ nextOpacity }};transition:opacity .25s">
+      <div style="width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.95);box-shadow:0 8px 24px {{ c.shadow }}, inset 0 1px 0 #fff">
+        <div style="width:13px;height:13px;margin-right:6px;border-right:3.5px solid {{ c.accentInk }};border-top:3.5px solid {{ c.accentInk }};border-radius:0 3px 0 0;transform:rotate(45deg)"></div>
+      </div>
+      <div style="height:22px;min-width:22px;padding:0 7px;box-sizing:border-box;border-radius:11px;background:{{ c.ink }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px">R</div>
+    </div>
+  </sc-if>
+
+  <div style="position:absolute;left:40px;right:40px;bottom:20px;height:50px;display:flex;align-items:center;gap:12px">
+    <div style="height:50px;padding:0 22px 0 12px;border-radius:25px;white-space:nowrap;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.95);box-shadow:0 6px 20px {{ c.shadow }}, inset 0 1px 0 #fff">
+      <div style="width:28px;height:28px;border-radius:9px;background:{{ focusFrame }}"></div>
+      <div style="font-weight:900;font-size:18px">{{ focusName }}</div>
+      <div style="font-weight:700;font-size:16px;color:{{ c.muted }}">{{ focusSub }}</div>
+    </div>
+    <div style="flex:1"></div>
+    <sc-if value="{{ multiPage }}">
+      <div style="position:absolute;left:50%;transform:translateX(-50%);height:34px;padding:0 14px;border-radius:17px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.95);box-shadow:0 6px 20px {{ c.shadow }}, inset 0 1px 0 #fff">
+        <sc-for list="{{ pageDots }}" as="d" hint-placeholder-count="2">
+          <div onClick="{{ d.on }}" style="width:{{ d.w }}px;height:8px;border-radius:4px;cursor:pointer;background:{{ d.bg }};transition:width .3s cubic-bezier(.2,.8,.2,1), background .3s"></div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showHints }}" hint-placeholder-val="{{ true }}">
+      <div style="height:50px;padding:0 20px 0 12px;border-radius:25px;display:flex;align-items:center;gap:20px;background:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.95);box-shadow:0 6px 20px {{ c.shadow }}, inset 0 1px 0 #fff">
+        <sc-for list="{{ hints }}" as="h" hint-placeholder-count="2">
+          <div onClick="{{ h.on }}" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:800;font-size:16px">
+            <span style="width:28px;height:28px;border-radius:14px;background:{{ c.ink }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900">{{ h.k }}</span>
+            <span>{{ h.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ toast }}">
+    <div style="position:absolute;left:50%;top:92px;transform:translateX(-50%);height:48px;padding:0 24px 0 10px;border-radius:24px;display:flex;align-items:center;gap:12px;background:{{ c.ink }};color:#fff;font-weight:800;font-size:16px;box-shadow:0 12px 30px {{ c.shadow }};z-index:20">
+      <span style="width:30px;height:30px;border-radius:15px;background:{{ c.grad }};display:flex;align-items:center;justify-content:center;font-size:13px">▶</span>
+      <span>{{ toast }}</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ gameOpen }}">
+    <div data-screen-label="Opciones de juego" onClick="{{ closeGame }}" style="position:absolute;inset:0;z-index:30;background:{{ c.scrim }};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">
+      <div onClick="{{ stop }}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:720px;box-sizing:border-box;border-radius:36px;background:rgba(255,255,255,0.97);box-shadow:0 30px 80px {{ c.shadow }}, inset 0 1px 0 #fff;padding:28px;display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;align-items:center;gap:20px">
+          <div style="width:112px;height:112px;flex:none;box-sizing:border-box;padding:5px;border-radius:20px;background:#fff;box-shadow:0 8px 22px {{ c.shadow }}">
+            <div style="width:100%;height:100%;border-radius:15px;background:{{ gCover }};position:relative">
+              <div style="position:absolute;top:8px;left:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:{{ c.muted }}">portada</div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+            <div style="font-weight:900;font-size:27px;line-height:1.15;letter-spacing:-0.01em;text-wrap:pretty">{{ gTitle }}</div>
+            <div style="height:32px;padding:0 14px 0 6px;border-radius:16px;display:flex;align-items:center;gap:8px;background:{{ c.chip }};font-weight:800;font-size:14px;color:{{ c.muted }}">
+              <span style="width:20px;height:20px;border-radius:7px;background:{{ gSysFrame }}"></span>
+              <span>{{ gSysName }}</span>
+            </div>
+          </div>
+          <div onClick="{{ closeGame }}" style="width:48px;height:48px;flex:none;align-self:flex-start;border-radius:24px;background:{{ c.chip }};display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900;font-size:18px">✕</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:{{ c.accentInk }};padding-left:6px">Archivo</div>
+          <div style="background:#fff;border:1px solid {{ c.line }};border-radius:22px;padding:16px 20px;display:flex;flex-direction:column;gap:4px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:15px;color:{{ c.ink }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ gFile }}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:{{ c.muted }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ gPath }}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:{{ c.accentInk }};padding-left:6px">Emulador</div>
+          <div style="background:#fff;border:1px solid {{ c.line }};border-radius:22px;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-weight:700;font-size:13px;color:{{ c.muted }};padding-left:8px">Aplicación</div>
+              <div style="position:relative">
+                <select data-v="{{ gApp }}" value="{{ gApp }}" onChange="{{ gOnApp }}" style="appearance:none;-webkit-appearance:none;width:100%;height:46px;border-radius:23px;border:1px solid {{ c.line }};background:{{ c.chip }};padding:0 40px 0 18px;font:700 15px 'M PLUS Rounded 1c',sans-serif;color:{{ c.ink }};cursor:pointer;outline:none">
+                  <sc-for list="{{ apps }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+                </select>
+                <span style="position:absolute;right:16px;top:12px;pointer-events:none;font-size:14px;color:{{ c.muted }}">▾</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-weight:700;font-size:13px;color:{{ c.muted }};padding-left:8px">Core</div>
+              <div style="position:relative">
+                <sc-if value="{{ gHasCore }}">
+                  <select data-v="{{ gCore }}" value="{{ gCore }}" onChange="{{ gOnCore }}" style="appearance:none;-webkit-appearance:none;width:100%;height:46px;border-radius:23px;border:1px solid {{ c.line }};background:#fff;padding:0 40px 0 18px;font:700 15px 'M PLUS Rounded 1c',sans-serif;color:{{ c.accentInk }};cursor:pointer;outline:none">
+                    <sc-for list="{{ cores }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+                  </select>
+                  <span style="position:absolute;right:16px;top:12px;pointer-events:none;font-size:14px;color:{{ c.muted }}">▾</span>
+                </sc-if>
+                <sc-if value="{{ gNoCore }}">
+                  <div style="height:46px;box-sizing:border-box;border-radius:23px;border:1px dashed {{ c.line }};display:flex;align-items:center;padding:0 18px;font-weight:700;font-size:14px;color:{{ c.muted }}">App independiente</div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;padding-top:4px">
+          <div onClick="{{ toggleFav }}" style="height:52px;padding:0 22px 0 16px;border-radius:26px;display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:800;font-size:16px;background:{{ gFavBg }};border:1px solid {{ gFavBorder }};color:{{ c.accentInk }};transition:background .2s, border-color .2s">
+            <span style="font-size:20px;line-height:1">{{ gFavIcon }}</span>
+            <span>{{ gFavLabel }}</span>
+          </div>
+          <div onClick="{{ del }}" style="height:52px;padding:0 22px;border-radius:26px;display:flex;align-items:center;cursor:pointer;font-weight:800;font-size:16px;background:{{ gDelBg }};color:{{ gDelInk }};border:1px solid {{ c.line }};transition:background .2s, color .2s">{{ gDelLabel }}</div>
+          <div style="flex:1"></div>
+          <div onClick="{{ play }}" style="height:56px;padding:0 30px 0 12px;border-radius:28px;display:flex;align-items:center;gap:12px;cursor:pointer;font-weight:900;font-size:18px;background:{{ c.grad }};color:#fff;box-shadow:0 10px 26px {{ c.glow }}">
+            <span style="width:32px;height:32px;border-radius:16px;background:rgba(255,255,255,0.28);display:flex;align-items:center;justify-content:center;font-size:14px">A</span>
+            <span>Jugar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ settingsOpen }}">
+    <div data-screen-label="Configuración" onClick="{{ closeSettings }}" style="position:absolute;inset:0;z-index:30;background:{{ c.scrim }};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">
+      <div onClick="{{ stop }}" style="position:absolute;inset:24px;border-radius:36px;background:rgba(255,255,255,0.96);box-shadow:0 30px 80px {{ c.shadow }}, inset 0 1px 0 #fff;display:grid;grid-template-columns:250px minmax(0,1fr);overflow:hidden">
+
+        <div style="background:{{ c.rail }};padding:30px 22px;display:flex;flex-direction:column;gap:8px;border-right:1px solid {{ c.line }}">
+          <div style="display:flex;align-items:center;gap:12px;padding:0 8px 26px">
+            <div style="width:32px;height:32px;border-radius:10px;background:{{ c.grad }};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px">G</div>
+            <div style="font-weight:900;font-size:22px">Configuración</div>
+          </div>
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+            <div onClick="{{ t.on }}" style="height:52px;padding:0 18px;border-radius:26px;display:flex;align-items:center;gap:12px;cursor:pointer;font-weight:800;font-size:17px;background:{{ t.bg }};color:{{ t.color }};box-shadow:{{ t.shadow }};transition:background .2s">
+              <span style="width:10px;height:10px;border-radius:4px;background:{{ t.dot }}"></span>
+              <span>{{ t.label }}</span>
+            </div>
+          </sc-for>
+          <div style="flex:1"></div>
+          <div onClick="{{ closeSettings }}" style="display:flex;align-items:center;gap:8px;padding:0 8px;cursor:pointer;font-weight:800;font-size:15px;color:{{ c.muted }}">
+            <span style="width:26px;height:26px;border-radius:13px;background:{{ c.ink }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900">B</span>
+            <span>Cerrar</span>
+          </div>
+        </div>
+
+        <div style="position:relative;display:flex;flex-direction:column;min-height:0">
+          <div style="display:flex;align-items:center;padding:28px 36px 18px 40px;gap:16px">
+            <div style="flex:1">
+              <div style="font-weight:900;font-size:28px;letter-spacing:-0.01em">{{ tabTitle }}</div>
+              <div style="font-weight:500;font-size:15px;color:{{ c.muted }};margin-top:2px">{{ tabDesc }}</div>
+            </div>
+            <div onClick="{{ closeSettings }}" style="width:48px;height:48px;border-radius:24px;background:{{ c.chip }};display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900;font-size:18px;color:{{ c.ink }}">✕</div>
+          </div>
+
+          <div style="flex:1;min-height:0;overflow:auto;padding:16px 36px 48px 40px;display:grid;align-content:start;gap:22px;-webkit-mask-image:linear-gradient(transparent 0, #000 16px, #000 calc(100% - 40px), transparent 100%);mask-image:linear-gradient(transparent 0, #000 16px, #000 calc(100% - 40px), transparent 100%)">
+
+            <sc-if value="{{ tabInterfaz }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:{{ c.accentInk }};padding-left:6px">Grilla</div>
+                <div style="background:#fff;border:1px solid {{ c.line }};border-radius:24px;padding:4px 24px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:68px">
+                    <div style="flex:1;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;font-size:17px">Filas visibles</div>
+                    <div style="display:flex;gap:4px;padding:4px;border-radius:24px;background:{{ c.chip }}">
+                      <sc-for list="{{ rowOpts }}" as="r" hint-placeholder-count="3">
+                        <div onClick="{{ r.on }}" style="width:56px;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900;font-size:16px;background:{{ r.bg }};color:{{ r.color }};box-shadow:{{ r.shadow }}">{{ r.n }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <div style="height:1px;background:{{ c.line }}"></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:68px">
+                    <div>
+                      <div style="flex:1;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;font-size:17px">Mostrar nombres</div>
+                      <div style="font-weight:500;font-size:14px;color:{{ c.muted }}">Nombre bajo cada sistema y juego</div>
+                    </div>
+                    <div onClick="{{ toggleTitles }}" style="width:56px;height:32px;border-radius:16px;position:relative;cursor:pointer;background:{{ togBg }};transition:background .2s">
+                      <div style="position:absolute;top:3px;left:{{ togX }}px;width:26px;height:26px;border-radius:13px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:left .2s"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:{{ c.accentInk }};padding-left:6px">Audio</div>
+                <div style="background:#fff;border:1px solid {{ c.line }};border-radius:24px;padding:4px 24px">
+                  <sc-for list="{{ sliders }}" as="s" hint-placeholder-count="2">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:68px;border-bottom:1px solid {{ c.line }}">
+                      <div style="flex:1;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;font-size:17px">{{ s.label }}</div>
+                      <div style="display:flex;align-items:center;gap:16px;width:340px;flex:none">
+                        <div onPointerDown="{{ s.down }}" onPointerMove="{{ s.move }}" onPointerUp="{{ s.up }}" style="position:relative;flex:1;height:36px;cursor:pointer;touch-action:none">
+                          <div style="position:absolute;left:0;right:0;top:12px;height:12px;border-radius:6px;background:{{ c.track }}"></div>
+                          <div style="position:absolute;left:0;top:12px;height:12px;border-radius:6px;width:{{ s.pct }}%;background:{{ c.grad }}"></div>
+                          <div style="position:absolute;top:4px;left:calc({{ s.pct }}% - 14px);width:28px;height:28px;border-radius:14px;box-sizing:border-box;background:#fff;border:3px solid {{ c.accent }};box-shadow:0 3px 10px {{ c.shadow }}"></div>
+                        </div>
+                        <div style="width:48px;text-align:right;font-weight:800;font-size:16px;color:{{ c.muted }}">{{ s.pct }}%</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:68px">
+                    <div style="flex:1;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;font-size:17px">Pista de fondo</div>
+                    <div style="position:relative;width:340px;flex:none">
+                      <select data-v="{{ track }}" value="{{ track }}" onChange="{{ setTrack }}" style="appearance:none;-webkit-appearance:none;width:100%;height:46px;border-radius:23px;border:1px solid {{ c.line }};background:{{ c.chip }};padding:0 44px 0 18px;font:700 15px 'M PLUS Rounded 1c',sans-serif;color:{{ c.ink }};cursor:pointer;outline:none">
+                        <sc-for list="{{ tracks }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+                      </select>
+                      <span style="position:absolute;right:18px;top:12px;pointer-events:none;font-size:14px;color:{{ c.muted }}">▾</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ tabCarpetas }}">
+              <sc-for list="{{ folders }}" as="f" hint-placeholder-count="3">
+                <div style="background:#fff;border:1px solid {{ c.line }};border-radius:24px;padding:20px 24px;display:flex;align-items:center;gap:24px">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+                    <div style="flex:1;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;font-size:17px">{{ f.title }}</div>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:13px;max-width:100%;box-sizing:border-box;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 12px;border-radius:10px;background:{{ c.chip }};color:{{ c.accentInk }}">{{ f.path }}</div>
+                    <sc-if value="{{ f.note }}">
+                      <div style="font-weight:500;font-size:14px;color:{{ c.muted }};text-wrap:pretty">{{ f.note }}</div>
+                    </sc-if>
+                  </div>
+                  <div style="display:flex;gap:10px;flex:none">
+                    <div onClick="{{ f.pick }}" style="height:44px;padding:0 20px;border-radius:22px;display:flex;align-items:center;cursor:pointer;font-weight:800;font-size:15px;background:{{ c.chip }};color:{{ c.accentInk }};border:1px solid {{ c.line }}">Elegir carpeta</div>
+                    <sc-if value="{{ f.scan }}">
+                      <div onClick="{{ f.scan }}" style="height:44px;padding:0 22px;border-radius:22px;display:flex;align-items:center;cursor:pointer;font-weight:800;font-size:15px;background:{{ c.grad }};color:#fff;box-shadow:0 6px 16px {{ c.glow }}">{{ f.scanLabel }}</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </sc-if>
+
+            <sc-if value="{{ tabEmuladores }}">
+              <div style="background:#fff;border:1px solid {{ c.line }};border-radius:24px;padding:4px 20px">
+                <sc-for list="{{ emus }}" as="e" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:16px;min-height:80px;border-bottom:1px solid {{ c.line }}">
+                    <div style="width:52px;height:52px;flex:none;box-sizing:border-box;border-radius:14px;padding:3px;background:{{ e.frame }}">
+                      <div style="width:100%;height:100%;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:{{ e.fs }}px;letter-spacing:-0.02em;color:{{ e.ink }}">{{ e.short }}</div>
+                    </div>
+                    <div style="flex:1;min-width:0">
+                      <div style="flex:1;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;font-size:17px">{{ e.name }}</div>
+                      <div style="font-weight:500;font-size:14px;color:{{ c.muted }}">{{ e.count }} juegos</div>
+                    </div>
+                    <div style="position:relative;width:200px;flex:none">
+                      <select data-v="{{ e.app }}" value="{{ e.app }}" onChange="{{ e.onApp }}" style="appearance:none;-webkit-appearance:none;width:100%;height:46px;border-radius:23px;border:1px solid {{ c.line }};background:{{ c.chip }};padding:0 40px 0 18px;font:700 15px 'M PLUS Rounded 1c',sans-serif;color:{{ c.ink }};cursor:pointer;outline:none">
+                        <sc-for list="{{ apps }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+                      </select>
+                      <span style="position:absolute;right:16px;top:12px;pointer-events:none;font-size:14px;color:{{ c.muted }}">▾</span>
+                    </div>
+                    <div style="position:relative;width:200px;flex:none">
+                      <sc-if value="{{ e.hasCore }}">
+                        <select data-v="{{ e.core }}" value="{{ e.core }}" onChange="{{ e.onCore }}" style="appearance:none;-webkit-appearance:none;width:100%;height:46px;border-radius:23px;border:1px solid {{ c.line }};background:#fff;padding:0 40px 0 18px;font:700 15px 'M PLUS Rounded 1c',sans-serif;color:{{ c.accentInk }};cursor:pointer;outline:none">
+                          <sc-for list="{{ cores }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+                        </select>
+                        <span style="position:absolute;right:16px;top:12px;pointer-events:none;font-size:14px;color:{{ c.muted }}">▾</span>
+                      </sc-if>
+                      <sc-if value="{{ e.noCore }}">
+                        <div style="height:46px;border-radius:23px;border:1px dashed {{ c.line }};display:flex;align-items:center;padding:0 18px;font-weight:700;font-size:14px;color:{{ c.muted }}">App independiente</div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Menta&quot;,&quot;Cielo&quot;,&quot;Durazno&quot;,&quot;Lila&quot;,&quot;Ciclo&quot;],&quot;default&quot;:&quot;Menta&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showHints&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const SYS = [
+  ['Atomiswave','AW',20,'RetroArch','Flycast',['Metal Slug 6','The King of Fighters XI','Dolphin Blue','Rumble Fish','Demolish Fist','Sports Shooting USA','Knights of Valour','Guilty Gear Isuka','Samurai Shodown VI']],
+  ['Dreamcast','DC',45,'Redream','',['Crazy Taxi','Jet Set Radio','Shenmue','Soulcalibur','Sonic Adventure 2','Skies of Arcadia','Power Stone 2','Rez','Ikaruga','Marvel vs. Capcom 2']],
+  ['FinalBurn Neo','FBN',60,'RetroArch (64-bit)','FinalBurn Neo',['Metal Slug X','Street Fighter III 3rd Strike','Cadillacs and Dinosaurs','Final Fight','1944: The Loop Master','Darkstalkers','Knights of the Round','Progear']],
+  ['Game Boy','GB',120,'RetroArch','Gambatte',['Tetris','Link\u2019s Awakening','Pokémon Rojo','Super Mario Land 2','Kirby\u2019s Dream Land','Metroid II','Wario Land']],
+  ['Game Boy Advance','GBA',275,'RetroArch','mGBA',['The Minish Cap','Metroid Fusion','Advance Wars','Golden Sun','Pokémon Esmeralda','Aria of Sorrow','Mother 3','Fire Emblem']],
+  ['Game Boy Color','GBC',335,'RetroArch','Gambatte',['Oracle of Seasons','Pokémon Cristal','Shantae','Wario Land 3','Dragon Warrior Monsters','Metal Gear Solid']],
+  ['GameCube','GC',290,'Dolphin','',['The Wind Waker','Metroid Prime','Super Mario Sunshine','F-Zero GX','Pikmin 2','Resident Evil 4','Skies of Arcadia Legends']],
+  ['NAOMI','NAOMI',5,'RetroArch','Flycast',['Virtua Tennis','Ikaruga','Guilty Gear XX','Capcom vs. SNK 2','Zombie Revenge','Dead or Alive 2']],
+  ['Neo Geo','NEO',85,'RetroArch','FinalBurn Neo',['Metal Slug','Garou: Mark of the Wolves','The Last Blade 2','Samurai Shodown II','Blazing Star','KOF \u201998','Pulstar']],
+  ['Neo Geo Pocket','NGP',205,'RetroArch','Beetle NeoPop',['SNK vs. Capcom','Neo Turf Masters','Sonic Pocket Adventure','Metal Slug 1st Mission']],
+  ['Neo Geo Pocket Color','NGPC',180,'RetroArch','Beetle NeoPop',['Card Fighters\u2019 Clash','Faselei!','Biomotor Unitron','Metal Slug 2nd Mission','Dark Arms']],
+  ['Nintendo 3DS','3DS',15,'Azahar','',['Ocarina of Time 3D','Fire Emblem Awakening','Kid Icarus Uprising','Majora\u2019s Mask 3D','Samus Returns','Bravely Default']],
+  ['Nintendo 64','N64',150,'RetroArch','Mupen64Plus-Next',['Super Mario 64','Ocarina of Time','GoldenEye 007','Banjo-Kazooie','Mario Kart 64','Star Fox 64','Paper Mario','Conker\u2019s Bad Fur Day']],
+  ['Nintendo DS','NDS',230,'melonDS','',['Chrono Trigger DS','Mario Kart DS','Phantom Hourglass','Pokémon Platino','The World Ends with You','Dawn of Sorrow','Professor Layton']],
+  ['NES','NES',30,'RetroArch','Mesen',['Super Mario Bros. 3','The Legend of Zelda','Mega Man 2','Metroid','Castlevania','Punch-Out!!','Kirby\u2019s Adventure','Contra']],
+  ['PC Engine','PCE',350,'RetroArch','Beetle PCE',['Bonk\u2019s Adventure','Blazing Lazers','Rondo of Blood','Ys Book I & II','Splatterhouse','Gate of Thunder']],
+  ['PICO-8','P8',320,'RetroArch','Fake-08',['Celeste Classic','Poom','Porklike','Just One Boss','Dank Tomb','Combo Pool']],
+  ['PlayStation','PS1',255,'DuckStation','',['Final Fantasy VII','Symphony of the Night','Metal Gear Solid','Crash Bandicoot','Spyro the Dragon','Tekken 3','Resident Evil 2','Chrono Cross']],
+  ['PSP','PSP',220,'PPSSPP','',['Crisis Core','Patapon','Lumines','Chains of Olympus','Monster Hunter Freedom Unite','Persona 3 Portable']],
+  ['Super Nintendo','SNES',300,'RetroArch','Snes9x',['Super Metroid','A Link to the Past','Chrono Trigger','Super Mario World','Donkey Kong Country','EarthBound','F-Zero','Secret of Mana']],
+  ['Mega Drive','MD',245,'RetroArch','Genesis Plus GX',['Sonic the Hedgehog 2','Streets of Rage 2','Gunstar Heroes','Phantasy Star IV','Shinobi III','Ecco the Dolphin','Comix Zone']],
+  ['Saturn','SAT',265,'RetroArch','Beetle Saturn',['Panzer Dragoon Saga','NiGHTS into Dreams','Radiant Silvergun','Guardian Heroes','Virtua Fighter 2','Sega Rally']]
+];
+const APPS = ['RetroArch','RetroArch (64-bit)','Redream','Flycast','Dolphin','DuckStation','PPSSPP','melonDS','Azahar'];
+const CORES = ['Flycast','FinalBurn Neo','Gambatte','mGBA','Mupen64Plus-Next','Mesen','Snes9x','Genesis Plus GX','Beetle PCE','Beetle Saturn','Beetle NeoPop','Fake-08','SwanStation'];
+const THEMES = { Menta:168, Cielo:240, Durazno:45, Lila:295 };
+const TRACKS = ['Monday Marimba','Lazy Afternoon','Pixel Breeze','Sin música'];
+const GAP = 20, GRID_H = 520;
+const frameOf = h => `linear-gradient(135deg, oklch(0.78 0.13 ${h}), oklch(0.83 0.11 ${h + 50}))`;
+
+class Component extends DCLogic {
+  state = {
+    view: 'systems', sys: 0, focus: 0, top: 0, rows: 3, showTitles: true,
+    settingsOpen: false, tab: 0, music: 12, ui: 55, track: 'Monday Marimba',
+    scale: 1, now: new Date(), toast: '', gameOpen: false, favs: {}, removed: {}, confirmDel: false, scanning: false, lastScan: '12/09/2026 15:27',
+    emu: SYS.map(s => ({ app: s[3], core: s[4] })),
+    paths: ['/tree/primary:Ginny USER', '/tree/primary:Ginny ROMS', '/tree/primary:RetroArch/states']
+  };
+  componentDidMount() {
+    this.fit = () => this.setState({ scale: Math.min(window.innerWidth / 1280, window.innerHeight / 720) });
+    this.fit();
+    this.componentDidUpdate();
+    window.addEventListener('resize', this.fit);
+    this.clock = setInterval(() => this.setState({ now: new Date() }), 20000);
+    this.key = e => this.onKey(e);
+    window.addEventListener('keydown', this.key);
+  }
+  cycleHue() {
+    const hs = Object.values(THEMES), HOLD = 6000, MOVE = 2500, T = HOLD + MOVE;
+    const t = (this.state.tick || 0) % (T * hs.length), i = Math.floor(t / T), p = t % T;
+    const a = hs[i], b = hs[(i + 1) % hs.length];
+    let d = ((b - a + 540) % 360) - 180;
+    const k = p < HOLD ? 0 : (p - HOLD) / MOVE, e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    return (a + d * e + 360) % 360;
+  }
+  componentDidUpdate() {
+    const on = this.props.theme === 'Ciclo';
+    if (on && !this.cyc) { const t0 = performance.now(); this.cyc = setInterval(() => this.setState({ tick: performance.now() - t0 }), 50); }
+    if (!on && this.cyc) { clearInterval(this.cyc); this.cyc = null; }
+    requestAnimationFrame(() => document.querySelectorAll('select[data-v]').forEach(s => { if (s.value !== s.dataset.v) s.value = s.dataset.v; }));
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.fit);
+    window.removeEventListener('keydown', this.key);
+    clearInterval(this.clock); clearInterval(this.cyc); clearTimeout(this.tt);
+  }
+  layout(rows = this.state.rows) {
+    const size = Math.floor((GRID_H - GAP * (rows - 1)) / rows);
+    const cols = Math.floor((1060 + GAP) / (size + GAP));
+    return { size, cols, gridW: cols * size + (cols - 1) * GAP };
+  }
+  games(s) { return SYS[s][5].filter(t => !this.state.removed[s + '|' + t]); }
+  favEntries(favs = this.state.favs, removed = this.state.removed) {
+    return SYS.flatMap((x, s) => x[5].filter(t => !removed[s + '|' + t] && favs[s + '|' + t]).map(t => ({ s, t })));
+  }
+  sysList() {
+    if (!this.favEntries().length) return SYS;
+    const f = ['Favoritos', '★', 0, '', '', []]; f.isFav = true;
+    return [f, ...SYS];
+  }
+  sysIdx(s) { return s === -1 ? 0 : s + (this.favEntries().length ? 1 : 0); }
+  list() {
+    if (this.state.view === 'systems') return this.sysList();
+    return this.state.sys === -1 ? this.favEntries() : this.games(this.state.sys).map(t => ({ s: this.state.sys, t }));
+  }
+  openOptions() {
+    if (this.state.view === 'systems') this.setState({ settingsOpen: true });
+    else this.setState({ gameOpen: true, confirmDel: false });
+  }
+  toggleFav() {
+    const en = this.list()[this.state.focus], k = en.s + '|' + en.t;
+    const favs = { ...this.state.favs, [k]: !this.state.favs[k] };
+    if (this.state.sys !== -1) return this.setState({ favs });
+    const left = this.favEntries(favs).length;
+    if (!left) return this.setState({ favs, gameOpen: false, view: 'systems', focus: 0, top: 0 });
+    const f = Math.min(this.state.focus, left - 1);
+    this.setState({ favs, gameOpen: false, focus: f, top: this.topFor(f, 0) });
+  }
+  del() {
+    if (!this.state.confirmDel) return this.setState({ confirmDel: true });
+    const en = this.list()[this.state.focus], cur = this.state.sys;
+    const removed = { ...this.state.removed, [en.s + '|' + en.t]: true };
+    const left = cur === -1 ? this.favEntries(this.state.favs, removed).length : SYS[cur][5].filter(x => !removed[cur + '|' + x]).length;
+    if (!left) {
+      this.setState({ removed, gameOpen: false, confirmDel: false, view: 'systems' }, () => {
+        const idx = cur === -1 ? 0 : this.sysIdx(cur);
+        this.setState({ focus: idx, top: this.topFor(idx, 0) });
+      });
+      return;
+    }
+    const f = Math.min(this.state.focus, left - 1);
+    this.setState({ removed, gameOpen: false, confirmDel: false, focus: f, top: this.topFor(f, 0) });
+  }
+  topFor(focus, top, rows = this.state.rows) {
+    const { cols } = this.layout(rows);
+    return Math.floor(Math.floor(focus / cols) / rows) * rows;
+  }
+  page(d) {
+    const { cols } = this.layout(), per = cols * this.state.rows, n = this.list().length;
+    const np = Math.floor(this.state.focus / per) + d;
+    if (np < 0 || np >= Math.ceil(n / per)) return;
+    this.goPage(np);
+  }
+  goPage(np) {
+    const { cols } = this.layout(), per = cols * this.state.rows, n = this.list().length;
+    const f = Math.min(n - 1, np * per + (this.state.focus % per));
+    this.setState({ focus: f, top: np * this.state.rows });
+  }
+  move(d) {
+    const n = this.list().length;
+    let f = this.state.focus + d;
+    if (f < 0 || f >= n) { if (Math.abs(d) > 1) f = Math.max(0, Math.min(n - 1, f)); else return; }
+    this.setState({ focus: f, top: this.topFor(f, this.state.top) });
+  }
+  open(i) {
+    if (this.state.view === 'systems') {
+      const it = this.sysList()[i];
+      this.setState({ view: 'games', sys: it.isFav ? -1 : SYS.indexOf(it), focus: 0, top: 0 });
+    }
+    else this.launch(i);
+  }
+  launch(i) {
+    const en = this.list()[i], e = this.state.emu[en.s];
+    clearTimeout(this.tt);
+    this.setState({ focus: i, gameOpen: false, toast: `Iniciando ${en.t} · ${e.app}` });
+    this.tt = setTimeout(() => this.setState({ toast: '' }), 2200);
+  }
+  back() {
+    if (this.state.view !== 'games') return;
+    const f = this.sysIdx(this.state.sys);
+    this.setState({ view: 'systems', focus: f, top: this.topFor(f, 0) });
+  }
+  onKey(e) {
+    if (this.state.gameOpen) {
+      if (['Escape', 'Backspace', 'b', 'y'].includes(e.key)) this.setState({ gameOpen: false });
+      else if (e.key === 'Enter' || e.key === 'a') this.launch(this.state.focus);
+      else if (e.key === 'f' || e.key === 'x') this.toggleFav();
+      return;
+    }
+    if (this.state.settingsOpen) { if (e.key === 'Escape' || e.key === 'Backspace') this.setState({ settingsOpen: false }); return; }
+    const { cols } = this.layout();
+    const map = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols };
+    if (map[e.key] !== undefined) { e.preventDefault(); this.move(map[e.key]); }
+    else if (['l', 'q', 'PageUp'].includes(e.key)) this.page(-1);
+    else if (['r', 'e', 'PageDown'].includes(e.key)) this.page(1);
+    else if (e.key === 'Enter' || e.key === 'a') this.open(this.state.focus);
+    else if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'b') this.back();
+    else if (e.key === 'y') this.openOptions();
+    else if (e.key === 'm') this.setState({ settingsOpen: true });
+  }
+  slider(key) {
+    const set = e => {
+      const r = e.currentTarget.getBoundingClientRect();
+      const v = Math.round(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * 100);
+      this.setState({ [key]: v });
+    };
+    return {
+      down: e => { this.drag = key; e.currentTarget.setPointerCapture(e.pointerId); set(e); },
+      move: e => { if (this.drag === key) set(e); },
+      up: () => { this.drag = null; }
+    };
+  }
+  renderVals() {
+    const st = this.state;
+    const h = this.props.theme === 'Ciclo' ? this.cycleHue() : (THEMES[this.props.theme] ?? 168);
+    const c = {
+      accent: `oklch(0.7 0.14 ${h})`, accentInk: `oklch(0.47 0.12 ${h})`,
+      grad: `linear-gradient(135deg, oklch(0.78 0.12 ${h + 35}), oklch(0.68 0.15 ${h}))`,
+      ink: `oklch(0.29 0.03 ${h})`, muted: `oklch(0.52 0.03 ${h})`,
+      bg0: `oklch(0.955 0.022 ${h})`, bg1: `oklch(0.89 0.075 ${h})`, bg2: `oklch(0.925 0.05 ${h + 40})`,
+      dot: `oklch(0.8 0.04 ${h} / 0.5)`, outer: `oklch(0.9 0.03 ${h})`,
+      shadow: `oklch(0.45 0.08 ${h} / 0.16)`, glow: `oklch(0.7 0.16 ${h} / 0.5)`,
+      chip: `oklch(0.965 0.015 ${h})`, line: `oklch(0.91 0.02 ${h})`, track: `oklch(0.92 0.02 ${h})`,
+      rail: `oklch(0.97 0.015 ${h})`, scrim: `oklch(0.35 0.05 ${h} / 0.3)`
+    };
+    const { size, cols, gridW } = this.layout();
+    const isSystems = st.view === 'systems';
+    const list = this.list();
+    const radius = Math.round(size * 0.1);
+    const sysHue = st.sys === -1 ? h : SYS[st.sys][2];
+    const tiles = list.map((it, i) => {
+      const f = i === st.focus;
+      const hue = isSystems ? (it.isFav ? h : it[2]) : SYS[it.s][2] + ((i * 37) % 90) - 45;
+      const short = isSystems ? it[1] : '';
+      return {
+        size, radius, pad: isSystems ? 4 : 5, innerRadius: radius - (isSystems ? 4 : 5),
+        isSys: isSystems, isGame: !isSystems, short, name: isSystems ? it[0] : it.t,
+        showName: st.showTitles && size > 110,
+        nameBottom: Math.round(size * 0.08),
+        fs: Math.round(size * (short.length > 3 ? 0.2 : 0.28)),
+        ink: `oklch(0.56 0.15 ${hue})`, sub: isSystems ? `oklch(0.55 0.05 ${hue})` : `oklch(0.42 0.08 ${hue})`,
+        shade: `oklch(0.3 0.08 ${hue} / 0.8)`,
+        frame: isSystems ? frameOf(hue) : '#fff',
+        fill: isSystems
+          ? `radial-gradient(circle at 1px 1px, oklch(0.88 0.03 ${hue}) 1px, transparent 1.5px) 0 0/9px 9px, linear-gradient(160deg, #fff, oklch(0.97 0.02 ${hue}))`
+          : `repeating-linear-gradient(135deg, oklch(0.86 0.06 ${hue}) 0 10px, oklch(0.83 0.07 ${hue}) 10px 20px)`,
+        shadow: f ? `0 0 0 4px #fff, 0 0 0 7px ${c.accent}, 0 16px 40px ${c.glow}` : `0 6px 16px ${c.shadow}`,
+        transform: f ? 'translateY(-4px) scale(1.06)' : 'none', z: f ? 2 : 1,
+        fav: !isSystems && !!st.favs[it.s + '|' + it.t],
+        onClick: () => { this.setState({ focus: i }); this.open(i); },
+        onHover: () => { if (st.focus !== i) this.setState({ focus: i }); }
+      };
+    });
+    const totalRows = Math.ceil(list.length / cols);
+    const fi = list[st.focus];
+    const emus = SYS.map((s, i) => {
+      const e = st.emu[i], hasCore = e.app.startsWith('RetroArch');
+      return {
+        name: s[0], short: s[1], count: this.games(i).length, frame: frameOf(s[2]), ink: `oklch(0.56 0.15 ${s[2]})`,
+        fs: s[1].length > 3 ? 11 : 15, app: e.app, core: e.core || CORES[0], hasCore, noCore: !hasCore,
+        onApp: ev => { const emu = st.emu.slice(); emu[i] = { ...e, app: ev.target.value }; this.setState({ emu }); },
+        onCore: ev => { const emu = st.emu.slice(); emu[i] = { ...e, core: ev.target.value }; this.setState({ emu }); }
+      };
+    });
+    const pick = k => () => {
+      const paths = st.paths.slice();
+      paths[k] = paths[k].replace(/( \(\d+\))?$/, '');
+      this.setState({ paths });
+    };
+    const scan = () => {
+      if (this.state.scanning) return;
+      this.setState({ scanning: true });
+      setTimeout(() => {
+        const d = new Date(), p = n => String(n).padStart(2, '0');
+        this.setState({ scanning: false, lastScan: `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}` });
+      }, 1600);
+    };
+    const TAB = [
+      ['Interfaz', 'Grilla, nombres y audio'],
+      ['Carpetas', 'Dónde vive tu biblioteca'],
+      ['Emuladores', 'Aplicación y core por sistema']
+    ];
+    const p = n => String(n).padStart(2, '0');
+    return {
+      c, scale: st.scale, size, cols, gridW,
+      offset: (st.top / st.rows) * (gridW + 200),
+      pages: Array.from({ length: Math.ceil(tiles.length / (cols * st.rows)) }, (_, i) => ({ tiles: tiles.slice(i * cols * st.rows, (i + 1) * cols * st.rows) })), isSystems, isGames: !isSystems,
+      sysName: st.sys === -1 ? 'Favoritos' : SYS[st.sys][0], sysFrame: frameOf(sysHue),
+      focusName: isSystems ? fi[0] : fi.t,
+      focusSub: isSystems ? `${fi.isFav ? this.favEntries().length : this.games(SYS.indexOf(fi)).length} juegos` : `${SYS[fi.s][0]} · ${st.emu[fi.s].app}`,
+      focusFrame: isSystems ? frameOf(fi.isFav ? h : fi[2]) : frameOf(SYS[fi.s][2]),
+      multiPage: totalRows > st.rows,
+      prevPage: () => this.page(-1), nextPage: () => this.page(1),
+      prevOpacity: st.top === 0 ? 0.35 : 1,
+      nextOpacity: st.top + st.rows >= totalRows ? 0.35 : 1,
+      pageDots: Array.from({ length: Math.ceil(totalRows / st.rows) }, (_, i) => {
+        const a = i * st.rows === st.top;
+        return { w: a ? 24 : 8, bg: a ? c.accent : c.line, on: () => this.goPage(i) };
+      }),
+      time: `${p(st.now.getHours())}:${p(st.now.getMinutes())}`,
+      date: `${p(st.now.getDate())}/${p(st.now.getMonth() + 1)}`,
+      showHints: this.props.showHints ?? true,
+      hints: [
+        { k: 'A', label: isSystems ? 'Abrir' : 'Jugar', on: () => this.open(st.focus) },
+        ...(isSystems ? [] : [{ k: 'B', label: 'Atrás', on: () => this.back() }]),
+        { k: 'Y', label: 'Opciones', on: () => this.openOptions() }
+      ],
+      gameOpen: st.gameOpen && !isSystems,
+      closeGame: () => this.setState({ gameOpen: false }),
+      ...(() => {
+        if (isSystems || !fi) return {};
+        const s = SYS[fi.s], e = st.emu[fi.s], hasCore = e.app.startsWith('RetroArch');
+        const arcade = ['AW', 'NAOMI', 'FBN', 'NEO'].includes(s[1]);
+        const ext = { DC: '.chd', GC: '.rvz', PS1: '.chd', SAT: '.chd', PSP: '.iso', NDS: '.nds', '3DS': '.3ds', GB: '.gb', GBC: '.gbc', GBA: '.gba', N64: '.z64', NES: '.nes', SNES: '.sfc', MD: '.md', PCE: '.pce', P8: '.p8.png', NGP: '.ngp', NGPC: '.ngc' }[s[1]];
+        const file = arcade ? fi.t.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) + '.zip' : `${fi.t} (USA)${ext}`;
+        const fav = !!st.favs[fi.s + '|' + fi.t];
+        const gh = s[2] + ((st.focus * 37) % 90) - 45;
+        return {
+          gTitle: fi.t, gSysName: s[0], gSysFrame: frameOf(s[2]), gFile: file, gPath: `${st.paths[1].replace('/tree/primary:', '/')}/${s[0]}/`,
+          gCover: `repeating-linear-gradient(135deg, oklch(0.86 0.06 ${gh}) 0 10px, oklch(0.83 0.07 ${gh}) 10px 20px)`,
+          gApp: e.app, gCore: e.core || CORES[0], gHasCore: hasCore, gNoCore: !hasCore,
+          gOnApp: ev => { const emu = st.emu.slice(); emu[fi.s] = { ...e, app: ev.target.value }; this.setState({ emu }); },
+          gOnCore: ev => { const emu = st.emu.slice(); emu[fi.s] = { ...e, core: ev.target.value }; this.setState({ emu }); },
+          gFav: fav, gFavLabel: fav ? 'En favoritos' : 'Favorito', gFavIcon: fav ? '★' : '☆',
+          gFavBg: fav ? `oklch(0.95 0.05 ${h})` : c.chip, gFavBorder: fav ? c.accent : c.line,
+          gDelLabel: st.confirmDel ? '¿Eliminar de verdad?' : 'Eliminar',
+          gDelBg: st.confirmDel ? 'oklch(0.6 0.19 25)' : c.chip, gDelInk: st.confirmDel ? '#fff' : 'oklch(0.52 0.17 25)',
+          toggleFav: () => this.toggleFav(), del: () => this.del(), play: () => this.launch(st.focus)
+        };
+      })(),
+      toast: st.toast,
+      back: () => this.back(),
+      openSettings: () => this.setState({ settingsOpen: true }),
+      closeSettings: () => this.setState({ settingsOpen: false }),
+      stop: e => e.stopPropagation(),
+      settingsOpen: st.settingsOpen,
+      tabs: TAB.map((t, i) => {
+        const a = i === st.tab;
+        return { label: t[0], on: () => this.setState({ tab: i }), bg: a ? c.grad : 'transparent', color: a ? '#fff' : c.ink,
+          shadow: a ? `0 8px 20px ${c.glow}` : 'none', dot: a ? '#fff' : c.line };
+      }),
+      tabTitle: TAB[st.tab][0], tabDesc: TAB[st.tab][1],
+      tabInterfaz: st.tab === 0, tabCarpetas: st.tab === 1, tabEmuladores: st.tab === 2,
+      rowOpts: [2, 3, 4].map(n => {
+        const a = n === st.rows;
+        return { n, bg: a ? '#fff' : 'transparent', color: a ? c.accentInk : c.muted, shadow: a ? `0 2px 8px ${c.shadow}` : 'none',
+          on: () => { const r = n; this.setState({ rows: r, top: this.topFor(st.focus, 0, r) }); } };
+      }),
+      togBg: st.showTitles ? c.accent : c.track, togX: st.showTitles ? 27 : 3,
+      toggleTitles: () => this.setState({ showTitles: !st.showTitles }),
+      sliders: [
+        { label: 'Música de fondo', pct: st.music, ...this.slider('music') },
+        { label: 'Sonidos de interfaz', pct: st.ui, ...this.slider('ui') }
+      ],
+      tracks: TRACKS, track: st.track, setTrack: e => this.setState({ track: e.target.value }),
+      folders: [
+        { title: 'Carpeta de usuario (assets)', path: st.paths[0], pick: pick(0) },
+        { title: 'Carpeta de ROMs', path: st.paths[1], pick: pick(1), scan, scanLabel: st.scanning ? 'Escaneando…' : 'Escanear biblioteca',
+          note: `Último escaneo: ${st.lastScan}` },
+        { title: 'Estados guardados de RetroArch (opcional)', path: st.paths[2], pick: pick(2),
+          note: 'Activa “savestate_thumbnail_enable” en RetroArch para generar las miniaturas.' }
+      ],
+      emus, apps: APPS, cores: CORES
+    };
+  }
+}
+</script>
+</body>
+</html>
