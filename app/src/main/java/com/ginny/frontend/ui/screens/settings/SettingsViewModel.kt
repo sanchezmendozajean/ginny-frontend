@@ -14,6 +14,7 @@ import com.ginny.frontend.data.model.MusicSelection
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.di.AppContainer
+import com.ginny.frontend.ui.theme.ThemeMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -88,6 +89,11 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     fun setGridRows(rows: Int) = viewModelScope.launch {
         settings.setGridRows(rows)
+        container.configRepository.requestSync()
+    }
+
+    fun setThemeMode(mode: ThemeMode) = viewModelScope.launch {
+        settings.setThemeMode(mode)
         container.configRepository.requestSync()
     }
 

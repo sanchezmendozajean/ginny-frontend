@@ -22,3 +22,6 @@ data class GameEntry(
      */
     val iconUri: Uri?,
 )
+
+/** Composite key used to persist favorites (see [com.ginny.frontend.data.SettingsRepository.favoriteGameKeys]). */
+fun GameEntry.favoriteKey(): String = "${systemId.name}|$romFileName"

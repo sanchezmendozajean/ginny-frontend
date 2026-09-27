@@ -6,6 +6,7 @@ import android.view.KeyEvent
 enum class LogicalButton(val defaultKeyCode: Int) {
     A(KeyEvent.KEYCODE_BUTTON_A),
     B(KeyEvent.KEYCODE_BUTTON_B),
+    Y(KeyEvent.KEYCODE_BUTTON_Y),
     MENU(KeyEvent.KEYCODE_MENU),
     L(KeyEvent.KEYCODE_BUTTON_L1),
     R(KeyEvent.KEYCODE_BUTTON_R1),

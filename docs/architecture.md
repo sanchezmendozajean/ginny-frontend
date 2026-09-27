@@ -52,12 +52,14 @@ app/src/main/java/com/ginny/frontend/
 │                              # archivo en Interface/Background Music de la Carpeta de Usuario
 ├── system/BatteryObserver.kt # Heurística de batería no confiable (ver sección abajo)
 └── ui/
-    ├── theme/                 # Paleta 1:1 con el mockup, tipografía Baloo2 (variable font, OFL)
-    ├── components/            # SnapFocusGrid (grid reutilizable), Tile, TopBar (menú de opciones ⋮
-    │                          # con D-Pad, ver sección propia abajo), BottomBar, GlassSurface (glow),
-    │                          # AuroraBackground, ButtonBadge
-    ├── common/                # Modales compartidos entre pantallas: EmulatorConfigDialog,
-    │                          # DeleteGameDialog, ScanProgressDialog
+    ├── theme/                 # Paleta OKLCH generada por matiz (4 temas + modo Ciclo animado),
+    │                          # tipografía M PLUS Rounded 1c (pesos estáticos, OFL)
+    ├── components/            # PagedFocusGrid (grid reutilizable, paginado), Tile, TopBar (acceso
+    │                          # directo a Configuración, ver sección propia abajo), BottomBar,
+    │                          # GlassSurface, AuroraBackground, ButtonBadge, SegmentedPillPicker,
+    │                          # GinnySlider, PillDropdown, PageJumpButton
+    ├── common/                # Modales compartidos: GinnyModalSurface (wrapper), GameOptionsDialog,
+    │                          # EmulatorConfigDialog, ScanProgressDialog
     ├── navigation/GinnyNavHost.kt  # systems -> games -> saves, + settings
     └── screens/{systems,games,savestates,settings}/  # Screen + ViewModel por pantalla
 ```
@@ -76,26 +78,35 @@ app/src/main/java/com/ginny/frontend/
   sigue siendo estático (`SystemCatalog`), pero la lista de *juegos* ya no se deriva en vivo. Detalle
   y motivación en "Caché de biblioteca" más abajo.
 
-## El componente de grid (`SnapFocusGrid`)
+## El componente de grid (`PagedFocusGrid`, rediseño 2026-09-25)
 
-Pieza más compleja del proyecto, aislada en `ui/components/SnapFocusGrid.kt` +
+Pieza más compleja del proyecto, aislada en `ui/components/PagedFocusGrid.kt` +
 `FocusGridMath.kt` (aritmética pura, sin Compose, para poder razonar/testear la navegación por
-separado del layout):
+separado del layout). Reemplaza al `SnapFocusGrid` original (scroll vertical continuo) por un
+modelo de **páginas discretas que se deslizan horizontalmente** — ver "Rediseño visual y de
+navegación" más abajo para el porqué del cambio:
 
 - Tamaño de tile = `(alturaDisponible - gap*(filas-1)) / filas`; columnas = las que entren en el
-  ancho disponible con ese tamaño de tile — igual que pide el spec.
+  ancho disponible con ese tamaño de tile — igual que pide el spec (sin cambios respecto al grid
+  anterior).
+- Una "página" son `columnas × filasVisibles` ítems; `FocusGridMath.pageOf`/`pageCount`/
+  `topRowForPage` calculan a qué página pertenece cada índice — a diferencia del `nextTopRow`
+  original (ventana de desplazamiento mínimo), la ventana de una página siempre está alineada a un
+  múltiplo de `filasVisibles`, nunca a mitad de fila.
 - Navegación D-Pad: `Modifier.onKeyEvent` interpreta el keycode físico a través del
   `ButtonMapping` remapeable configurado en Settings, no hardcodea `KEYCODE_DPAD_*`.
-- **Decisión de diseño no especificada en el prompt**: Izquierda/Derecha *no* hace wrap a la fila
-  anterior/siguiente — se frena en los bordes de la fila. Documentado aquí porque el prompt lo dejó
-  abierto ("wrap opcional... decidir comportamiento").
-- **Snap centrado**: se interpreta como "mantener la fila con foco dentro de la ventana visible de N
-  filas, moviendo la ventana lo mínimo posible" (no como centrado matemático estricto, ambiguo
-  cuando N es par). Para el swipe táctil, al terminar el scroll (`LazyGridState.isScrollInProgress`
-  pasa a `false`) se corrige la posición a la fila completa más cercana.
+  `moveUp/Down/Left/Right` se reusan sin cambios del grid anterior (Izquierda/Derecha sigue sin
+  hacer wrap a la fila anterior/siguiente). L/R (además de los botones táctiles `PageJumpButton` en
+  los bordes de la pantalla) saltan una página entera en vez de saltar filas dentro del scroll.
+- `PagedFocusGrid` reporta `currentPage`/`pageCount`/`goToPage` hacia la pantalla que lo usa vía
+  `onPagingChanged` (un `SideEffect`, no un callback durante composición), para que
+  `GinnyBottomBar` pueda dibujar los puntos de página y los botones L/R queden fuera del propio
+  componente de grid — evita que el grid necesite conocer detalles de layout de la barra inferior.
 - B (retroceder) deliberadamente *nunca* es parte de la navegación por foco del grid — es solo
   táctil/botón físico dedicado, manejado a nivel de `MainActivity.dispatchKeyEvent` para funcionar
   sin importar qué composable tenga el foco en ese momento.
+- Y (nuevo `LogicalButton`) abre Configuración en Sistemas/Estados guardados, y el modal
+  "Opciones de juego" (`GameOptionsDialog`) en Juegos — ver "Rediseño visual y de navegación".
 
 ## Caché de biblioteca (Room)
 
@@ -167,7 +178,14 @@ Patrón Strategy (`LauncherStrategy`), una implementación por emulador:
   patrón que ya usaba `SettingsViewModel`), en vez de mantenerlos encapsulados detrás de métodos
   específicos.
 
-## Menú de opciones (⋮) y gestión de juegos (agregado 2026-08-17)
+## Menú de opciones (⋮) y gestión de juegos (agregado 2026-08-17, superado 2026-09-25)
+
+**Sección histórica** — el rediseño visual de 2026-09-25 (ver más abajo) eliminó por completo el
+menú desplegable `OverflowMenu`/`menuExpanded` descripto en esta sección: Menú/la hamburguesa
+ahora abre Configuración directo (sin desplegable) y las acciones de juego (seleccionar emulador,
+reescanear, eliminar) viven en el modal `GameOptionsDialog` (botón Y). Se deja el resto de esta
+sección tal cual para contexto histórico de las decisiones de "Eliminar juego"/permisos de
+escritura, que siguen vigentes.
 
 **De botón físico Menú → Configuración directo, a menú desplegable D-Pad-navegable.** El botón
 físico Menú abría antes `Routes.SETTINGS` directamente (`MainActivity.dispatchKeyEvent`), sin pasar
@@ -247,9 +265,11 @@ quiere cambiarlo), el diálogo ganó parámetros `title`/`description` para no m
 ## Sistemas mostrados y organización de ROMs
 
 - La pantalla de sistemas solo lista los que tienen `<carpeta ROMs>/<sistema>/` presente **y** con
-  al menos un juego válido adentro (`SystemsViewModel.availableSystems`, recalculado cada vez que
-  cambian las carpetas configuradas) — evita mostrar sistemas vacíos que solo llevarían a un grid
-  en blanco.
+  al menos un juego válido adentro (`SystemsViewModel.tiles`, recalculado cada vez que cambian las
+  carpetas configuradas) — evita mostrar sistemas vacíos que solo llevarían a un grid en blanco.
+  Desde el rediseño 2026-09-25, `tiles` es `List<SystemTileItem>` en vez de `List<SystemDefinition>`
+  directamente: antepone un tile sintético "Favoritos" cuando hay al menos un juego marcado como
+  favorito (ver "Rediseño visual y de navegación").
 - `SystemDefinition.romOrganization` distingue dos formas de escanear un sistema
   (`RomRepository.listGames`): `FLAT_FILES` (un archivo = un juego, todos los sistemas salvo Switch)
   y `FOLDER_PER_GAME` (una subcarpeta = un juego, con el base + updates/DLC juntos adentro — la
@@ -277,7 +297,7 @@ quiere cambiarlo), el diálogo ganó parámetros `title`/`description` para no m
   `Assets/<sistema>/icons/` cuando existe, y si no, cae al `Uri` del ROM mismo (`GameEntry.iconUri
   = romUri`) en vez del placeholder genérico. Como el cart `.p8.png` es **portrait** (no cuadrado) y
   `AsyncImage` en `GamesScreen.kt` no fija `contentScale` (default de Coil: `ContentScale.Fit`) sobre
-  un `FocusableTile` con fondo blanco (`GinnyColors.CardBg`), el resultado ya sale redimensionado
+  un `FocusableTile` con fondo blanco, el resultado ya sale redimensionado
   para entrar en el cuadrado sin recortar y con el sobrante en blanco — **sin ningún procesamiento de
   bitmap adicional**, es consecuencia directa de cómo ya se renderizaban todos los íconos.
 
@@ -302,7 +322,7 @@ quiere cambiarlo), el diálogo ganó parámetros `title`/`description` para no m
   esos archivos según el contenido cargado, no según ningún alias cosmético.
 - **Nombre de archivo visible junto al nombre bonito (agregado 2026-07-31)**: `GinnyBottomBar`
   (`ui/components/BottomBar.kt`) admite un `selectedSecondaryText` opcional, una segunda línea más
-  chica (`labelSmall`, color `GinnyColors.TextSecondary`) debajo del nombre seleccionado. En
+  chica (`labelSmall`, color `palette.muted`) debajo del nombre seleccionado. En
   `GamesScreen` se le pasa `romFileName`, pero **solo cuando difiere de `displayName`** — si no hay
   `names.json` (o el ROM puntual no tiene entrada), `displayName` ya es el nombre de archivo (sin
   extensión, o la carpeta completa en `FOLDER_PER_GAME`), así que mostrar la segunda línea sería
@@ -341,9 +361,78 @@ y **no se compiló** — se agregó sin volver a correr el workaround de JDK/SDK
 Primera sync/build después de ese cambio conviene hacerla con más atención de lo normal, en particular
 el annotation processing de Room (`kapt`, generación de `GinnyDatabase_Impl`/DAOs).
 
+**Actualización 2026-09-25**: en esta máquina sí había un JDK/Android SDK reales instalados
+(`C:\Program Files\Android\Android Studio\jbr`, el JBR de Android Studio, JDK 21; y el SDK en
+`%LOCALAPPDATA%\Android\Sdk`) — se corrió `gradlew compileDebugKotlin` y `gradlew assembleDebug`
+**vía PowerShell, no bash** (el sandbox de bash de este entorno sigue sin poder abrir sockets de
+loopback, pero PowerShell no tiene esa restricción) con las versiones reales del proyecto (Gradle
+8.7, Kotlin 1.9.24, AGP tal como está en `build.gradle.kts`), sin downgrades. Ambos terminaron en
+`BUILD SUCCESSFUL`. Esto verifica compilación y empaquetado (dexing, recursos, fuentes, manifest)
+del rediseño completo (ver sección siguiente), pero **no** verifica renderizado/comportamiento en
+un dispositivo real: no había ningún emulador/dispositivo conectado (`adb devices` vacío) para
+tomar capturas o probar la navegación por D-Pad a mano. Conviene correrlo vos y avisar si algo no
+se ve como se espera.
+
+## Rediseño visual y de navegación (agregado 2026-09-25)
+
+Rediseño completo del look & feel y parte de la navegación, a partir de una maqueta interactiva
+(`docs/diseño/Ginny Frontend.dc.html`) que reemplaza la estética plana original por un lenguaje
+"glass"/pastel derivado de OKLCH. Mantiene el 100% de las funciones que ya existían (mapeo de
+botones, todas las carpetas, escaneo, emuladores/cores por sistema) — nada se sacó, solo se le
+aplicó la piel nueva y se sumaron features que la maqueta insinuaba pero la app no tenía.
+
+**Sistema de color** (`ui/theme/OklchColor.kt`, `GinnyPalette.kt`, `ThemeMode.kt`, `CycleHue.kt`):
+toda la UI deriva sus colores de un solo matiz (`hue: Float`) vía `ginnyPalette(hue)`, una
+traducción directa del `renderVals()` de la maqueta (conversión OKLCH→sRGB propia, sin librería
+externa). `ThemeMode` tiene 4 hues fijos (Menta/Cielo/Durazno/Lila) más `CICLO`, que anima el hue
+con `cycleHue()` (hold 6s + easing cúbico 2.5s entre paradas, replicado 1:1 del prototipo) vía
+`rememberCyclingHue()` — el reloj de animación por frame **solo corre si Ciclo está seleccionado**,
+para no gastar batería de más en el caso común de un tema fijo. Persistido en
+`SettingsRepository.themeMode` (clave `theme_mode`, un enum-name, mismo idioma que el resto del
+repo) y seleccionable en Configuración > Interfaz > Tema (mismo `SegmentedPillPicker` que "Filas
+visibles"). `GinnyColors` (paleta plana hardcodeada) se eliminó por completo — todo el código lee
+`LocalGinnyPalette.current` en su lugar.
+
+**Tipografía**: Baloo2 → M PLUS Rounded 1c (Google Fonts, OFL, ver `licenses/MPLUSRounded1c-OFL.txt`).
+A diferencia de Baloo2 (una sola variable font), M PLUS Rounded 1c se distribuye como archivos
+estáticos por peso — se bundlean solo los 4 pesos realmente usados (Medium/Bold/ExtraBold/Black;
+Regular se omitió porque el texto de cuerpo sigue en Roboto, igual que antes) para no inflar de más
+el APK; cada peso ronda 3.4MB, ~14MB en total — un tradeoff de tamaño consciente frente a Baloo2's
+~680KB, aceptable para un frontend que no es storage-constrained pero vale la pena tenerlo presente.
+
+**Navegación paginada**: ver "El componente de grid (`PagedFocusGrid`)" más arriba.
+
+**Configuración como overlay, no como pantalla** (`GinnyNavHost.kt`, `MainActivity.kt`): `Routes.SETTINGS`
+se eliminó. `settingsOpen: MutableState<Boolean>` se hoistea en `GinnyNavHost` (mismo patrón que el
+`menuExpanded` que reemplaza) y Configuración se renderiza como una capa más en el mismo árbol de
+composición (no un `Dialog`/Window separado), envolviendo el `NavHost` en `Modifier.blur()` mientras
+está abierta — así la pantalla de atrás se ve borrosa de verdad detrás del modal, como pide la
+maqueta. `Modifier.blur()` es no-op por debajo de API 31: en esos dispositivos el efecto se degrada
+a solo el scrim oscuro, sin blur, pero sigue siendo funcional. El botón físico Menú ahora abre
+Configuración directo (antes togglaba el menú ⋮, ver nota en esa sección más arriba).
+
+**Botón Y y `GameOptionsDialog`** (`data/ButtonMapping.kt`, `ui/common/GameOptionsDialog.kt`): nuevo
+`LogicalButton.Y` (`KEYCODE_BUTTON_Y`), remapeable como cualquier otro botón en Configuración. En
+Sistemas/Estados guardados, Y abre Configuración (igual que Menú); en Juegos, abre
+`GameOptionsDialog`, que junta lo que antes eran 3 acciones separadas del menú ⋮ ("Seleccionar
+emulador", "Reescanear este sistema", "Eliminar juego" + su `DeleteGameDialog` aparte) en un solo
+modal con selector de emulador/core, favorito, reescaneo y un borrado de doble-toque inline
+(`deleteArmed`, estado local del diálogo) en vez de un segundo diálogo de confirmación.
+
+**Favoritos** (feature nueva, no existía antes): `SettingsRepository.favoriteGameKeys` (DataStore,
+`Set<String>` de claves compuestas `"${systemId}|${romFileName}"`, mismo idioma que
+`packageOverrideFor`) — deliberadamente **no** vive en `ScannedGameEntity`/Room, porque
+`replaceAll`/`replaceForSystem` hacen DELETE+reinsert completo en cada escaneo y cualquier columna
+ahí se perdería en el próximo "Escanear biblioteca". `SystemTileItem` (sellado, solo a nivel UI) le
+agrega un tile sintético "Favoritos" a la grilla de Sistemas cuando hay al menos un favorito —
+`SystemCatalog` no se toca. `GamesViewModel`/`GamesScreen` generalizan de "siempre un `SystemId`
+real" a `GamesScope` (`Single(systemId)` o `Favorites`, cruza todos los sistemas vía el nuevo
+`GameIndexRepository.observeAllGames()` filtrado por `favoriteGameKeys`) — como `GameEntry` ya
+traía su propio `systemId`, lanzar un juego favorito con el emulador/core de *su* sistema no
+requirió tocar `GameLauncher`.
+
 ## Limitaciones conocidas / seguidas para v2
 
-- Selector de tema (Settings) es un placeholder — solo hay un tema claro por ahora.
 - Mapeo de botones en Settings no es D-Pad-navegable todavía (usa foco por defecto de Compose,
   funciona por toque siempre; por teclado/D-Pad depende del focus traversal por defecto).
 - Save states: solo RetroArch en v1, tal como acota el prompt. Dolphin/PPSSPP/AetherSX2 quedan para

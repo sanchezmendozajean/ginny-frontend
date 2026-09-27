@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.screens.settings.ScanProgressEntry
-import com.ginny.frontend.ui.theme.GinnyColors
+import com.ginny.frontend.ui.theme.LocalGinnyPalette
 
 /** Fixed height for the scrollable entries area — keeps the dialog's own size stable regardless
  * of how many systems have reported in, instead of growing past the screen as scanning runs. */
@@ -48,6 +48,7 @@ fun ScanProgressDialog(
     onStop: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val palette = LocalGinnyPalette.current
     AlertDialog(
         onDismissRequest = { if (!scanning) onDismiss() },
         title = {
@@ -67,7 +68,7 @@ fun ScanProgressDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(EntriesBoxHeight)
-                        .dashedBorder(GinnyColors.TextSecondary.copy(alpha = 0.5f))
+                        .dashedBorder(palette.muted.copy(alpha = 0.5f))
                         .padding(12.dp)
                         .verticalScroll(rememberScrollState()),
                 ) {
@@ -83,7 +84,7 @@ fun ScanProgressDialog(
                         Text(
                             "Buscando…",
                             style = MaterialTheme.typography.bodySmall,
-                            color = GinnyColors.TextSecondary,
+                            color = palette.muted,
                         )
                     }
                 }

@@ -13,6 +13,7 @@ import com.ginny.frontend.di.AppContainer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -27,14 +28,18 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
     /** Only systems whose ROM subfolder exists and has at least one valid game — per spec, a
      * system with nothing to show simply isn't listed rather than appearing empty. Read from the
      * Room-backed scan cache (populated from Settings > Carpetas > "Escanear biblioteca"), not a
-     * live filesystem scan — see [com.ginny.frontend.data.GameIndexRepository]. */
-    private val _availableSystems = MutableStateFlow<List<SystemDefinition>>(emptyList())
-    val availableSystems: StateFlow<List<SystemDefinition>> = _availableSystems
+     * live filesystem scan — see [com.ginny.frontend.data.GameIndexRepository]. The Favoritos tile
+     * is prepended whenever at least one game is favorited (see [SystemTileItem]). */
+    private val _tiles = MutableStateFlow<List<SystemTileItem>>(emptyList())
+    val tiles: StateFlow<List<SystemTileItem>> = _tiles
 
     /** Game count per system, gathered alongside the availability scan so the UI can show
      * "[Sistema] - N juegos" without re-scanning. */
     private val _gameCounts = MutableStateFlow<Map<SystemId, Int>>(emptyMap())
     val gameCounts: StateFlow<Map<SystemId, Int>> = _gameCounts
+
+    private val _favoriteCount = MutableStateFlow(0)
+    val favoriteCount: StateFlow<Int> = _favoriteCount
 
     /** Distinguishes "still loading the cache" from "loaded, cache is empty" for the empty-state message. */
     private val _isScanning = MutableStateFlow(true)
@@ -44,14 +49,23 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            container.gameIndexRepository.observeGameCounts().collect { counts -> applyCounts(counts) }
+            combine(
+                container.gameIndexRepository.observeGameCounts(),
+                container.settingsRepository.favoriteGameKeys,
+            ) { counts, favorites -> counts to favorites.size }
+                .collect { (counts, favoriteCount) -> applyCounts(counts, favoriteCount) }
         }
     }
 
-    private fun applyCounts(counts: Map<SystemId, Int>) {
+    private fun applyCounts(counts: Map<SystemId, Int>, favoriteCount: Int) {
         _gameCounts.value = counts
-        _availableSystems.value = SystemCatalog.allSortedByName.filter { (counts[it.id] ?: 0) > 0 }
+        _favoriteCount.value = favoriteCount
+        val systems: List<SystemDefinition> = SystemCatalog.allSortedByName.filter { (counts[it.id] ?: 0) > 0 }
+        _tiles.value = buildList {
+            if (favoriteCount > 0) add(SystemTileItem.Favorites)
+            addAll(systems.map(SystemTileItem::Real))
+        }
         _isScanning.value = false
-        focusedIndex = focusedIndex.coerceIn(0, (_availableSystems.value.size - 1).coerceAtLeast(0))
+        focusedIndex = focusedIndex.coerceIn(0, (_tiles.value.size - 1).coerceAtLeast(0))
     }
 }

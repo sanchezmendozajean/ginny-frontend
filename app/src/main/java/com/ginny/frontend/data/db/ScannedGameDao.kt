@@ -15,6 +15,10 @@ interface ScannedGameDao {
     @Query("SELECT * FROM scanned_games WHERE systemId = :systemId ORDER BY displayName COLLATE NOCASE")
     fun observeGames(systemId: String): Flow<List<ScannedGameEntity>>
 
+    /** Cross-system listing, used by the Favoritos pseudo-system (see GamesScope.Favorites). */
+    @Query("SELECT * FROM scanned_games ORDER BY displayName COLLATE NOCASE")
+    fun observeAllGames(): Flow<List<ScannedGameEntity>>
+
     @Query("SELECT systemId, COUNT(*) as count FROM scanned_games GROUP BY systemId")
     fun observeGameCounts(): Flow<List<SystemGameCount>>
 

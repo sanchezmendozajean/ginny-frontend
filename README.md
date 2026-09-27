@@ -361,5 +361,5 @@ Usuario (ver sección "Estructura de carpetas esperada").
 
 ## Licencias de terceros
 
-La tipografía Baloo 2 (`app/src/main/res/font/baloo2.ttf`) está bajo SIL Open Font License — ver
-[licenses/Baloo2-OFL.txt](licenses/Baloo2-OFL.txt).
+La tipografía M PLUS Rounded 1c (`app/src/main/res/font/mplus_rounded1c_*.ttf`) está bajo SIL
+Open Font License — ver [licenses/MPLUSRounded1c-OFL.txt](licenses/MPLUSRounded1c-OFL.txt).

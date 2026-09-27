@@ -91,4 +91,17 @@ object FocusGridMath {
             else -> currentTopRow
         }.coerceIn(0, maxTopRow)
     }
+
+    /** 0-based page index containing [index] — a "page" is [visibleRows] rows, per [PagedFocusGrid]. */
+    fun pageOf(index: Int, columns: Int, visibleRows: Int): Int = rowOf(index, columns) / visibleRows.coerceAtLeast(1)
+
+    fun pageCount(itemCount: Int, columns: Int, visibleRows: Int): Int {
+        val rows = rowCount(itemCount, columns)
+        val perPage = visibleRows.coerceAtLeast(1)
+        return if (rows == 0) 1 else (rows - 1) / perPage + 1
+    }
+
+    /** Page-aligned top row for whichever page contains [row] — always a multiple of [visibleRows],
+     * unlike [nextTopRow]'s minimal-shift window (the deliberate behavior difference for paging). */
+    fun topRowForPage(row: Int, visibleRows: Int): Int = (row / visibleRows.coerceAtLeast(1)) * visibleRows
 }

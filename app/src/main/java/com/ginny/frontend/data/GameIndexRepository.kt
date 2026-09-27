@@ -21,6 +21,10 @@ class GameIndexRepository(context: Context) {
     fun observeGames(systemId: SystemId): Flow<List<GameEntry>> =
         dao.observeGames(systemId.name).map { rows -> rows.map { it.toGameEntry() } }
 
+    /** Cross-system listing, used by the Favoritos pseudo-system (see GamesScope.Favorites). */
+    fun observeAllGames(): Flow<List<GameEntry>> =
+        dao.observeAllGames().map { rows -> rows.map { it.toGameEntry() } }
+
     /** Game count per system, derived from the same cached table used to list games. */
     fun observeGameCounts(): Flow<Map<SystemId, Int>> =
         dao.observeGameCounts().map { rows ->

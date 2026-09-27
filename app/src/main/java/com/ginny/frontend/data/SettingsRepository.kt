@@ -7,10 +7,14 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.ginny.frontend.data.model.EmulatorTarget
+import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemId
+import com.ginny.frontend.data.model.favoriteKey
+import com.ginny.frontend.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -30,6 +34,8 @@ class SettingsRepository(private val context: Context) {
         val UI_SOUND_VOLUME = floatPreferencesKey("ui_sound_volume")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val LAST_SCAN_AT = longPreferencesKey("last_scan_at")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val FAVORITE_GAMES = stringSetPreferencesKey("favorite_games")
 
         fun emulatorFor(systemId: SystemId) = stringPreferencesKey("emulator_${systemId.name}")
         fun coreFor(systemId: SystemId) = stringPreferencesKey("core_${systemId.name}")
@@ -79,6 +85,24 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setGridRows(rows: Int) {
         context.dataStore.edit { it[Keys.GRID_ROWS] = rows.coerceIn(1, 4) }
+    }
+
+    val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
+        prefs[Keys.THEME_MODE]?.let { name -> runCatching { ThemeMode.valueOf(name) }.getOrNull() }
+            ?: ThemeMode.MENTA
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { it[Keys.THEME_MODE] = mode.name }
+    }
+
+    val favoriteGameKeys: Flow<Set<String>> = context.dataStore.data.map { it[Keys.FAVORITE_GAMES].orEmpty() }
+
+    suspend fun setFavorite(game: GameEntry, favorite: Boolean) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[Keys.FAVORITE_GAMES].orEmpty()
+            prefs[Keys.FAVORITE_GAMES] = if (favorite) current + game.favoriteKey() else current - game.favoriteKey()
+        }
     }
 
     suspend fun setUserFolderUri(uri: String?) {

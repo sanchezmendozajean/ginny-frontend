@@ -10,12 +10,15 @@ import androidx.lifecycle.viewModelScope
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.data.model.SystemCatalog
+import com.ginny.frontend.data.model.SystemDefinition
 import com.ginny.frontend.data.model.SystemId
+import com.ginny.frontend.data.model.favoriteKey
 import com.ginny.frontend.di.AppContainer
 import com.ginny.frontend.launch.LaunchResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -27,10 +30,11 @@ sealed interface GameSelectionOutcome {
 
 class GamesViewModel(
     private val container: AppContainer,
-    val systemId: SystemId,
+    val scope: GamesScope,
 ) : ViewModel() {
 
-    val systemDefinition = SystemCatalog.byId.getValue(systemId)
+    /** Null in [GamesScope.Favorites] — games there each carry their own [GameEntry.systemId]. */
+    val systemDefinition: SystemDefinition? = (scope as? GamesScope.Single)?.let { SystemCatalog.byId.getValue(it.systemId) }
     val settingsRepository = container.settingsRepository
     val assetRepository = container.assetRepository
 
@@ -41,9 +45,14 @@ class GamesViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ButtonMapping.DEFAULT)
 
     /** Read from the Room-backed scan cache (populated from Settings > Carpetas > "Escanear
-     * biblioteca"), not a live filesystem scan — see [com.ginny.frontend.data.GameIndexRepository]. */
+     * biblioteca"), not a live filesystem scan — see [com.ginny.frontend.data.GameIndexRepository].
+     * In [GamesScope.Favorites], combines every system's cache filtered by favorite keys instead
+     * of a single system's list. */
     private val _games = MutableStateFlow<List<GameEntry>>(emptyList())
     val games: StateFlow<List<GameEntry>> = _games
+
+    val favoriteGameKeys: StateFlow<Set<String>> = container.settingsRepository.favoriteGameKeys
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     /** Distinguishes "still loading the cache" from "loaded, cache is empty" for the empty-state
      * message — without this, the message flashes for a frame before the first read completes. */
@@ -54,7 +63,13 @@ class GamesViewModel(
 
     init {
         viewModelScope.launch {
-            container.gameIndexRepository.observeGames(systemId).collect { list -> applyGames(list) }
+            when (scope) {
+                is GamesScope.Single -> container.gameIndexRepository.observeGames(scope.systemId).collect(::applyGames)
+                GamesScope.Favorites -> combine(
+                    container.gameIndexRepository.observeAllGames(),
+                    container.settingsRepository.favoriteGameKeys,
+                ) { all, favorites -> all.filter { it.favoriteKey() in favorites } }.collect(::applyGames)
+            }
         }
     }
 
@@ -75,14 +90,22 @@ class GamesViewModel(
         }
     }
 
+    suspend fun toggleFavorite(game: GameEntry) {
+        val isFavorite = game.favoriteKey() in favoriteGameKeys.value
+        container.settingsRepository.setFavorite(game, !isFavorite)
+    }
+
     /** Guards against a second tap re-entering [rescanSystem] while one is already in flight —
-     * not surfaced to the UI, since the menu item itself isn't disabled while scanning. */
+     * not surfaced to the UI, since the action itself isn't disabled while scanning. */
     private var isRescanning = false
 
-    /** "Reescanear este sistema" from the overflow menu — same SAF walk as the Settings full
-     * library scan, but scoped to just [systemId] so it doesn't touch every other system's cache. */
-    fun rescanSystem(context: Context) {
+    /** "Reescanear este sistema" from the game options modal — same SAF walk as the Settings full
+     * library scan, but scoped to just [systemId] so it doesn't touch every other system's cache.
+     * Takes an explicit [systemId] (rather than reading [scope]) since in [GamesScope.Favorites]
+     * the system to rescan is whichever game's options are open, not a fixed one for the screen. */
+    fun rescanSystem(context: Context, systemId: SystemId) {
         if (isRescanning) return
+        val definition = SystemCatalog.byId.getValue(systemId)
         viewModelScope.launch {
             val romUri = settingsRepository.romFolderUri.first()
             if (romUri == null) {
@@ -101,7 +124,7 @@ class GamesViewModel(
                 container.configRepository.requestSync()
                 android.widget.Toast.makeText(
                     context,
-                    "${systemDefinition.displayName}: ${games.size} juegos encontrados.",
+                    "${definition.displayName}: ${games.size} juegos encontrados.",
                     android.widget.Toast.LENGTH_SHORT,
                 ).show()
             } finally {
@@ -113,7 +136,7 @@ class GamesViewModel(
     /**
      * "Eliminar juego": removes the ROM physically from the ROM folder, its icon from the Assets
      * folder (if any), and the cached Room row — irreversible, no backup, per the confirmation
-     * dialog shown before this is called.
+     * step shown before this is called. Scope-agnostic: resolves everything from [game.systemId].
      */
     suspend fun deleteGame(context: Context, game: GameEntry) {
         val romUri = settingsRepository.romFolderUri.first()?.let(Uri::parse)
@@ -131,6 +154,7 @@ class GamesViewModel(
                 container.assetRepository.deleteIcon(userUri, game.systemId, game.romFileName)
             }
             container.gameIndexRepository.deleteGame(game)
+            container.settingsRepository.setFavorite(game, false)
             container.configRepository.requestSync()
             android.widget.Toast.makeText(
                 context,

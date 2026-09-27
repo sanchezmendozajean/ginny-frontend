@@ -1,6 +1,5 @@
 package com.ginny.frontend.ui.common
 
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,18 +25,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.ginny.frontend.data.AssetRepository
 import com.ginny.frontend.data.model.EmulatorTarget
 import com.ginny.frontend.data.model.SystemDefinition
-import com.ginny.frontend.ui.components.TilePlaceholderLabel
-import com.ginny.frontend.ui.theme.GinnyColors
+import com.ginny.frontend.ui.components.SystemLogoBox
+import com.ginny.frontend.ui.theme.LocalGinnyPalette
 
 private val IconBoxSize = 64.dp
 
@@ -63,15 +61,10 @@ fun EmulatorConfigDialog(
     description: String = "El emulador seleccionado no se encuentra instalado en el dispositivo. " +
         "Selecciona un emulador diferente.",
 ) {
+    val palette = LocalGinnyPalette.current
     var emulator by remember { mutableStateOf(initialEmulator) }
     var coreId by remember { mutableStateOf(initialCoreId) }
     var packageOverride by remember { mutableStateOf(initialPackageOverride.orEmpty()) }
-
-    val logoUri by produceState<Uri?>(initialValue = null, userFolderUri, system.id) {
-        value = userFolderUri?.let { uriString ->
-            runCatching { assetRepository.systemLogoUri(Uri.parse(uriString), system.id) }.getOrNull()
-        }
-    }
 
     val showsCoreDropdown = emulator in EmulatorTarget.RETROARCH_VARIANTS && system.retroArchCores.isNotEmpty()
 
@@ -83,27 +76,23 @@ fun EmulatorConfigDialog(
                 Text(
                     description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = GinnyColors.TextSecondary,
+                    color = palette.muted,
                 )
                 Spacer(Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                     Box(
                         modifier = Modifier
                             .size(IconBoxSize)
-                            .background(GinnyColors.CardBg, RoundedCornerShape(10.dp))
-                            .border(1.dp, GinnyColors.TextSecondary.copy(alpha = 0.35f), RoundedCornerShape(10.dp)),
+                            .background(Color.White, RoundedCornerShape(10.dp))
+                            .border(1.dp, palette.line, RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (logoUri != null) {
-                            AsyncImage(
-                                model = logoUri,
-                                contentDescription = system.displayName,
-                                modifier = Modifier.fillMaxSize().padding(6.dp),
-                            )
-                        } else {
-                            val colorIndex = system.id.ordinal % GinnyColors.SystemColors.size
-                            TilePlaceholderLabel(text = system.displayName, color = GinnyColors.SystemColors[colorIndex])
-                        }
+                        SystemLogoBox(
+                            system = system,
+                            userFolderUri = userFolderUri,
+                            assetRepository = assetRepository,
+                            imagePadding = 6.dp,
+                        )
                     }
 
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {

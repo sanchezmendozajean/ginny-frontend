@@ -16,20 +16,19 @@ import com.ginny.frontend.audio.SoundManager
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.ui.navigation.GinnyNavHost
-import com.ginny.frontend.ui.navigation.Routes
 import com.ginny.frontend.ui.theme.GinnyFrontendTheme
 import kotlinx.coroutines.launch
 
 /**
  * Single-activity host. Immersive landscape shell; hardware Back(B)/Menu are handled globally
  * here via [dispatchKeyEvent] rather than per-screen, since they must work regardless of which
- * composable currently owns D-Pad focus (see SnapFocusGrid, which deliberately never consumes B).
+ * composable currently owns D-Pad focus (see PagedFocusGrid, which deliberately never consumes B).
  */
 class MainActivity : ComponentActivity() {
 
     private lateinit var soundManager: SoundManager
     private var navController: NavHostController? = null
-    private var menuExpanded: MutableState<Boolean>? = null
+    private var settingsOpen: MutableState<Boolean>? = null
     private var buttonMapping: ButtonMapping = ButtonMapping.DEFAULT
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,12 +46,12 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            GinnyFrontendTheme {
+            GinnyFrontendTheme(settingsRepository = container.settingsRepository) {
                 GinnyNavHost(
                     container = container,
                     soundManager = soundManager,
                     onNavControllerReady = { navController = it },
-                    onMenuStateReady = { menuExpanded = it },
+                    onSettingsStateReady = { settingsOpen = it },
                 )
             }
         }
@@ -88,14 +87,14 @@ class MainActivity : ComponentActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN) {
             val nav = navController
-            val menu = menuExpanded
+            val settings = settingsOpen
             when (buttonMapping.buttonForKeyCode(event.keyCode)) {
                 LogicalButton.B -> {
-                    // Closing an open overflow menu takes priority over navigating back — this
-                    // intercept runs before the event ever reaches the menu's own Compose focus
-                    // handling, so it's the only place that can do this.
-                    if (menu != null && menu.value) {
-                        menu.value = false
+                    // Closing Settings takes priority over navigating back — this intercept runs
+                    // before the event ever reaches Settings' own Compose focus handling, so it's
+                    // the only place that can do this.
+                    if (settings != null && settings.value) {
+                        settings.value = false
                         return true
                     }
                     if (nav != null && nav.previousBackStackEntry != null) {
@@ -104,10 +103,9 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 LogicalButton.MENU -> {
-                    // Opens the overflow ("...") menu implemented by GinnyTopBar, D-Pad-navigable
-                    // once open, instead of jumping straight to Settings.
-                    if (menu != null && nav != null && nav.currentDestination?.route != Routes.SETTINGS) {
-                        menu.value = !menu.value
+                    // Opens Settings directly — no overflow menu in this design anymore.
+                    if (settings != null) {
+                        settings.value = true
                         return true
                     }
                 }
