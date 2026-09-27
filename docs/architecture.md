@@ -1,5 +1,10 @@
 # Arquitectura — Ginny Frontend
 
+> **Nota (2026-09-27):** la capa `ui/` se está reconstruyendo paso a paso — ver
+> [plan-reconstruccion-ui.md](plan-reconstruccion-ui.md). Las secciones de este documento que
+> describen componentes visuales (`PagedFocusGrid`, TopBar, overlays, tema) se refieren a la
+> versión archivada en [ui-legacy/](ui-legacy/); la capa de datos, lanzadores y audio siguen vigentes.
+
 ## Stack elegido
 
 **Kotlin nativo + Jetpack Compose.**
