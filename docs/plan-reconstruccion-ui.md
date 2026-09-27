@@ -127,3 +127,4 @@ Anotar aquí cada elemento terminado y cualquier regla que se decida cambiar o d
 |---|---|---|
 | 2026-09-27 | Lienzo vacío | Fondo liso `#E3F5ED` (bg0 Menta). UI anterior archivada en `docs/ui-legacy/`. |
 | 2026-09-27 | Temas (`ui/theme/GinnyThemes.kt`) | Paletas escritas a mano (4 papeles: background/accent/ink/muted) en vez de generadas por hue. Valores iguales a los del diseño anterior. Ciclo aún no implementado (cae en Menta). `GinnyApp` usa `GinnyThemes.Menta` fijo: todavía no lee el tema de Configuración. |
+| 2026-09-27 | Header / Content / Footer (`ui/layout/`) | `Column` con margen 18dp (igual que el anterior) y gap 12dp entre las tres piezas (cumple la regla de piezas separadas). Header y Footer 48dp fijos; Content ocupa el resto (`weight(1f)`). Fondos blancos translúcidos provisionales, sin estilo glass/glow todavía. |
