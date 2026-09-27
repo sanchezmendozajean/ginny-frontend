@@ -126,3 +126,4 @@ Anotar aquí cada elemento terminado y cualquier regla que se decida cambiar o d
 | Fecha | Elemento | Notas / reglas modificadas |
 |---|---|---|
 | 2026-09-27 | Lienzo vacío | Fondo liso `#E3F5ED` (bg0 Menta). UI anterior archivada en `docs/ui-legacy/`. |
+| 2026-09-27 | Temas (`ui/theme/GinnyThemes.kt`) | Paletas escritas a mano (4 papeles: background/accent/ink/muted) en vez de generadas por hue. Valores iguales a los del diseño anterior. Ciclo aún no implementado (cae en Menta). `GinnyApp` usa `GinnyThemes.Menta` fijo: todavía no lee el tema de Configuración. |

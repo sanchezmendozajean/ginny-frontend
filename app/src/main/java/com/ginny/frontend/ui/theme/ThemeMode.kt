@@ -1,8 +1,9 @@
 package com.ginny.frontend.ui.theme
 
 /**
- * The 4 fixed hues match the mockup's Menta/Cielo/Durazno/Lila themes 1:1. [CICLO] has no fixed
- * [hue] — [com.ginny.frontend.ui.theme.cycleHue] animates through the other 4 over time instead.
+ * Opción de tema elegida por el usuario (persistida en SettingsRepository). Sus colores viven en
+ * [GinnyThemes.paletteFor]. [CICLO] no tiene [hue] fijo: rotaba entre los otros 4 en el diseño
+ * anterior (docs/ui-legacy/ui/theme/CycleHue.kt) y todavía no está reimplementado.
  */
 enum class ThemeMode(val displayName: String, val hue: Float?) {
     MENTA("Menta", 168f),
