@@ -24,7 +24,7 @@ fun Container(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val roundedCorner = 12.dp;
+    val roundedCorner = 16.dp;
 
     Row(
         modifier = modifier
@@ -47,7 +47,7 @@ fun Container(
                 offsetY = 0.dp,
                 spread = 3.dp
             )
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp), // espacio entre botones
         verticalAlignment = Alignment.CenterVertically,     // botones centrados en vertical
     ) {

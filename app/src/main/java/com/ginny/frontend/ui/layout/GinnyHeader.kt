@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.components.BatteryIcon
 import com.ginny.frontend.ui.components.Container
+import com.ginny.frontend.ui.components.SystemLabel
 
 /** Barra superior. Aquí irán el título contextual, la hora, la batería y el acceso a Configuración. */
 @Composable
@@ -19,15 +20,6 @@ fun GinnyHeader(modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .height(48.dp)
     ) {
-        Container() {
-            BatteryIcon(
-                percent = 100,
-                charging = true,
-                color = Color.Black
-            )
-            Text(
-                text = "Hola"
-            )
-        }
+        SystemLabel(systemName = "Nintendo")
     }
 }
