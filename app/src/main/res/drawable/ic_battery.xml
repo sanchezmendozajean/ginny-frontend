@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado desde "Iconos del sistema/" (SVG de Illustrator). Para cambiarlo, editar el SVG y regenerar. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M40,4h20v6.5h-20z"
+        android:fillColor="#FF000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M31.0147,10.5h37.9706a11.0147,11.0147 0 0 1 11.0147,11.0147v63.4706a11.0147,11.0147 0 0 1 -11.0147,11.0147h-37.9706a11.0147,11.0147 0 0 1 -11.0147,-11.0147v-63.4706a11.0147,11.0147 0 0 1 11.0147,-11.0147z"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M32,22.5h36v61.5h-36z"
+        android:fillColor="#FF000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

@@ -20,7 +20,7 @@ import com.ginny.frontend.ui.modifiers.innerShadow
  * dentro de las llaves, en [content].
  */
 @Composable
-fun ButtonContainer(
+fun Container(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
