@@ -35,7 +35,7 @@ fun GinnyApp() {
                 linearGradient(
                     150f,                                // ángulo, como en CSS
                     palette.background,                 // desde el color de fondo…
-                    palette.background.darken(0.2f),   // …hasta el mismo, un poco más oscuro
+                    palette.background.darken(0.1f),   // …hasta el mismo, un poco más oscuro
                 ),
             )
             .padding(18.dp),                            // margen con los bordes de la pantalla

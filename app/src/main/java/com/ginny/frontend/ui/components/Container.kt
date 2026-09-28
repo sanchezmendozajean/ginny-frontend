@@ -47,7 +47,7 @@ fun Container(
                 offsetY = 0.dp,
                 spread = 3.dp
             )
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp), // espacio entre botones
         verticalAlignment = Alignment.CenterVertically,     // botones centrados en vertical
     ) {
