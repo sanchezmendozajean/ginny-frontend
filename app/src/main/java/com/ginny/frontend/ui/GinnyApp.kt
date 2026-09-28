@@ -32,11 +32,6 @@ fun GinnyApp() {
             .padding(18.dp),                            // margen con los bordes de la pantalla
         verticalArrangement = Arrangement.spacedBy(12.dp), // separación entre las tres filas
     ) {
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White.copy(alpha = 0.6f))
-            .height(12.dp)
-        )
         GinnyHeader()
         GinnyContent(modifier = Modifier.weight(1f))    // ocupa todo el alto sobrante
         GinnyFooter()
