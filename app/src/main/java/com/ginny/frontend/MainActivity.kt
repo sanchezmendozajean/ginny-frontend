@@ -11,12 +11,13 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.ginny.frontend.audio.SoundManager
 import com.ginny.frontend.ui.GinnyApp
+import com.ginny.frontend.ui.theme.GinnyTheme
 
 /**
  * Single-activity host. Immersive landscape shell.
  *
  * La UI se está reconstruyendo paso a paso (docs/plan-reconstruccion-ui.md). El manejo global de
- * Back(B)/Menu vía dispatchKeyEvent, la navegación y el tema de la versión anterior están
+ * Back(B)/Menu vía dispatchKeyEvent y la navegación de la versión anterior están
  * archivados en docs/ui-legacy/MainActivity.kt y se reincorporarán cuando existan pantallas.
  */
 class MainActivity : ComponentActivity() {
@@ -34,7 +35,9 @@ class MainActivity : ComponentActivity() {
         soundManager.start()
 
         setContent {
-            GinnyApp()
+            GinnyTheme(settingsRepository = container.settingsRepository) {
+                GinnyApp()
+            }
         }
     }
 

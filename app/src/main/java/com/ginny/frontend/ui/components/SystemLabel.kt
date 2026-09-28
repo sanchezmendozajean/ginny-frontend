@@ -21,9 +21,7 @@ fun SystemLabel(
     systemName: String? = null
 ) {
     Container() {
-        Icon(
-            id = R.drawable.ic_ginny
-        )
+        GinnyIcon()
         Row(
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.Bottom
@@ -31,9 +29,9 @@ fun SystemLabel(
             Text(
                 text = "Ginny",
                 fontFamily = GinnyFont,   // la familia
-                fontWeight = FontWeight.Bold,        // el peso (grosor)
+                fontWeight = FontWeight.ExtraBold,        // el peso (grosor)
                 fontSize = 18.sp,                    // el tamaño
-                color = GinnyThemes.Menta.accent,
+                color = GinnyThemes.current.ink,
             )
             if (systemName != null) {
                 Text(
@@ -41,7 +39,7 @@ fun SystemLabel(
                     fontFamily = GinnyFont,   // la familia
                     fontWeight = FontWeight.Bold,        // el peso (grosor)
                     fontSize = 18.sp,                    // el tamaño
-                    color = GinnyThemes.Menta.accent,
+                    color = GinnyThemes.current.ink,
                 )
                 Text(
                     text = systemName,

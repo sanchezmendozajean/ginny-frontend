@@ -1,5 +1,8 @@
 package com.ginny.frontend.ui.theme
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -18,34 +21,28 @@ data class GinnyPalette(
 )
 
 /**
- * Los 4 temas fijos. Valores calculados con las mismas fórmulas OKLCH del diseño anterior
- * (docs/ui-legacy/ui/theme/GinnyPalette.kt), con el hue de cada [ThemeMode].
+ * La receta: todos los papeles salen de un único color [base], cambiando su luminosidad y
+ * saturación (ver ColorModifiers.kt). Ajustar un número aquí cambia ese papel en los 4 temas a
+ * la vez, y todos siguen igual de parejos entre sí.
+ */
+fun paletteFrom(base: Color) = GinnyPalette(
+    background = base.adjust(lightness = 0.955f, chroma = 0.022f), // muy claro, apenas teñido
+    accent = base,                                                 // el color base tal cual
+    // Muy oscuro, con color. 0.06 = la máxima saturación que Menta admite con L=0.3; más alto
+    // se recorta de forma distinta en cada tema (Cielo se vuelve azul puro, Durazno rojo).
+    ink = base.adjust(lightness = 0.3f, chroma = 0.06f),
+    muted = base.adjust(lightness = 0.52f, chroma = 0.03f),        // medio, grisáceo
+)
+
+/**
+ * Los 4 temas fijos: solo se define el color base de cada uno. Son los acentos del diseño
+ * anterior (docs/ui-legacy/ui/theme/GinnyPalette.kt), todos con L=0.70 y C=0.14 en OKLCH.
  */
 object GinnyThemes {
-    val Menta = GinnyPalette(
-        background = Color(0xFFE3F5ED),
-        accent = Color(0xFF0DB98E),
-        ink = Color(0xFF1C3028),
-        muted = Color(0xFF596F66),
-    )
-    val Cielo = GinnyPalette(
-        background = Color(0xFFE4F3FE),
-        accent = Color(0xFF37A8EC),
-        ink = Color(0xFF1D2D39),
-        muted = Color(0xFF5A6C79),
-    )
-    val Durazno = GinnyPalette(
-        background = Color(0xFFFEECE4),
-        accent = Color(0xFFE57F4F),
-        ink = Color(0xFF38271F),
-        muted = Color(0xFF78645B),
-    )
-    val Lila = GinnyPalette(
-        background = Color(0xFFF1EEFE),
-        accent = Color(0xFFA58BEC),
-        ink = Color(0xFF2C2839),
-        muted = Color(0xFF6A6679),
-    )
+    val Menta = paletteFrom(Color(0xFF0DB98E))
+    val Cielo = paletteFrom(Color(0xFF37A8EC))
+    val Durazno = paletteFrom(Color(0xFFE57F4F))
+    val Lila = paletteFrom(Color(0xFFA58BEC))
 
     /** Traduce la opción guardada en Configuración a su paleta. */
     fun paletteFor(mode: ThemeMode): GinnyPalette = when (mode) {
@@ -56,4 +53,18 @@ object GinnyThemes {
         // Ciclo todavía no está implementado: por ahora se queda en Menta.
         ThemeMode.CICLO -> Menta
     }
+
+    /**
+     * La paleta del tema actual, desde cualquier composable: `val palette = GinnyThemes.current`.
+     * La define [GinnyApp][com.ginny.frontend.ui.GinnyApp] con `CompositionLocalProvider`.
+     */
+    val current: GinnyPalette
+        @Composable @ReadOnlyComposable
+        get() = LocalGinnyPalette.current
 }
+
+/**
+ * "Canal" por el que el tema actual baja a todos los composables sin pasarlo como parámetro.
+ * Menta es el valor si nadie lo definió (ej. en un @Preview).
+ */
+val LocalGinnyPalette = staticCompositionLocalOf { GinnyThemes.Menta }
