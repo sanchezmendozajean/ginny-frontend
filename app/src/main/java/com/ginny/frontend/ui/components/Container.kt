@@ -1,6 +1,7 @@
 package com.ginny.frontend.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -23,7 +24,7 @@ fun ButtonContainer(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val roundedCorner = 16.dp;
+    val roundedCorner = 12.dp;
 
     Row(
         modifier = modifier
@@ -33,13 +34,18 @@ fun ButtonContainer(
                 color = Color.Transparent,
                 shape = RoundedCornerShape(roundedCorner)
             )
+            .border(
+                width = 2.dp,
+                color = Color.White,
+                shape = RoundedCornerShape(roundedCorner)
+            )
             .innerShadow(
                 shape = RoundedCornerShape(roundedCorner),
                 color = Color.White,
                 blur = 5.dp,
                 offsetX = 0.dp,
                 offsetY = 0.dp,
-                spread = 1.dp
+                spread = 3.dp
             )
             .padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp), // espacio entre botones
