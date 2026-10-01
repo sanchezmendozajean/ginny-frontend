@@ -1,24 +1,32 @@
 package com.ginny.frontend.ui.layout
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.ginny.frontend.ui.components.ButtonLegend
+import com.ginny.frontend.ui.components.Container
+import com.ginny.frontend.ui.components.FaceButton
+import com.ginny.frontend.ui.components.SelectionInfo
 
-/** Barra inferior. Aquí irán el nombre del elemento enfocado y los botones A / B. */
+/** Barra inferior: elemento enfocado a la izquierda, leyenda de botones a la derecha. */
 @Composable
 fun GinnyFooter(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
-            // Fondo provisional, solo para ver dónde está el contenedor.
-            .background(Color.White.copy(alpha = 0.6f)),
+            .height(48.dp),
     ) {
-        // Elementos hijos
+        // Textos estáticos por ahora; vendrán del elemento enfocado en la grilla.
+        SelectionInfo(title = "Super Nintendo", subtitle = "128 juegos")
+
+        Container(modifier = Modifier.align(Alignment.CenterEnd)) {
+            ButtonLegend(FaceButton.A, "Abrir")
+            ButtonLegend(FaceButton.B, "Regresar")
+            ButtonLegend(FaceButton.Y, "Opciones")
+        }
     }
 }

@@ -87,6 +87,12 @@ fun Color.darken(amount: Float): Color = toOklch().let { withLightness(it.l - am
 /** Aclara sumando [amount] a la luminosidad. */
 fun Color.lighten(amount: Float): Color = toOklch().let { withLightness(it.l + amount) }
 
+/** Gira el tono [degrees] grados en la rueda de color, sin tocar luminosidad ni saturación. */
+fun Color.rotateHue(degrees: Float): Color = toOklch().let { it.copy(h = (it.h + degrees).mod(360f)) }.toColor()
+
+/** El color opuesto en la rueda (tono + 180°): Menta → fucsia, Cielo → durazno, etc. */
+fun Color.complementary(): Color = rotateHue(180f)
+
 // ── Conversión sRGB ↔ lineal ──────────────────────────────────────────────────────────────
 
 private fun srgbToLinear(v: Float): Float =

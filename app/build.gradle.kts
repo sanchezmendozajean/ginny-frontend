@@ -116,5 +116,10 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Desenfoque de lo que hay detrás de un elemento (backdrop blur), que Compose 1.6 no trae.
+    // Serie 0.7.x = la compatible con Compose 1.6 / Kotlin 1.9. Blur real en API 31+; en 29-30
+    // cae a un tinte translúcido sin desenfoque.
+    implementation("dev.chrisbanes.haze:haze:0.7.3")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
