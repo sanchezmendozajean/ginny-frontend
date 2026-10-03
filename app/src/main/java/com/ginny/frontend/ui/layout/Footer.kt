@@ -21,14 +21,20 @@ import com.ginny.frontend.ui.components.SelectionInfo
  * leyenda de botones.
  */
 @Composable
-fun GinnyFooter(modifier: Modifier = Modifier) {
+fun GinnyFooter(
+    modifier: Modifier = Modifier,
+    title: String = "",
+    subtitle: String = "",
+    pageCount: Int = 1,
+    currentPage: Int = 0,
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(48.dp),
     ) {
-        // Textos estáticos por ahora; vendrán del elemento enfocado en la grilla.
-        SelectionInfo(title = "Super Nintendo", subtitle = "128 juegos")
+        // El elemento seleccionado en la grilla.
+        SelectionInfo(title = title, subtitle = subtitle)
 
         // Columna a la derecha: en un Column, align solo acepta alineación horizontal (End).
         Column(
@@ -38,10 +44,9 @@ fun GinnyFooter(modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.End,                // ambos pegados a la derecha
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            // Páginas provisionales; vendrán de la grilla.
             // Alturas fijas: Container usa fillMaxHeight y, sin ellas, el primero se quedaría
             // con todo el alto.
-            PageIndicator(pageCount = 4, currentPage = 0, modifier = Modifier.height(16.dp))
+            PageIndicator(pageCount = pageCount, currentPage = currentPage, modifier = Modifier.height(16.dp))
 
             Container(modifier = Modifier.height(28.dp), horizontalPadding = 12.dp) {
                 ButtonLegend(FaceButton.A, "Abrir")

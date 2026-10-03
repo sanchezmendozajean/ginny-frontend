@@ -1,6 +1,7 @@
 package com.ginny.frontend.ui.components.game
 
 import android.net.Uri
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -30,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.ginny.frontend.ui.components.Container
+import com.ginny.frontend.ui.components.Icon
+import com.ginny.frontend.ui.theme.adjust
 import com.ginny.frontend.ui.theme.GinnyFont
 import com.ginny.frontend.ui.theme.GinnyThemes
 
@@ -38,6 +41,12 @@ val ElementCornerRadius = 10.dp
 
 /** Grosor del marco blanco: grueso, tipo marco (regla del spec). */
 val ElementFrameWidth = 4.dp
+
+/** Tamaño de un ícono de la app dentro del elemento, como fracción del lado (ej. Favoritos). */
+const val ElementIconScale = 0.45f
+
+/** Luminosidad (OKLCH, 0…1) del ícono: el acento del tema, aclarado. */
+const val ElementIconLightness = 0.8f
 
 /** Duración del fade con el que aparece el elemento cuando su imagen está lista (o falló). */
 const val ElementFadeInMs = 300
@@ -74,6 +83,7 @@ fun Element(
     title: String = "",
     subtitle: String = "",
     image: Uri? = null,
+    @DrawableRes icon: Int? = null,
     empty: Boolean = false,
     cornerRadius: Dp = ElementCornerRadius,
 ) {
@@ -94,16 +104,22 @@ fun Element(
                     )                    // detrás de la imagen mientras carga
             ) {}
         } else {
-            // Estado de la imagen. remember(image): si cambia la imagen, se empieza de cero.
-            // Sin imagen no hay nada que esperar: directo a mostrar el título.
-            var state by remember(image) {
-                mutableStateOf(if (image == null) ImageState.Failed else ImageState.Loading)
+            // Estado de la imagen. remember(image, icon): si cambian, se empieza de cero.
+            // Un ícono de la app ya está listo; sin imagen, directo a mostrar el título.
+            var state by remember(image, icon) {
+                mutableStateOf(
+                    when {
+                        icon != null -> ImageState.Loaded
+                        image == null -> ImageState.Failed
+                        else -> ImageState.Loading
+                    },
+                )
             }
 
             // Opacidad del elemento completo: 0 mientras carga; cuando la imagen está lista (o
             // falló), sube a 1 con un fade. Animatable + LaunchedEffect (y no animateFloatAsState)
             // para que también haya fade cuando el elemento ya nace sin imagen.
-            val alpha = remember(image) { Animatable(0f) }
+            val alpha = remember(image, icon) { Animatable(0f) }
             LaunchedEffect(state) {
                 if (state != ImageState.Loading) alpha.animateTo(1f, tween(ElementFadeInMs))
             }
@@ -117,8 +133,16 @@ fun Element(
                     .border(ElementFrameWidth, Color.White, shape), // marco blanco, encima de la imagen
                 contentAlignment = Alignment.Center,
             ) {
-                // La imagen se compone aunque el elemento sea invisible: así empieza a cargar ya.
-                if (image != null && state != ImageState.Failed) {
+                if (icon != null) {
+                    // Ícono de la app (ej. la estrella de Favoritos): chico, centrado y en un
+                    // tono claro del tema.
+                    Icon(
+                        id = icon,
+                        tint = palette.accent.adjust(lightness = ElementIconLightness),
+                        size = size * ElementIconScale,
+                    )
+                } else if (image != null && state != ImageState.Failed) {
+                    // La imagen se compone aunque el elemento sea invisible: así empieza a cargar ya.
                     AsyncImage(
                         model = image,
                         contentDescription = title,

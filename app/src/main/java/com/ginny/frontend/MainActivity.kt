@@ -5,6 +5,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -12,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.ginny.frontend.audio.SoundManager
 import com.ginny.frontend.ui.GinnyApp
 import com.ginny.frontend.ui.theme.GinnyTheme
+import com.ginny.frontend.ui.util.LocalSoundManager
 
 /**
  * Single-activity host. Immersive landscape shell.
@@ -36,7 +38,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             GinnyTheme(settingsRepository = container.settingsRepository) {
-                GinnyApp()
+                // Los efectos de sonido, disponibles para toda la interfaz.
+                CompositionLocalProvider(LocalSoundManager provides soundManager) {
+                    GinnyApp()
+                }
             }
         }
     }

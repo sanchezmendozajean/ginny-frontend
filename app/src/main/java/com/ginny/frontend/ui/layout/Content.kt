@@ -5,9 +5,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -20,18 +21,28 @@ import com.ginny.frontend.ui.components.Container
 import com.ginny.frontend.ui.components.game.ArrowDirection
 import com.ginny.frontend.ui.components.game.ElementGrid
 import com.ginny.frontend.ui.components.game.GridEntry
+import com.ginny.frontend.ui.components.game.GridLayout
+import com.ginny.frontend.ui.components.game.GridNavigation
 import com.ginny.frontend.ui.components.game.PageArrow
 import com.ginny.frontend.ui.screens.systems.SystemTileItem
 import com.ginny.frontend.ui.screens.systems.SystemsViewModel
+import com.ginny.frontend.ui.util.LocalSoundManager
 import com.ginny.frontend.ui.util.appContainer
-import com.ginny.frontend.ui.util.drawableUri
 
 /**
  * Panel central: flecha izquierda · grilla de elementos · flecha derecha.
- * Las flechas se ven semitransparentes cuando no hay página hacia ese lado.
+ * Las flechas se ven semitransparentes cuando no hay página hacia ese lado; tocarlas cambia de
+ * página.
+ *
+ * [onSelectionChanged] y [onPagingChanged] informan hacia afuera el elemento seleccionado y las
+ * páginas (total, actual), para que el footer los muestre.
  */
 @Composable
-fun Content(modifier: Modifier = Modifier) {
+fun Content(
+    modifier: Modifier = Modifier,
+    onSelectionChanged: (GridEntry?) -> Unit = {},
+    onPagingChanged: (pageCount: Int, currentPage: Int) -> Unit = { _, _ -> },
+) {
     // Provisional: por ahora muestra los sistemas. Cuando exista la pantalla de Sistemas, el
     // ViewModel se creará allí y Content recibirá ya la lista de elementos.
     val container = appContainer()
@@ -43,51 +54,78 @@ fun Content(modifier: Modifier = Modifier) {
     val favoriteCount by viewModel.favoriteCount.collectAsState()
     val logos by viewModel.systemLogos.collectAsState()     // null mientras busca
     val rows by viewModel.gridRows.collectAsState()         // filas visibles, de Configuración (1–4)
+    val buttonMapping by viewModel.buttonMapping.collectAsState()
+    val sound = LocalSoundManager.current
 
-    // Por ahora siempre la primera página; el cambio de página viene después.
-    val currentPage = 0
-    var pageCount by remember { mutableIntStateOf(1) }
+    // Forma de la grilla (la informa ElementGrid al medirse); null hasta entonces.
+    var layout by remember { mutableStateOf<GridLayout?>(null) }
+
+    val entries = tiles.map { tile ->
+        when (tile) {
+            SystemTileItem.Favorites -> GridEntry(
+                key = "favorites",
+                title = "Favoritos",
+                subtitle = "$favoriteCount juegos",
+                icon = R.drawable.ic_star,
+            )
+            is SystemTileItem.Real -> GridEntry(
+                key = tile.system.id.name,
+                title = tile.system.displayName,
+                subtitle = "${gameCounts[tile.system.id] ?: 0} juegos",
+                image = logos?.get(tile.system.id),
+            )
+        }
+    }
+
+    // La selección vive en el ViewModel (regla del spec: sobrevive a recomposiciones).
+    val selectedIndex = viewModel.focusedIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0))
+    val currentLayout = layout
+    val pageCount = currentLayout?.pageCount(entries.size) ?: 1
+    val currentPage = currentLayout?.pageOf(selectedIndex) ?: 0
+
+    /** Cambia la selección y suena el efecto de foco (regla del spec). */
+    fun select(index: Int) {
+        if (index == viewModel.focusedIndex) return
+        viewModel.focusedIndex = index
+        sound?.playFocusSound()
+    }
+
+    // Avisa hacia afuera (fuera de la composición) cuando cambian la selección o las páginas.
+    val selectedEntry = entries.getOrNull(selectedIndex)
+    LaunchedEffect(selectedEntry) { onSelectionChanged(selectedEntry) }
+    LaunchedEffect(pageCount, currentPage) { onPagingChanged(pageCount, currentPage) }
 
     Container(modifier = modifier.fillMaxWidth()) {
-        PageArrow(ArrowDirection.Left, enabled = currentPage > 0)
+        PageArrow(
+            ArrowDirection.Left,
+            enabled = currentPage > 0,
+            onClick = { currentLayout?.let { select(GridNavigation.previousPage(selectedIndex, it, entries.size)) } },
+        )
 
         // Espera a saber qué logos hay: si no, los elementos nacerían "sin imagen" (con el
         // título) y un instante después recibirían el logo.
-        val loadedLogos = logos
-        if (loadedLogos != null) {
-            val starUri = drawableUri(R.drawable.ic_star)
-            val entries = tiles.map { tile ->
-                when (tile) {
-                    SystemTileItem.Favorites -> GridEntry(
-                        key = "favorites",
-                        title = "Favoritos",
-                        subtitle = "$favoriteCount juegos",
-                        image = starUri,
-                    )
-                    is SystemTileItem.Real -> GridEntry(
-                        key = tile.system.id.name,
-                        title = tile.system.displayName,
-                        subtitle = "${gameCounts[tile.system.id] ?: 0} juegos",
-                        image = loadedLogos[tile.system.id],
-                    )
-                }
-            }
-
+        if (logos != null) {
             ElementGrid(
                 entries = entries,
                 rows = rows,
-                page = currentPage,
+                selectedIndex = selectedIndex,
+                onSelectedIndexChange = ::select,
+                buttonMapping = buttonMapping,
                 modifier = Modifier
                     .weight(1f)                 // ocupa todo el ancho entre las dos flechas
                     .fillMaxHeight()
                     .padding(vertical = 16.dp), // aire arriba y abajo (también para el cursor)
-                onPageCountChanged = { pageCount = it },
+                onLayoutChanged = { layout = it },
             )
         } else {
             // Mientras tanto, el mismo espacio vacío, para que las flechas no salten de lugar.
             Spacer(Modifier.weight(1f))
         }
 
-        PageArrow(ArrowDirection.Right, enabled = currentPage < pageCount - 1)
+        PageArrow(
+            ArrowDirection.Right,
+            enabled = currentPage < pageCount - 1,
+            onClick = { currentLayout?.let { select(GridNavigation.nextPage(selectedIndex, it, entries.size)) } },
+        )
     }
 }

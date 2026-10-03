@@ -7,10 +7,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.components.GeometricBackground
+import com.ginny.frontend.ui.components.game.GridEntry
 import com.ginny.frontend.ui.layout.Content
 import com.ginny.frontend.ui.layout.GinnyFooter
 import com.ginny.frontend.ui.layout.GinnyHeader
@@ -27,6 +32,11 @@ import dev.chrisbanes.haze.haze
 fun GinnyApp() {
     // El tema lo provee GinnyTheme (en MainActivity), leído de Configuración.
     val palette = GinnyThemes.current
+    // Lo que el contenido informa y el footer muestra: elemento seleccionado y páginas.
+    var selected by remember { mutableStateOf<GridEntry?>(null) }
+    var pageCount by remember { mutableIntStateOf(1) }
+    var currentPage by remember { mutableIntStateOf(0) }
+
     // Une el fondo (que se desenfoca) con los Container (que lo desenfocan detrás de sí).
     val hazeState = remember { HazeState() }
 
@@ -47,8 +57,20 @@ fun GinnyApp() {
                 verticalArrangement = Arrangement.spacedBy(12.dp),  // separación entre las tres filas
             ) {
                 GinnyHeader()
-                Content(modifier = Modifier.weight(1f))            // ocupa todo el alto sobrante
-                GinnyFooter()
+                Content(
+                    modifier = Modifier.weight(1f),                // ocupa todo el alto sobrante
+                    onSelectionChanged = { selected = it },
+                    onPagingChanged = { count, page ->
+                        pageCount = count
+                        currentPage = page
+                    },
+                )
+                GinnyFooter(
+                    title = selected?.title.orEmpty(),
+                    subtitle = selected?.subtitle.orEmpty(),
+                    pageCount = pageCount,
+                    currentPage = currentPage,
+                )
             }
         }
     }
