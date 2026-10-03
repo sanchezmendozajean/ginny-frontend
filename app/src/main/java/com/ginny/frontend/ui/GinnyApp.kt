@@ -35,9 +35,10 @@ val SettingsBackdropBlur = 16.dp
  * La implementación anterior completa está archivada en docs/ui-legacy/ como referencia.
  *
  * [settingsOpen]: si el modal de Configuración está abierto (lo controla MainActivity).
+ * [onCloseSettings]: cerrarlo desde la interfaz (ej. tocando "Cerrar").
  */
 @Composable
-fun GinnyApp(settingsOpen: Boolean = false) {
+fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
     // El tema lo provee GinnyTheme (en MainActivity), leído de Configuración.
     val palette = GinnyThemes.current
     // Lo que el contenido informa y el footer muestra: elemento seleccionado y páginas.
@@ -94,6 +95,6 @@ fun GinnyApp(settingsOpen: Boolean = false) {
         }
 
         // ── Modal de Configuración, encima de todo ───────────────────────────────────────────
-        SettingsModal(visible = settingsOpen)
+        SettingsModal(visible = settingsOpen, onClose = onCloseSettings)
     }
 }

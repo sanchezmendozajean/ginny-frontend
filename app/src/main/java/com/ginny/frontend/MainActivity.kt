@@ -55,7 +55,10 @@ class MainActivity : ComponentActivity() {
             GinnyTheme(settingsRepository = container.settingsRepository) {
                 // Los efectos de sonido, disponibles para toda la interfaz.
                 CompositionLocalProvider(LocalSoundManager provides soundManager) {
-                    GinnyApp(settingsOpen = settingsOpen.value)
+                    GinnyApp(
+                        settingsOpen = settingsOpen.value,
+                        onCloseSettings = { settingsOpen.value = false },
+                    )
                 }
             }
         }
