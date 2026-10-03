@@ -81,11 +81,13 @@ fun ElementGrid(
     buttonMapping: ButtonMapping,
     modifier: Modifier = Modifier,
     gap: Dp = ElementGridGap,
+    active: Boolean = true,
     onLayoutChanged: (GridLayout) -> Unit = {},
 ) {
-    // Para que el teclado llegue a la grilla, la grilla tiene que tener el foco.
+    // Para que el teclado llegue a la grilla, la grilla tiene que tener el foco. Lo pide al
+    // aparecer y cada vez que vuelve a estar activa (ej. al cerrarse un modal que se lo quitó).
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    LaunchedEffect(active) { if (active) focusRequester.requestFocus() }
 
     // BoxWithConstraints: da el tamaño disponible (maxWidth / maxHeight) para calcular el lado.
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -112,7 +114,7 @@ fun ElementGrid(
                 .focusRequester(focusRequester)
                 .focusable()
                 .onKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown || count == 0) return@onKeyEvent false
+                    if (!active || event.type != KeyEventType.KeyDown || count == 0) return@onKeyEvent false
                     val (i, g, mapping) = current
                     val target = when (mapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)) {
                         LogicalButton.DPAD_UP -> GridNavigation.up(i, g, count)

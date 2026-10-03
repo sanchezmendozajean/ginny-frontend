@@ -36,10 +36,14 @@ import com.ginny.frontend.ui.util.appContainer
  *
  * [onSelectionChanged] y [onPagingChanged] informan hacia afuera el elemento seleccionado y las
  * páginas (total, actual), para que el footer los muestre.
+ *
+ * [active] = false (ej. con Configuración abierta): la grilla no responde a la cruceta; al volver
+ * a true recupera el foco.
  */
 @Composable
 fun Content(
     modifier: Modifier = Modifier,
+    active: Boolean = true,
     onSelectionChanged: (GridEntry?) -> Unit = {},
     onPagingChanged: (pageCount: Int, currentPage: Int) -> Unit = { _, _ -> },
 ) {
@@ -111,6 +115,7 @@ fun Content(
                 selectedIndex = selectedIndex,
                 onSelectedIndexChange = ::select,
                 buttonMapping = buttonMapping,
+                active = active,
                 modifier = Modifier
                     .weight(1f)                 // ocupa todo el ancho entre las dos flechas
                     .fillMaxHeight()

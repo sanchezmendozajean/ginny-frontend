@@ -1,30 +1,40 @@
 package com.ginny.frontend
 
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.ginny.frontend.audio.SoundManager
+import com.ginny.frontend.data.ButtonMapping
+import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.ui.GinnyApp
 import com.ginny.frontend.ui.theme.GinnyTheme
 import com.ginny.frontend.ui.util.LocalSoundManager
+import kotlinx.coroutines.launch
 
 /**
  * Single-activity host. Immersive landscape shell.
  *
- * La UI se está reconstruyendo paso a paso (docs/plan-reconstruccion-ui.md). El manejo global de
- * Back(B)/Menu vía dispatchKeyEvent y la navegación de la versión anterior están
- * archivados en docs/ui-legacy/MainActivity.kt y se reincorporarán cuando existan pantallas.
+ * La UI se está reconstruyendo paso a paso (docs/plan-reconstruccion-ui.md). Los botones globales
+ * (Menú / Y abren Configuración, B la cierra) se manejan aquí, en [dispatchKeyEvent], porque deben
+ * funcionar sin importar qué composable tenga el foco — mismo enfoque que el diseño anterior
+ * (docs/ui-legacy/MainActivity.kt). La navegación entre pantallas se reincorporará cuando existan.
  */
 class MainActivity : ComponentActivity() {
 
     private lateinit var soundManager: SoundManager
+    private var buttonMapping: ButtonMapping = ButtonMapping.DEFAULT
+
+    /** Si el modal de Configuración está abierto. Es estado de Compose: la UI se actualiza sola. */
+    private val settingsOpen = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -36,11 +46,16 @@ class MainActivity : ComponentActivity() {
         soundManager = SoundManager(this, container.settingsRepository, container.musicRepository, lifecycleScope)
         soundManager.start()
 
+        // Mapeo de botones remapeable (Configuración): las teclas se interpretan a través de él.
+        lifecycleScope.launch {
+            container.settingsRepository.buttonMapping.collect { buttonMapping = it }
+        }
+
         setContent {
             GinnyTheme(settingsRepository = container.settingsRepository) {
                 // Los efectos de sonido, disponibles para toda la interfaz.
                 CompositionLocalProvider(LocalSoundManager provides soundManager) {
-                    GinnyApp()
+                    GinnyApp(settingsOpen = settingsOpen.value)
                 }
             }
         }
@@ -71,5 +86,29 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         soundManager.release()
         super.onDestroy()
+    }
+
+    /**
+     * Corre antes que cualquier manejo de teclas de Compose, por eso aquí van los botones que deben
+     * funcionar siempre. Lo que no se maneja aquí sigue su camino hacia Compose (ej. la cruceta).
+     */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            when (buttonMapping.buttonForKeyCode(event.keyCode)) {
+                // Menú abre Configuración. Y también, mientras la única pantalla sea Sistemas
+                // (regla del spec: en Juegos, Y abrirá las opciones del juego).
+                LogicalButton.MENU, LogicalButton.Y -> if (!settingsOpen.value) {
+                    settingsOpen.value = true
+                    return true
+                }
+                // B cierra Configuración. Tiene prioridad sobre "regresar" (cuando haya pantallas).
+                LogicalButton.B -> if (settingsOpen.value) {
+                    settingsOpen.value = false
+                    return true
+                }
+                else -> Unit
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 }
