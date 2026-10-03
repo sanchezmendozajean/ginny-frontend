@@ -1,6 +1,8 @@
 package com.ginny.frontend.ui.components.game
 
 import android.net.Uri
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,6 +39,16 @@ val ElementCornerRadius = 10.dp
 /** Grosor del marco blanco: grueso, tipo marco (regla del spec). */
 val ElementFrameWidth = 4.dp
 
+/** Duración del fade con el que aparece el elemento cuando su imagen está lista (o falló). */
+const val ElementFadeInMs = 300
+
+/** Ciclo de vida de la imagen de un elemento. */
+private enum class ImageState {
+    Loading, // cargando: el elemento todavía no se muestra
+    Loaded,  // lista: aparece con la imagen
+    Failed,  // sin imagen o no cargó: aparece con el título
+}
+
 /**
  * Un elemento cuadrado de la grilla (sistema, juego o estado guardado), con marco blanco redondeado.
  *
@@ -44,6 +58,8 @@ val ElementFrameWidth = 4.dp
  *   todas las imágenes reales (GameEntry.iconUri, AssetRepository.systemLogoUri,
  *   SaveStateEntry.thumbnailUri); para recursos de la app, usar `drawableUri(R.drawable.x)`.
  *   Sin imagen, o si no carga, muestra el [title] como reemplazo.
+ * - Aparición: el elemento queda invisible mientras la imagen carga, y aparece con un fade
+ *   ([ElementFadeInMs]) cuando está lista — o con el título, si no hay imagen o falló.
  *
  * El elemento no sabe si está seleccionado: la selección la muestra un cursor aparte que se mueve
  * hacia el elemento elegido.
@@ -78,27 +94,41 @@ fun Element(
                     )                    // detrás de la imagen mientras carga
             ) {}
         } else {
+            // Estado de la imagen. remember(image): si cambia la imagen, se empieza de cero.
+            // Sin imagen no hay nada que esperar: directo a mostrar el título.
+            var state by remember(image) {
+                mutableStateOf(if (image == null) ImageState.Failed else ImageState.Loading)
+            }
+
+            // Opacidad del elemento completo: 0 mientras carga; cuando la imagen está lista (o
+            // falló), sube a 1 con un fade. Animatable + LaunchedEffect (y no animateFloatAsState)
+            // para que también haya fade cuando el elemento ya nace sin imagen.
+            val alpha = remember(image) { Animatable(0f) }
+            LaunchedEffect(state) {
+                if (state != ImageState.Loading) alpha.animateTo(1f, tween(ElementFadeInMs))
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .graphicsLayer { this.alpha = alpha.value } // se lee al dibujar: no recompone
                     .clip(shape)                                // recorta la imagen a las esquinas redondeadas
-                    .background(Color.White)                    // detrás de la imagen mientras carga
+                    .background(Color.White)                    // detrás de la imagen
                     .border(ElementFrameWidth, Color.White, shape), // marco blanco, encima de la imagen
                 contentAlignment = Alignment.Center,
             ) {
-                // Si la imagen no carga (archivo borrado, formato inválido…), se cae al título.
-                // remember(image): si cambia la imagen, se vuelve a intentar desde cero.
-                var failed by remember(image) { mutableStateOf(false) }
-
-                if (image != null && !failed) {
+                // La imagen se compone aunque el elemento sea invisible: así empieza a cargar ya.
+                if (image != null && state != ImageState.Failed) {
                     AsyncImage(
                         model = image,
                         contentDescription = title,
                         contentScale = ContentScale.Crop, // llena el cuadrado, recortando si hace falta
                         modifier = Modifier.fillMaxSize(),
-                        onError = { failed = true },
+                        onSuccess = { state = ImageState.Loaded },
+                        onError = { state = ImageState.Failed },
                     )
-                } else {
+                }
+                if (state == ImageState.Failed) {
                     // Sin imagen (o falló la carga): el título como reemplazo provisional.
                     Text(
                         text = title,

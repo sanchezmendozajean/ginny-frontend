@@ -54,8 +54,11 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
      * por id. Los que no tienen logo simplemente no están en el mapa → `systemLogos[id]` da null.
      * Se calcula en segundo plano (búsqueda real de archivos vía SAF) y se recalcula solo si cambia
      * la Carpeta de Usuario en Configuración. Uso en la UI: `image = logos[SystemId.SNES]`.
+     *
+     * null = todavía buscando. Distinto de un mapa vacío ("ya busqué, no hay logos"): así la UI
+     * puede esperar en vez de mostrar primero el reemplazo y después, de golpe, el logo.
      */
-    val systemLogos: StateFlow<Map<SystemId, Uri>> = container.settingsRepository.userFolderUri
+    val systemLogos: StateFlow<Map<SystemId, Uri>?> = container.settingsRepository.userFolderUri
         .map { uriString ->
             val userTree = uriString?.let(Uri::parse) ?: return@map emptyMap()
             SystemCatalog.all.mapNotNull { system ->
@@ -64,7 +67,7 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
                     ?.let { logo -> system.id to logo }
             }.toMap()
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
         viewModelScope.launch {

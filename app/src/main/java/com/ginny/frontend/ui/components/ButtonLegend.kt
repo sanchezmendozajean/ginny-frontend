@@ -34,16 +34,16 @@ fun ButtonLegend(button: FaceButton, label: String, modifier: Modifier = Modifie
     val palette = GinnyThemes.current
 
     Row(
-        modifier = modifier.padding(horizontal = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier.padding(horizontal = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(id = R.drawable.ic_buttons, degrees = button.rotation)
+        Icon(id = R.drawable.ic_buttons, degrees = button.rotation, size = 16.dp)
         Text(
             text = label,
             fontFamily = GinnyFont,
             fontWeight = FontWeight.Bold,
-            fontSize = 14.sp,
+            fontSize = 12.sp,
             color = palette.ink,
         )
     }

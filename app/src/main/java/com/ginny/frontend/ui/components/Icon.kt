@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.theme.GinnyThemes
 
@@ -17,8 +18,9 @@ fun Icon(
     id: Int,
     degrees: Float = 0f,
     tint: Color = GinnyThemes.current.ink,
+    size: Dp = 24.dp,
 ) {
-    Box(modifier = Modifier.size(24.dp)) {
+    Box(modifier = Modifier.size(size)) {
         Icon(
             painter = painterResource(id),
             contentDescription = null,

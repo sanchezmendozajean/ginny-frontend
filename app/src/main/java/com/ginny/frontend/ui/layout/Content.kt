@@ -32,7 +32,7 @@ fun Content(modifier: Modifier = Modifier) {
     val viewModel: SystemsViewModel = viewModel(
         factory = viewModelFactory { initializer { SystemsViewModel(container) } },
     )
-    // Mapa SystemId → Uri del logo. Empieza vacío y se llena cuando termina la búsqueda.
+    // Mapa SystemId → Uri del logo. null mientras la búsqueda no termina.
     val logos by viewModel.systemLogos.collectAsState()
 
     Container(
@@ -44,16 +44,21 @@ fun Content(modifier: Modifier = Modifier) {
                 .padding(5.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            // Prueba del cursor: Box apila al elemento y al cursor uno encima del otro.
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-                Element(size = 120.dp, title = "Super Nintendo", image = logos[SystemId.SNES])
-                Cursor(size = 140.dp)
+            // Espera a saber qué logos hay: si no, los elementos nacerían "sin imagen" (con el
+            // título) y un instante después recibirían el logo.
+            val loadedLogos = logos
+            if (loadedLogos != null) {
+                // Prueba del cursor: Box apila al elemento y al cursor uno encima del otro.
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    Element(size = 120.dp, title = "Super Nintendo", image = loadedLogos[SystemId.SNES])
+                    Cursor(size = 140.dp)
+                }
+                Element(size = 120.dp, title = "NES", image = loadedLogos[SystemId.NES])
+                Element(size = 120.dp, title = "Prueba", image = drawableUri(R.drawable.ic_ginny))
+                Element(size = 120.dp, empty = true)
             }
-            Element(size = 120.dp, title = "NES", image = logos[SystemId.NES])
-            Element(size = 120.dp, title = "Prueba", image = drawableUri(R.drawable.ic_ginny))
-            Element(size = 120.dp, empty = true)
         }
     }
 }
