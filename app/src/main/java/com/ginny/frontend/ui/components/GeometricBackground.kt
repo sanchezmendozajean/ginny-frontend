@@ -41,9 +41,12 @@ private const val FrameIntervalMs = 33L
 /** Cambiar la semilla genera otra composición (siempre la misma para una misma semilla). */
 private const val Seed = 7
 
-/** Grilla imaginaria: una forma por celda, para repartirlas sin amontonar. */
+/**
+ * Grilla imaginaria: una forma por celda, para repartirlas sin amontonar. Cantidad de formas =
+ * columnas × filas (7 × 5 = 35; antes 7 × 4 = 28 se veía algo vacío).
+ */
 private const val GridColumns = 7
-private const val GridRows = 4
+private const val GridRows = 5
 
 /**
  * Movimiento de cada forma: recorre un óvalo de radio entre [MinAmplitudeDp] y [MaxAmplitudeDp],

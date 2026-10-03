@@ -65,13 +65,13 @@ fun Content(
             SystemTileItem.Favorites -> GridEntry(
                 key = "favorites",
                 title = "Favoritos",
-                subtitle = "$favoriteCount juegos",
+                subtitle = gamesLabel(favoriteCount),
                 icon = R.drawable.ic_star,
             )
             is SystemTileItem.Real -> GridEntry(
                 key = tile.system.id.name,
                 title = tile.system.displayName,
-                subtitle = "${gameCounts[tile.system.id] ?: 0} juegos",
+                subtitle = gamesLabel(gameCounts[tile.system.id] ?: 0),
                 image = logos?.get(tile.system.id),
             )
         }
@@ -129,3 +129,6 @@ fun Content(
         )
     }
 }
+
+/** "1 juego" / "N juegos". */
+private fun gamesLabel(count: Int): String = if (count == 1) "1 juego" else "$count juegos"
