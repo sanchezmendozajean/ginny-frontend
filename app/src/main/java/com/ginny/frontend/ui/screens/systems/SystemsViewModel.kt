@@ -1,5 +1,6 @@
 package com.ginny.frontend.ui.screens.systems
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -46,6 +48,23 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
     val isScanning: StateFlow<Boolean> = _isScanning
 
     var focusedIndex by mutableStateOf(0)
+
+    /**
+     * Logo de cada sistema que tenga uno (`Assets/<sistema>/system.png` en la Carpeta de Usuario),
+     * por id. Los que no tienen logo simplemente no están en el mapa → `systemLogos[id]` da null.
+     * Se calcula en segundo plano (búsqueda real de archivos vía SAF) y se recalcula solo si cambia
+     * la Carpeta de Usuario en Configuración. Uso en la UI: `image = logos[SystemId.SNES]`.
+     */
+    val systemLogos: StateFlow<Map<SystemId, Uri>> = container.settingsRepository.userFolderUri
+        .map { uriString ->
+            val userTree = uriString?.let(Uri::parse) ?: return@map emptyMap()
+            SystemCatalog.all.mapNotNull { system ->
+                runCatching { container.assetRepository.systemLogoUri(userTree, system.id) }
+                    .getOrNull()
+                    ?.let { logo -> system.id to logo }
+            }.toMap()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     init {
         viewModelScope.launch {
