@@ -7,6 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -15,7 +17,9 @@ import androidx.lifecycle.lifecycleScope
 import com.ginny.frontend.audio.SoundManager
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.LogicalButton
+import com.ginny.frontend.data.model.ButtonLayout
 import com.ginny.frontend.ui.GinnyApp
+import com.ginny.frontend.ui.components.LocalButtonLayout
 import com.ginny.frontend.ui.theme.GinnyTheme
 import com.ginny.frontend.ui.util.LocalSoundManager
 import kotlinx.coroutines.launch
@@ -53,8 +57,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             GinnyTheme(settingsRepository = container.settingsRepository) {
-                // Los efectos de sonido, disponibles para toda la interfaz.
-                CompositionLocalProvider(LocalSoundManager provides soundManager) {
+                // Distribución de botones (Configuración > Botones), para los íconos de la leyenda.
+                val buttonLayout by container.settingsRepository.buttonLayout
+                    .collectAsState(initial = ButtonLayout.YX_BA)
+
+                // Los efectos de sonido y la distribución de botones, disponibles para toda la interfaz.
+                CompositionLocalProvider(
+                    LocalSoundManager provides soundManager,
+                    LocalButtonLayout provides buttonLayout,
+                ) {
                     GinnyApp(
                         settingsOpen = settingsOpen.value,
                         onCloseSettings = { settingsOpen.value = false },

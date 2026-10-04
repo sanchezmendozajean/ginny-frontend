@@ -1,5 +1,6 @@
 package com.ginny.frontend.data
 
+import com.ginny.frontend.data.model.ButtonLayout
 import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
@@ -142,6 +143,7 @@ class GinnyConfigRepository(
         return JSONObject().apply {
             put("version", CONFIG_VERSION)
             put("gridRows", settings.gridRows.first())
+            put("buttonLayout", settings.buttonLayout.first().name)
             put("musicVolume", settings.musicVolume.first().toDouble())
             put("uiSoundVolume", settings.uiSoundVolume.first().toDouble())
             put("backgroundMusicTrack", settings.backgroundMusicTrack.first() ?: JSONObject.NULL)
@@ -160,6 +162,9 @@ class GinnyConfigRepository(
         val json = JSONObject(text)
 
         json.optInt("gridRows", -1).takeIf { it in 1..4 }?.let { settings.setGridRows(it) }
+        json.optStringOrNull("buttonLayout")
+            ?.let { name -> runCatching { ButtonLayout.valueOf(name) }.getOrNull() }
+            ?.let { settings.setButtonLayout(it) }
         if (json.has("musicVolume")) settings.setMusicVolume(json.optDouble("musicVolume", 0.5).toFloat())
         if (json.has("uiSoundVolume")) settings.setUiSoundVolume(json.optDouble("uiSoundVolume", 0.7).toFloat())
         json.optStringOrNull("backgroundMusicTrack")?.let { settings.setBackgroundMusicTrack(it) }

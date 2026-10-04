@@ -30,6 +30,9 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.ui.theme.GinnyThemes
@@ -60,8 +63,13 @@ fun SettingsModal(visible: Boolean, onClose: () -> Unit) {
     AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
         val palette = GinnyThemes.current
         val sound = LocalSoundManager.current
-        val buttonMapping by appContainer().settingsRepository.buttonMapping
+        val container = appContainer()
+        val buttonMapping by container.settingsRepository.buttonMapping
             .collectAsState(initial = ButtonMapping.DEFAULT)
+        // Lee y guarda la configuración (y sincroniza ginny.cfg).
+        val viewModel: SettingsViewModel = viewModel(
+            factory = viewModelFactory { initializer { SettingsViewModel(container) } },
+        )
 
         // Sección elegida. Se reinicia en Interfaz cada vez que se abre el modal.
         var section by remember { mutableStateOf(SettingsSection.Interfaz) }
@@ -116,8 +124,14 @@ fun SettingsModal(visible: Boolean, onClose: () -> Unit) {
                         .background(palette.ink.copy(alpha = 0.08f)),
                 )
 
-                // Contenido de la sección elegida (siguiente paso).
-                Box(modifier = Modifier.weight(1f).fillMaxHeight())
+                // Contenido de la sección elegida: encabezado + área de opciones.
+                SettingsContent(section = section, modifier = Modifier.weight(1f)) {
+                    when (section) {
+                        SettingsSection.Interfaz -> InterfazOptions(viewModel)
+                        SettingsSection.Carpetas -> Unit   // siguiente paso
+                        SettingsSection.Emuladores -> Unit // siguiente paso
+                    }
+                }
             }
         }
     }

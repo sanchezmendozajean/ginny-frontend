@@ -14,6 +14,7 @@ import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.data.model.favoriteKey
+import com.ginny.frontend.data.model.ButtonLayout
 import com.ginny.frontend.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -36,6 +37,7 @@ class SettingsRepository(private val context: Context) {
         val LAST_SCAN_AT = longPreferencesKey("last_scan_at")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val FAVORITE_GAMES = stringSetPreferencesKey("favorite_games")
+        val BUTTON_LAYOUT = stringPreferencesKey("button_layout")
 
         fun emulatorFor(systemId: SystemId) = stringPreferencesKey("emulator_${systemId.name}")
         fun coreFor(systemId: SystemId) = stringPreferencesKey("core_${systemId.name}")
@@ -81,6 +83,16 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setLastScanAt(epochMillis: Long) {
         context.dataStore.edit { it[Keys.LAST_SCAN_AT] = epochMillis }
+    }
+
+    /** Distribución de los botones frontales: solo afecta los íconos de la leyenda. */
+    val buttonLayout: Flow<ButtonLayout> = context.dataStore.data.map { prefs ->
+        prefs[Keys.BUTTON_LAYOUT]?.let { name -> runCatching { ButtonLayout.valueOf(name) }.getOrNull() }
+            ?: ButtonLayout.YX_BA
+    }
+
+    suspend fun setButtonLayout(layout: ButtonLayout) {
+        context.dataStore.edit { it[Keys.BUTTON_LAYOUT] = layout.name }
     }
 
     suspend fun setGridRows(rows: Int) {

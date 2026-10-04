@@ -31,15 +31,15 @@ import com.ginny.frontend.ui.theme.GinnyFont
 import com.ginny.frontend.ui.theme.GinnyThemes
 import com.ginny.frontend.ui.theme.lighten
 
-/** Secciones de Configuración, en el orden en que aparecen. [description] irá bajo el título. */
-enum class SettingsSection(val label: String, val description: String) {
-    Interfaz("Interfaz", "Grilla, nombres y audio"),
-    Carpetas("Carpetas", "Dónde vive tu biblioteca"),
-    Emuladores("Emuladores", "Aplicación y core por sistema"),
+/** Secciones de Configuración, en el orden en que aparecen. */
+enum class SettingsSection(val label: String) {
+    Interfaz("Interfaz"),
+    Carpetas("Carpetas"),
+    Emuladores("Emuladores"),
 }
 
 /** Ancho de la barra lateral. */
-val SettingsSidebarWidth = 200.dp
+val SettingsSidebarWidth = 160.dp
 
 /**
  * Barra lateral del modal: título "Configuración", la lista de secciones (la elegida como píldora

@@ -1,5 +1,6 @@
 package com.ginny.frontend.ui.screens.settings
 
+import com.ginny.frontend.data.model.ButtonLayout
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -89,6 +90,11 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     fun setGridRows(rows: Int) = viewModelScope.launch {
         settings.setGridRows(rows)
+        container.configRepository.requestSync()
+    }
+
+    fun setButtonLayout(layout: ButtonLayout) = viewModelScope.launch {
+        settings.setButtonLayout(layout)
         container.configRepository.requestSync()
     }
 
