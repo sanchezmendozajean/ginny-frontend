@@ -29,13 +29,14 @@ import com.ginny.frontend.ui.components.settings.SettingsGroup
 import com.ginny.frontend.ui.components.settings.SettingsRow
 import com.ginny.frontend.ui.theme.GinnyFont
 import com.ginny.frontend.ui.theme.GinnyThemes
+import com.ginny.frontend.ui.theme.ThemeMode
 import kotlin.math.roundToInt
 
 /** Ancho de los controles de la derecha (deslizadores, desplegable), para que queden alineados. */
 private val ControlWidth = 220.dp
 
 /**
- * Opciones de la sección Interfaz: grilla (filas visibles), botones (distribución) y audio (volúmenes y
+ * Opciones de la sección Interfaz: grilla (filas visibles), tema, botones (distribución) y audio (volúmenes y
  * pista de fondo). Lee y guarda a través de [viewModel], que además sincroniza ginny.cfg.
  */
 @Composable
@@ -43,6 +44,7 @@ fun InterfazOptions(viewModel: SettingsViewModel) {
     val settings = viewModel.settings
     val gridRows by settings.gridRows.collectAsState(initial = 2)
     val buttonLayout by settings.buttonLayout.collectAsState(initial = ButtonLayout.YX_BA)
+    val themeMode by settings.themeMode.collectAsState(initial = ThemeMode.MENTA)
     val musicVolume by settings.musicVolume.collectAsState(initial = 0.5f)
     val uiVolume by settings.uiSoundVolume.collectAsState(initial = 0.7f)
     val storedTrack by settings.backgroundMusicTrack.collectAsState(initial = null)
@@ -68,11 +70,24 @@ fun InterfazOptions(viewModel: SettingsViewModel) {
             }
         }
 
+        SettingsGroup("Tema") {
+            SettingsRow(title = "Paleta de color") {
+                // Ciclo todavía no está implementado (hoy se vería igual que Menta): se ofrece
+                // cuando lo esté. Si quedó guardado de antes, se muestra Menta, que es lo que se ve.
+                GinnyDropdown(
+                    selected = if (themeMode == ThemeMode.CICLO) ThemeMode.MENTA else themeMode,
+                    options = ThemeMode.entries.filter { it != ThemeMode.CICLO }.map { it.displayName to it },
+                    onSelect = { viewModel.setThemeMode(it) },
+                    width = ControlWidth + 52.dp,
+                )
+            }
+        }
+
         SettingsGroup("Botones") {
             SettingsRow(title = "Distribución") {
                 // Solo cambia qué botón señalan los íconos de la leyenda (ver ButtonLayout).
                 GinnyDropdown(
-                    selectedLabel = buttonLayout.label,
+                    selected = buttonLayout,
                     options = ButtonLayout.entries.map { it.label to it },
                     onSelect = { viewModel.setButtonLayout(it) },
                     width = ControlWidth + 52.dp, // mismo ancho que el desplegable de pista
@@ -92,7 +107,7 @@ fun InterfazOptions(viewModel: SettingsViewModel) {
             SettingsRow(title = "Pista de fondo") {
                 val tracks = BundledMusicTrack.entries.map { MusicSelection.Bundled(it) } + customTracks
                 GinnyDropdown(
-                    selectedLabel = MusicSelection.decode(storedTrack, customTracks).label(),
+                    selected = MusicSelection.decode(storedTrack, customTracks),
                     options = tracks.map { it.label() to it },
                     onSelect = { viewModel.setBackgroundMusicTrack(it) },
                     width = ControlWidth + 52.dp, // = deslizador + porcentaje

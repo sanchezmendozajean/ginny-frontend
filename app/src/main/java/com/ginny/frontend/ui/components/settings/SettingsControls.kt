@@ -260,10 +260,13 @@ fun GinnySlider(value: Float, onValueChange: (Float) -> Unit, modifier: Modifier
     }
 }
 
-/** Desplegable: muestra [selectedLabel]; al tocarlo, lista [options] (texto → valor). */
+/**
+ * Desplegable: muestra la opción [selected]; al tocarlo, lista [options] (texto → valor) con la
+ * elegida resaltada (fondo del acento suave, texto en el color del tema y ✓).
+ */
 @Composable
 fun <T> GinnyDropdown(
-    selectedLabel: String,
+    selected: T,
     options: List<Pair<String, T>>,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
@@ -271,6 +274,7 @@ fun <T> GinnyDropdown(
 ) {
     val palette = GinnyThemes.current
     var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = options.firstOrNull { it.second == selected }?.first.orEmpty()
 
     Box(modifier = modifier) {
         Row(
@@ -296,14 +300,43 @@ fun <T> GinnyDropdown(
             Text(text = "▾", fontSize = 12.sp, color = palette.muted)
         }
 
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .width(width)
+                .background(Color.White), // sin esto, Material usa un fondo lila por defecto
+        ) {
             options.forEach { (label, value) ->
+                val active = value == selected
                 DropdownMenuItem(
-                    text = { Text(label, fontFamily = GinnyFont, fontWeight = FontWeight.Bold, color = palette.ink) },
+                    text = {
+                        Text(
+                            label,
+                            fontFamily = GinnyFont,
+                            fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Bold,
+                            color = if (active) accentText() else palette.ink,
+                        )
+                    },
+                    trailingIcon = if (active) {
+                        { Text("✓", fontWeight = FontWeight.ExtraBold, color = accentText()) }
+                    } else {
+                        null
+                    },
                     onClick = {
                         expanded = false
                         onSelect(value)
                     },
+                    // La elegida: fondo del acento suave, como una píldora dentro del menú.
+                    modifier = Modifier
+                        .padding(horizontal = 6.dp)
+                        .then(
+                            if (active) {
+                                Modifier.background(palette.accent.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                            } else {
+                                Modifier
+                            },
+                        ),
                 )
             }
         }

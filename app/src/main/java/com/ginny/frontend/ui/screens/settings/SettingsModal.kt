@@ -124,8 +124,8 @@ fun SettingsModal(visible: Boolean, onClose: () -> Unit) {
                         .background(palette.ink.copy(alpha = 0.08f)),
                 )
 
-                // Contenido de la sección elegida: encabezado + área de opciones.
-                SettingsContent(section = section, modifier = Modifier.weight(1f)) {
+                // Opciones de la sección elegida.
+                SettingsContent(modifier = Modifier.weight(1f)) {
                     when (section) {
                         SettingsSection.Interfaz -> InterfazOptions(viewModel)
                         SettingsSection.Carpetas -> Unit   // siguiente paso

@@ -62,33 +62,33 @@ fun Cursor(
         // Una "L" por esquina: brazo vertical → curva de 90° → brazo horizontal.
         // arcTo dibuja la curva dentro del cuadrado [rect], desde startAngle girando sweep grados
         // (0° = derecha, 90° = abajo, 180° = izquierda, 270° = arriba).
-        // [a] = largo del brazo; el borde usa uno un poco más largo para cubrir también las puntas.
-        fun corners(a: Float) = Path().apply {
+        val corners = Path().apply {
             // Arriba a la izquierda
-            moveTo(left, top + a)
+            moveTo(left, top + arm)
             arcTo(Rect(left, top, left + 2 * r, top + 2 * r), 180f, 90f, false)
-            lineTo(left + a, top)
+            lineTo(left + arm, top)
 
             // Arriba a la derecha
-            moveTo(right - a, top)
+            moveTo(right - arm, top)
             arcTo(Rect(right - 2 * r, top, right, top + 2 * r), 270f, 90f, false)
-            lineTo(right, top + a)
+            lineTo(right, top + arm)
 
             // Abajo a la derecha
-            moveTo(right, bottom - a)
+            moveTo(right, bottom - arm)
             arcTo(Rect(right - 2 * r, bottom - 2 * r, right, bottom), 0f, 90f, false)
-            lineTo(right - a, bottom)
+            lineTo(right - arm, bottom)
 
             // Abajo a la izquierda
-            moveTo(left + a, bottom)
+            moveTo(left + arm, bottom)
             arcTo(Rect(left, bottom - 2 * r, left + 2 * r, bottom), 90f, 90f, false)
-            lineTo(left, bottom - a)
+            lineTo(left, bottom - arm)
         }
 
-        // 1) Borde: el mismo dibujo, más ancho y en el color claro. Sus brazos son [border] más
-        //    largos para que el borde también envuelva las puntas.
-        drawPath(corners(arm + border), borderColor, style = Stroke(width = outer, cap = StrokeCap.Butt))
-        // 2) Trazo principal encima. Extremos rectos (Butt), como en el diseño.
-        drawPath(corners(arm), color, style = Stroke(width = stroke, cap = StrokeCap.Butt))
+        // Puntas redondeadas (Round). El mismo trazado se dibuja dos veces:
+        // 1) Borde: más ancho y en el color claro. Su punta redonda es un semicírculo más grande
+        //    que el del trazo de arriba, así que el borde también envuelve las puntas.
+        drawPath(corners, borderColor, style = Stroke(width = outer, cap = StrokeCap.Round))
+        // 2) Trazo principal encima.
+        drawPath(corners, color, style = Stroke(width = stroke, cap = StrokeCap.Round))
     }
 }
