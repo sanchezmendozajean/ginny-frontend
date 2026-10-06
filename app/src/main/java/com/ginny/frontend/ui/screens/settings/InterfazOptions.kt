@@ -72,11 +72,10 @@ fun InterfazOptions(viewModel: SettingsViewModel) {
 
         SettingsGroup("Tema") {
             SettingsRow(title = "Paleta de color") {
-                // Ciclo todavía no está implementado (hoy se vería igual que Menta): se ofrece
-                // cuando lo esté. Si quedó guardado de antes, se muestra Menta, que es lo que se ve.
+                // Temas fijos y, al final, "Cambio cíclico" (pasa por todos ellos).
                 GinnyDropdown(
-                    selected = if (themeMode == ThemeMode.CICLO) ThemeMode.MENTA else themeMode,
-                    options = ThemeMode.entries.filter { it != ThemeMode.CICLO }.map { it.displayName to it },
+                    selected = themeMode,
+                    options = ThemeMode.entries.map { it.displayName to it },
                     onSelect = { viewModel.setThemeMode(it) },
                     width = ControlWidth + 52.dp,
                 )

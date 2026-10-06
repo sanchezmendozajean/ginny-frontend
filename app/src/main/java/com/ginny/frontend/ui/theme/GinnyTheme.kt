@@ -16,8 +16,13 @@ fun GinnyTheme(settingsRepository: SettingsRepository, content: @Composable () -
     // Menta mientras DataStore responde (una fracción de segundo al abrir la app).
     val themeMode by settingsRepository.themeMode.collectAsState(initial = ThemeMode.MENTA)
 
-    CompositionLocalProvider(
-        LocalGinnyPalette provides GinnyThemes.paletteFor(themeMode),
-        content = content,
-    )
+    val palette = if (themeMode == ThemeMode.CICLO) {
+        // El ciclo solo corre mientras está elegido: al cambiar de modo, esta rama sale de la
+        // composición y su corrutina se cancela.
+        rememberCyclingPalette().value
+    } else {
+        GinnyThemes.paletteFor(themeMode)
+    }
+
+    CompositionLocalProvider(LocalGinnyPalette provides palette, content = content)
 }

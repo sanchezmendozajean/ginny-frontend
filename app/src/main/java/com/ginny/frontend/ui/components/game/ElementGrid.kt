@@ -29,13 +29,14 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.LogicalButton
-import kotlin.math.floor
+import kotlin.math.roundToInt
 import kotlin.math.max
 
 /** Lo que la grilla necesita saber de cada elemento, venga de un sistema, juego o estado guardado. */
@@ -92,8 +93,15 @@ fun ElementGrid(
     // BoxWithConstraints: da el tamaño disponible (maxWidth / maxHeight) para calcular el lado.
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val safeRows = rows.coerceIn(1, 4)
-        val tileSize = (maxHeight - gap * (safeRows - 1)) / safeRows
-        val columns = max(1, floor((maxWidth + gap) / (tileSize + gap)).toInt())
+        // Lado y separación en píxeles enteros. Si quedaran fraccionarios, cada elemento y cada
+        // separación se redondearían por su lado al dibujarse, y el cursor (calculado con el
+        // valor exacto) se correría unos píxeles del elemento.
+        val density = LocalDensity.current
+        val gapPx = with(density) { gap.roundToPx() }
+        val tilePx = with(density) { ((maxHeight.toPx() - gapPx * (safeRows - 1)) / safeRows).toInt() }
+        val tileSize = with(density) { tilePx.toDp() }
+        val gridGap = with(density) { gapPx.toDp() }
+        val columns = max(1, (constraints.maxWidth + gapPx) / (tilePx + gapPx))
         val layout = GridLayout(columns, safeRows)
 
         // Se informa fuera de la composición (efecto), nunca mientras se dibuja.
@@ -109,7 +117,7 @@ fun ElementGrid(
         val current by rememberUpdatedState(Triple(selected, layout, buttonMapping))
 
         Column(
-            verticalArrangement = Arrangement.spacedBy(gap),
+            verticalArrangement = Arrangement.spacedBy(gridGap),
             modifier = Modifier
                 .focusRequester(focusRequester)
                 .focusable()
@@ -130,7 +138,7 @@ fun ElementGrid(
                 },
         ) {
             for (row in 0 until safeRows) {
-                Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(gridGap)) {
                     for (col in 0 until columns) {
                         val index = pageStart + row * columns + col
                         val entry = entries.getOrNull(index)
@@ -160,14 +168,20 @@ fun ElementGrid(
 
         // ── Cursor ─────────────────────────────────────────────────────────────────────────
         if (count > 0) {
-            // Dónde queda el elemento seleccionado: la grilla está centrada en el espacio.
+            // Dónde queda el elemento seleccionado, en píxeles enteros y redondeando igual que el
+            // centrado de la Box (Alignment.Center), para caer exactamente sobre el elemento.
             val localIndex = selected - pageStart
-            val gridWidth = tileSize * columns + gap * (columns - 1)
-            val gridHeight = tileSize * safeRows + gap * (safeRows - 1)
-            val target = DpOffset(
-                x = (maxWidth - gridWidth) / 2 + (tileSize + gap) * (localIndex % columns) - CursorOutset,
-                y = (maxHeight - gridHeight) / 2 + (tileSize + gap) * (localIndex / columns) - CursorOutset,
-            )
+            val outsetPx = with(density) { CursorOutset.roundToPx() }
+            val gridWidthPx = tilePx * columns + gapPx * (columns - 1)
+            val gridHeightPx = tilePx * safeRows + gapPx * (safeRows - 1)
+            val originX = ((constraints.maxWidth - gridWidthPx) / 2f).roundToInt()
+            val originY = ((constraints.maxHeight - gridHeightPx) / 2f).roundToInt()
+            val target = with(density) {
+                DpOffset(
+                    x = (originX + (tilePx + gapPx) * (localIndex % columns) - outsetPx).toDp(),
+                    y = (originY + (tilePx + gapPx) * (localIndex / columns) - outsetPx).toDp(),
+                )
+            }
 
             val position = remember { Animatable(target, DpOffset.VectorConverter) }
             var lastPage by remember { mutableIntStateOf(page) }
@@ -183,7 +197,7 @@ fun ElementGrid(
             }
 
             Cursor(
-                size = tileSize + CursorOutset * 2,
+                size = with(density) { (tilePx + outsetPx * 2).toDp() },
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     // La posición se lee al ubicar el cursor: la animación no recompone nada.

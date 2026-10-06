@@ -1,14 +1,18 @@
 package com.ginny.frontend.ui.theme
 
 /**
- * Opción de tema elegida por el usuario (persistida en SettingsRepository). Sus colores viven en
- * [GinnyThemes.paletteFor]. [CICLO] no tiene [hue] fijo: rotaba entre los otros 4 en el diseño
- * anterior (docs/ui-legacy/ui/theme/CycleHue.kt) y todavía no está reimplementado.
+ * Opción de tema elegida por el usuario (persistida en SettingsRepository por su nombre: no
+ * renombrar las constantes). Sus colores viven en [GinnyThemes.paletteFor]. [CICLO] no tiene
+ * paleta propia: pasa por todos los demás temas, uno tras otro (ver ThemeCycle.kt).
  */
-enum class ThemeMode(val displayName: String, val hue: Float?) {
-    MENTA("Menta", 168f),
-    CIELO("Cielo", 240f),
-    DURAZNO("Durazno", 45f),
-    LILA("Lila", 295f),
-    CICLO("Ciclo", null),
+enum class ThemeMode(val displayName: String) {
+    MENTA("Menta"),
+    CIELO("Cielo"),
+    LILA("Lila"),
+    FUCSIA("Fucsia"),
+    ROSA("Rosa"),
+    LAVA("Lava"),
+    DURAZNO("Durazno"),
+    SMOG("Smog"),
+    CICLO("Cambio cíclico"),
 }

@@ -102,3 +102,30 @@ private fun linearToSrgb(value: Float): Float {
     val v = value.coerceIn(0f, 1f)
     return if (v <= 0.0031308f) v * 12.92f else 1.055f * v.pow(1f / 2.4f) - 0.055f
 }
+
+// ── Mezcla ────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Mezcla [this] con [other] en el espacio OKLab ([t] = 0 → this, 1 → other). A mitad de camino
+ * el color se ve parejo, sin pasar por tonos sucios como la mezcla RGB, y funciona también con
+ * grises (Smog), que no tienen un tono definido para girar.
+ */
+fun Color.mixOklab(other: Color, t: Float): Color {
+    val a = toOklch()
+    val b = other.toOklch()
+    fun Oklch.ab(): Pair<Float, Float> {
+        val r = h * (PI / 180.0)
+        return (c * cos(r)).toFloat() to (c * sin(r)).toFloat()
+    }
+    val (aa, ab) = a.ab()
+    val (ba, bb) = b.ab()
+    val labA = aa + (ba - aa) * t
+    val labB = ab + (bb - ab) * t
+    val hue = (atan2(labB, labA) * (180.0 / PI)).toFloat().let { if (it < 0f) it + 360f else it }
+    return Oklch(
+        l = a.l + (b.l - a.l) * t,
+        c = sqrt(labA * labA + labB * labB),
+        h = hue,
+        alpha = a.alpha + (b.alpha - a.alpha) * t,
+    ).toColor()
+}

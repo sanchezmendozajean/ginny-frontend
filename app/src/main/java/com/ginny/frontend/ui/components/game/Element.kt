@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -41,6 +42,9 @@ val ElementCornerRadius = 10.dp
 
 /** Grosor del marco blanco: grueso, tipo marco (regla del spec). */
 val ElementFrameWidth = 4.dp
+
+/** Elevación de la sombra ligera que rodea al elemento. */
+val ElementShadowElevation = 4.dp
 
 /** Tamaño de un ícono de la app dentro del elemento, como fracción del lado (ej. Favoritos). */
 const val ElementIconScale = 0.45f
@@ -94,16 +98,14 @@ fun Element(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center,
     ) {
-        if (empty) {
-            // Hueco: un Container pequeñito, sin desenfoque, centrado.
-            Box(
-                modifier = Modifier.size(10.dp)
-                    .background(
-                        color = Color.White,
-                        shape = RoundedCornerShape(10.dp)
-                    )                    // detrás de la imagen mientras carga
-            ) {}
-        } else {
+        Box(
+            modifier = Modifier.size(10.dp)
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(10.dp)
+                )                    // detrás de la imagen mientras carga
+        ) {}
+        if (!empty) {
             // Estado de la imagen. remember(image, icon): si cambian, se empieza de cero.
             // Un ícono de la app ya está listo; sin imagen, directo a mostrar el título.
             var state by remember(image, icon) {
@@ -128,9 +130,12 @@ fun Element(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { this.alpha = alpha.value } // se lee al dibujar: no recompone
-                    .clip(shape)                                // recorta la imagen a las esquinas redondeadas
-                    .background(Color.White)                    // detrás de la imagen
-                    .border(ElementFrameWidth, Color.White, shape), // marco blanco, encima de la imagen
+                    // Sombra antes del fondo y la imagen: se dibuja por fuera del elemento. Con
+                    // clip = true además recorta el contenido a las esquinas redondeadas; un
+                    // .clip(shape) antes de la sombra la cortaría.
+                    .shadow(ElementShadowElevation, shape, clip = true)
+                    .background(Color.White),
+                    //.border(ElementFrameWidth, Color.White, shape), // marco blanco, encima de la imagen
                 contentAlignment = Alignment.Center,
             ) {
                 if (icon != null) {

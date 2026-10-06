@@ -132,6 +132,8 @@ fun SettingsRow(
                     fontWeight = FontWeight.Medium,
                     fontSize = 12.sp,
                     color = palette.muted,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -340,5 +342,51 @@ fun <T> GinnyDropdown(
                 )
             }
         }
+    }
+}
+
+/**
+ * Botón píldora. [primary]: degradado del acento con texto blanco (la acción principal, ej.
+ * "Escanear"); si no, fondo tenue con texto del tema (ej. "Elegir"). Deshabilitado: apagado y
+ * sin responder al toque.
+ */
+@Composable
+fun GinnyButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    primary: Boolean = false,
+    enabled: Boolean = true,
+) {
+    val palette = GinnyThemes.current
+    val currentOnClick by rememberUpdatedState(onClick)
+    val background = when {
+        !enabled -> Brush.horizontalGradient(listOf(lineColor(), lineColor()))
+        primary -> Brush.horizontalGradient(listOf(palette.accent.lighten(0.08f), palette.accent))
+        else -> Brush.horizontalGradient(listOf(palette.background, palette.background))
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .height(40.dp)
+            .then(if (primary && enabled) Modifier.shadow(4.dp, CircleShape, spotColor = palette.accent) else Modifier)
+            .background(background, CircleShape)
+            .then(if (!primary) Modifier.border(1.dp, lineColor(), CircleShape) else Modifier)
+            .pointerInput(enabled) { if (enabled) detectTapGestures { currentOnClick() } }
+            .padding(horizontal = 20.dp),
+    ) {
+        Text(
+            text = text,
+            fontFamily = GinnyFont,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 14.sp,
+            color = when {
+                !enabled -> palette.muted
+                primary -> Color.White
+                else -> accentText()
+            },
+            maxLines = 1,
+        )
     }
 }

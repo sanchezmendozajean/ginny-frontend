@@ -2,7 +2,7 @@ package com.ginny.frontend.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -35,24 +35,38 @@ fun paletteFrom(base: Color) = GinnyPalette(
 )
 
 /**
- * Los 4 temas fijos: solo se define el color base de cada uno. Son los acentos del diseño
- * anterior (docs/ui-legacy/ui/theme/GinnyPalette.kt), todos con L=0.70 y C=0.14 en OKLCH.
+ * Los temas fijos: solo se define el color base de cada uno.
+ * - Menta, Cielo, Durazno, Lila: acentos del diseño anterior (docs/ui-legacy/ui/theme/
+ *   GinnyPalette.kt), todos con L=0.70 y C=0.14 en OKLCH.
+ * - Fucsia, Rosa, Lava, Smog: nuevos, con su propio carácter (entre paréntesis, su OKLCH):
+ *   Fucsia vivo (0.64 0.22 345), Rosa suave y claro (0.76 0.11 5), Lava rojo anaranjado intenso
+ *   (0.64 0.19 35, más rojo y saturado que Durazno) y Smog gris apenas azulado (0.66 0.012 255).
  */
 object GinnyThemes {
     val Menta = paletteFrom(Color(0xFF0DB98E))
     val Cielo = paletteFrom(Color(0xFF37A8EC))
     val Durazno = paletteFrom(Color(0xFFE57F4F))
     val Lila = paletteFrom(Color(0xFFA58BEC))
+    val Fucsia = paletteFrom(Color(0xFFE141AA))
+    val Rosa = paletteFrom(Color(0xFFEC93A8))
+    val Lava = paletteFrom(Color(0xFFE8542F))
+    val Smog = paletteFrom(Color(0xFF8D939A))
 
-    /** Traduce la opción guardada en Configuración a su paleta. */
+    /** Traduce un tema fijo a su paleta. [ThemeMode.CICLO] no tiene una fija: ver ThemeCycle.kt. */
     fun paletteFor(mode: ThemeMode): GinnyPalette = when (mode) {
         ThemeMode.MENTA -> Menta
         ThemeMode.CIELO -> Cielo
-        ThemeMode.DURAZNO -> Durazno
         ThemeMode.LILA -> Lila
-        // Ciclo todavía no está implementado: por ahora se queda en Menta.
-        ThemeMode.CICLO -> Menta
+        ThemeMode.FUCSIA -> Fucsia
+        ThemeMode.ROSA -> Rosa
+        ThemeMode.LAVA -> Lava
+        ThemeMode.DURAZNO -> Durazno
+        ThemeMode.SMOG -> Smog
+        ThemeMode.CICLO -> Menta // punto de partida del ciclo
     }
+
+    /** Los temas fijos, en el orden del desplegable y del ciclo (todos menos [ThemeMode.CICLO]). */
+    val fixed: List<ThemeMode> = ThemeMode.entries.filter { it != ThemeMode.CICLO }
 
     /**
      * La paleta del tema actual, desde cualquier composable: `val palette = GinnyThemes.current`.
@@ -66,5 +80,8 @@ object GinnyThemes {
 /**
  * "Canal" por el que el tema actual baja a todos los composables sin pasarlo como parámetro.
  * Menta es el valor si nadie lo definió (ej. en un @Preview).
+ *
+ * compositionLocalOf (y no static…): en el cambio cíclico la paleta cambia en cada cuadro durante
+ * la transición; así solo se recomponen los composables que leen el color, no toda la app.
  */
-val LocalGinnyPalette = staticCompositionLocalOf { GinnyThemes.Menta }
+val LocalGinnyPalette = compositionLocalOf { GinnyThemes.Menta }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -124,12 +125,15 @@ fun SettingsModal(visible: Boolean, onClose: () -> Unit) {
                         .background(palette.ink.copy(alpha = 0.08f)),
                 )
 
-                // Opciones de la sección elegida.
-                SettingsContent(modifier = Modifier.weight(1f)) {
-                    when (section) {
-                        SettingsSection.Interfaz -> InterfazOptions(viewModel)
-                        SettingsSection.Carpetas -> Unit   // siguiente paso
-                        SettingsSection.Emuladores -> Unit // siguiente paso
+                // Opciones de la sección elegida. key: cada sección empieza con su propio
+                // desplazamiento, desde arriba.
+                key(section) {
+                    SettingsContent(modifier = Modifier.weight(1f)) {
+                        when (section) {
+                            SettingsSection.Interfaz -> InterfazOptions(viewModel)
+                            SettingsSection.Carpetas -> CarpetasOptions(viewModel)
+                            SettingsSection.Emuladores -> Unit // siguiente paso
+                        }
                     }
                 }
             }
