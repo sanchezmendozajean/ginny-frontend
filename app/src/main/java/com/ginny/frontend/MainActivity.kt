@@ -115,9 +115,15 @@ class MainActivity : ComponentActivity() {
                     settingsOpen.value = true
                     return true
                 }
-                // B cierra Configuración. Tiene prioridad sobre "regresar" (cuando haya pantallas).
-                LogicalButton.B -> if (settingsOpen.value) {
-                    settingsOpen.value = false
+                // B cierra Configuración; si está cerrada, regresa a la pantalla anterior (lo
+                // maneja el BackHandler de GinnyApp). Solo si hay a dónde volver: en Sistemas,
+                // B no hace nada (el "atrás" por defecto cerraría la app).
+                LogicalButton.B -> {
+                    if (settingsOpen.value) {
+                        settingsOpen.value = false
+                    } else if (onBackPressedDispatcher.hasEnabledCallbacks()) {
+                        onBackPressedDispatcher.onBackPressed()
+                    }
                     return true
                 }
                 else -> Unit

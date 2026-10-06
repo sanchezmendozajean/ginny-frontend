@@ -81,6 +81,9 @@ const val CursorBumpOutMs = 70
  * [onSelectedIndexChange]; quien usa la grilla guarda el índice (en el ViewModel, regla del spec).
  * Las reglas de movimiento están en [GridNavigation]. B nunca se maneja aquí (va a nivel Activity).
  *
+ * Abrir: A (remapeable) o tocar el elemento que ya está seleccionado llaman a [onActivate] con su
+ * índice. Tocar otro elemento solo lo selecciona.
+ *
  * [onLayoutChanged] informa la forma de la grilla (columnas × filas), para calcular páginas.
  */
 @Composable
@@ -89,6 +92,7 @@ fun ElementGrid(
     rows: Int,
     selectedIndex: Int,
     onSelectedIndexChange: (Int) -> Unit,
+    onActivate: (Int) -> Unit = {},
     buttonMapping: ButtonMapping,
     modifier: Modifier = Modifier,
     gap: Dp = ElementGridGap,
@@ -125,6 +129,8 @@ fun ElementGrid(
         // El manejo de teclas se crea una vez; rememberUpdatedState le da siempre los valores
         // actuales sin tener que recrearlo.
         val current by rememberUpdatedState(Triple(selected, layout, buttonMapping))
+        val currentOnSelect by rememberUpdatedState(onSelectedIndexChange)
+        val currentOnActivate by rememberUpdatedState(onActivate)
 
         // Rebote del cursor cuando se intenta ir a donde no se puede (borde de la grilla, primera
         // o última página): avanza un poco en esa dirección y vuelve con un leve temblor.
@@ -150,6 +156,10 @@ fun ElementGrid(
                     if (!active || event.type != KeyEventType.KeyDown || count == 0) return@onKeyEvent false
                     val (i, g, mapping) = current
                     val button = mapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)
+                    if (button == LogicalButton.A) {
+                        currentOnActivate(i)
+                        return@onKeyEvent true
+                    }
                     val target = when (button) {
                         LogicalButton.DPAD_UP -> GridNavigation.up(i, g, count)
                         LogicalButton.DPAD_DOWN -> GridNavigation.down(i, g, count)
@@ -157,7 +167,7 @@ fun ElementGrid(
                         LogicalButton.DPAD_RIGHT -> GridNavigation.right(i, g, count)
                         LogicalButton.L -> GridNavigation.previousPage(i, g, count)
                         LogicalButton.R -> GridNavigation.nextPage(i, g, count)
-                        else -> return@onKeyEvent false // A, B, Y, Menú: no son de la grilla
+                        else -> return@onKeyEvent false // B, Y, Menú: no son de la grilla
                     }
                     if (target != i) {
                         onSelectedIndexChange(target)
@@ -186,9 +196,11 @@ fun ElementGrid(
                                     subtitle = entry.subtitle,
                                     image = entry.image,
                                     icon = entry.icon,
-                                    // Tocar un elemento lo selecciona.
+                                    // Tocar un elemento lo selecciona; si ya lo estaba, lo abre.
                                     modifier = Modifier.pointerInput(index) {
-                                        detectTapGestures { onSelectedIndexChange(index) }
+                                        detectTapGestures {
+                                            if (current.first == index) currentOnActivate(index) else currentOnSelect(index)
+                                        }
                                     },
                                 )
                             }

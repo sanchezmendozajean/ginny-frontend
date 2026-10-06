@@ -10,15 +10,18 @@ import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.components.DeviceStatus
 import com.ginny.frontend.ui.components.SystemLabel
 
-/** Barra superior. Aquí irán el título contextual, la hora, la batería y el acceso a Configuración. */
+/**
+ * Barra superior: a la izquierda "Ginny" y, dentro de un sistema, su nombre ([title]); a la
+ * derecha la hora y la batería.
+ */
 @Composable
-fun GinnyHeader(modifier: Modifier = Modifier) {
+fun GinnyHeader(modifier: Modifier = Modifier, title: String? = null) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(32.dp)
     ) {
-        SystemLabel(systemName = "Nintendo")
+        SystemLabel(systemName = title)
         DeviceStatus(modifier = Modifier.align(Alignment.CenterEnd)) // a la derecha
     }
 }
