@@ -38,7 +38,7 @@ fun SystemLabel(
                     text = "/",
                     fontFamily = GinnyFont,   // la familia
                     fontWeight = FontWeight.Bold,        // el peso (grosor)
-                    fontSize = 18.sp,                    // el tamaño
+                    fontSize = 16.sp,                    // el tamaño
                     color = GinnyThemes.current.ink,
                 )
                 Text(

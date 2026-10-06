@@ -16,7 +16,7 @@ import com.ginny.frontend.R
 
 @Composable
 fun BatteryIcon(percent: Int, charging: Boolean, color: Color) {
-    Box(modifier = Modifier.size(24.dp)) {
+    Box(modifier = Modifier.size(16.dp)) {
         // Capa 1: contorno
         Icon(
             painter = painterResource(R.drawable.ic_battery_empty),

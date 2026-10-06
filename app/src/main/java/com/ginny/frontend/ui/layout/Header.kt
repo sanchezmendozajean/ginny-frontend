@@ -16,7 +16,7 @@ fun GinnyHeader(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(32.dp)
     ) {
         SystemLabel(systemName = "Nintendo")
         DeviceStatus(modifier = Modifier.align(Alignment.CenterEnd)) // a la derecha

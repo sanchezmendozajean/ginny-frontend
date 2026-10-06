@@ -43,7 +43,7 @@ fun DeviceStatus(modifier: Modifier = Modifier) {
             text = time,
             fontFamily = GinnyFont,
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
+            fontSize = 12.sp,
             color = palette.ink,
         )
 
@@ -58,7 +58,7 @@ fun DeviceStatus(modifier: Modifier = Modifier) {
                     text = "${battery.percent}%",
                     fontFamily = GinnyFont,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
+                    fontSize = 10.sp,
                     color = palette.ink,
                 )
             }

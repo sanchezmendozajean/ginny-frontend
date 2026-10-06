@@ -27,7 +27,7 @@ fun PageArrow(
     direction: ArrowDirection,
     enabled: Boolean,
     modifier: Modifier = Modifier,
-    size: Dp = 28.dp,
+    size: Dp = 18.dp,
     onClick: () -> Unit = {},
 ) {
     Box(

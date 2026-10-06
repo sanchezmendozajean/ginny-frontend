@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -38,6 +41,7 @@ import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.LogicalButton
 import kotlin.math.roundToInt
 import kotlin.math.max
+import kotlinx.coroutines.launch
 
 /** Lo que la grilla necesita saber de cada elemento, venga de un sistema, juego o estado guardado. */
 data class GridEntry(
@@ -53,6 +57,12 @@ val ElementGridGap = 8.dp
 
 /** Cuánto sobresale el cursor del elemento, por cada lado. */
 val CursorOutset = 10.dp
+
+/** Cuánto avanza el cursor al rebotar contra un borde (no hay a dónde moverse). */
+val CursorBumpDistance = 8.dp
+
+/** Duración del avance del rebote; la vuelta es un resorte con un leve temblor. */
+const val CursorBumpOutMs = 70
 
 /**
  * Una página de la grilla: [rows] filas de elementos cuadrados, con todas las columnas que entren,
@@ -116,6 +126,21 @@ fun ElementGrid(
         // actuales sin tener que recrearlo.
         val current by rememberUpdatedState(Triple(selected, layout, buttonMapping))
 
+        // Rebote del cursor cuando se intenta ir a donde no se puede (borde de la grilla, primera
+        // o última página): avanza un poco en esa dirección y vuelve con un leve temblor.
+        // [bumpDirection] (-1/0/1 por eje) y [bump] (0…1) se leen al ubicar el cursor: no recomponen.
+        val scope = rememberCoroutineScope()
+        val bump = remember { Animatable(0f) }
+        var bumpDirection by remember { mutableStateOf(IntOffset.Zero) }
+        fun bumpTowards(dx: Int, dy: Int) {
+            bumpDirection = IntOffset(dx, dy)
+            scope.launch {
+                bump.snapTo(0f)
+                bump.animateTo(1f, tween(CursorBumpOutMs))
+                bump.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = Spring.StiffnessMedium))
+            }
+        }
+
         Column(
             verticalArrangement = Arrangement.spacedBy(gridGap),
             modifier = Modifier
@@ -124,7 +149,8 @@ fun ElementGrid(
                 .onKeyEvent { event ->
                     if (!active || event.type != KeyEventType.KeyDown || count == 0) return@onKeyEvent false
                     val (i, g, mapping) = current
-                    val target = when (mapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)) {
+                    val button = mapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)
+                    val target = when (button) {
                         LogicalButton.DPAD_UP -> GridNavigation.up(i, g, count)
                         LogicalButton.DPAD_DOWN -> GridNavigation.down(i, g, count)
                         LogicalButton.DPAD_LEFT -> GridNavigation.left(i, g, count)
@@ -133,7 +159,15 @@ fun ElementGrid(
                         LogicalButton.R -> GridNavigation.nextPage(i, g, count)
                         else -> return@onKeyEvent false // A, B, Y, Menú: no son de la grilla
                     }
-                    if (target != i) onSelectedIndexChange(target)
+                    if (target != i) {
+                        onSelectedIndexChange(target)
+                    } else when (button) {
+                        // No hay a dónde ir: el cursor rebota hacia ese lado.
+                        LogicalButton.DPAD_UP -> bumpTowards(0, -1)
+                        LogicalButton.DPAD_DOWN -> bumpTowards(0, 1)
+                        LogicalButton.DPAD_LEFT, LogicalButton.L -> bumpTowards(-1, 0)
+                        else -> bumpTowards(1, 0) // derecha o R
+                    }
                     true
                 },
         ) {
@@ -201,7 +235,13 @@ fun ElementGrid(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     // La posición se lee al ubicar el cursor: la animación no recompone nada.
-                    .offset { IntOffset(position.value.x.roundToPx(), position.value.y.roundToPx()) },
+                    .offset {
+                        val push = CursorBumpDistance.toPx() * bump.value
+                        IntOffset(
+                            (position.value.x.toPx() + bumpDirection.x * push).roundToInt(),
+                            (position.value.y.toPx() + bumpDirection.y * push).roundToInt(),
+                        )
+                    },
             )
         }
     }
