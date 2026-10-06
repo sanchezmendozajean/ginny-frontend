@@ -49,28 +49,30 @@ class RomRepository(
      * only place this expensive SAF walk should run; everywhere else reads the Room-backed cache
      * that this populates (see [com.ginny.frontend.data.GameIndexRepository]). */
     suspend fun scanAllSystems(
-        romFolderUri: Uri,
+        romFolderUri: Uri?,
         userFolderUri: Uri?,
+        overrides: Map<SystemId, Uri> = emptyMap(),
         onSystemScanned: suspend (SystemDefinition, List<GameEntry>) -> Unit = { _, _ -> },
     ): List<GameEntry> {
         val result = mutableListOf<GameEntry>()
         for (definition in SystemCatalog.all) {
-            val games = listGames(romFolderUri, userFolderUri, definition.id)
+            val games = listGames(romFolderUri, userFolderUri, definition.id, overrides[definition.id])
             result += games
             onSystemScanned(definition, games)
         }
         return result
     }
 
+    /** [overrideUri]: carpeta propia del sistema (Configuración > Sistemas); si es null se usa
+     * `<romFolderUri>/<folderName>`. */
     suspend fun listGames(
-        romFolderUri: Uri,
+        romFolderUri: Uri?,
         userFolderUri: Uri?,
         systemId: SystemId,
+        overrideUri: Uri? = null,
     ): List<GameEntry> = withContext(Dispatchers.IO) {
         val definition = SystemCatalog.byId.getValue(systemId)
-        val romRoot = SafUtils.treeDocument(context, romFolderUri) ?: return@withContext emptyList()
-        val systemDir = SafUtils.findChild(romRoot, systemId.folderName)?.takeIf { it.isDirectory }
-            ?: return@withContext emptyList()
+        val systemDir = systemDirectory(romFolderUri, systemId, overrideUri) ?: return@withContext emptyList()
 
         val iconIndex = userFolderUri?.let { assetRepository.loadIconIndex(it, systemId) } ?: emptyMap()
         val nameIndex = userFolderUri?.let { assetRepository.loadNameIndex(it, systemId) } ?: emptyMap()
@@ -149,12 +151,20 @@ class RomRepository(
      * folder name for those systems) to find and remove the whole thing. Returns false if the ROM
      * folder, the system subfolder, or the game itself can't be found.
      */
-    suspend fun deleteGame(romFolderUri: Uri, game: GameEntry): Boolean = withContext(Dispatchers.IO) {
-        val romRoot = SafUtils.treeDocument(context, romFolderUri) ?: return@withContext false
-        val systemDir = SafUtils.findChild(romRoot, game.systemId.folderName)?.takeIf { it.isDirectory }
-            ?: return@withContext false
+    suspend fun deleteGame(romFolderUri: Uri?, game: GameEntry, overrideUri: Uri? = null): Boolean = withContext(Dispatchers.IO) {
+        val systemDir = systemDirectory(romFolderUri, game.systemId, overrideUri) ?: return@withContext false
         val target = SafUtils.findChild(systemDir, game.romFileName) ?: return@withContext false
         target.delete()
+    }
+
+    /**
+     * Carpeta de un sistema: la propia ([overrideUri]) si tiene una; si no, la subcarpeta
+     * `<folderName>` dentro de la carpeta de ROMs. null si no existe o no está configurada.
+     */
+    private fun systemDirectory(romFolderUri: Uri?, systemId: SystemId, overrideUri: Uri?): DocumentFile? {
+        if (overrideUri != null) return SafUtils.treeDocument(context, overrideUri)?.takeIf { it.isDirectory }
+        val romRoot = romFolderUri?.let { SafUtils.treeDocument(context, it) } ?: return null
+        return SafUtils.findChild(romRoot, systemId.folderName)?.takeIf { it.isDirectory }
     }
 
     /**

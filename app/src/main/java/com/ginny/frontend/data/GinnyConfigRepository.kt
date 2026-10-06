@@ -135,6 +135,7 @@ class GinnyConfigRepository(
                     put("emulator", settings.emulatorFor(system.id).first().name)
                     settings.retroArchCoreFor(system.id).first()?.let { put("core", it) }
                     settings.packageOverrideFor(system.id).first()?.let { put("packageOverride", it) }
+                    settings.romFolderOverrideFor(system.id).first()?.let { put("romFolderUri", it) }
                 }
                 put(system.id.name, systemJson)
             }
@@ -187,6 +188,8 @@ class GinnyConfigRepository(
                     ?.let { settings.setEmulatorFor(system.id, it) }
                 systemJson.optStringOrNull("core")?.let { settings.setRetroArchCoreFor(system.id, it) }
                 systemJson.optStringOrNull("packageOverride")?.let { settings.setPackageOverride(system.id, it) }
+                systemJson.optStringOrNull("romFolderUri")?.let { settings.setRomFolderOverride(system.id, it) }
+                systemJson.optStringOrNull("romFolderUri")?.let { settings.setRomFolderOverride(system.id, it) }
             }
         }
     }

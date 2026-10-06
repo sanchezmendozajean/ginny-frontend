@@ -25,6 +25,16 @@ import com.ginny.frontend.ui.layout.GinnyHeader
 import com.ginny.frontend.ui.modifiers.LocalHazeState
 import com.ginny.frontend.ui.navigation.Screen
 import com.ginny.frontend.ui.screens.games.GamesScreen
+import com.ginny.frontend.ui.screens.games.GameModal
+import com.ginny.frontend.ui.screens.games.GamesViewModel
+import com.ginny.frontend.ui.util.appContainer
+import com.ginny.frontend.data.ButtonMapping
+import com.ginny.frontend.data.model.GameEntry
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.runtime.collectAsState
 import com.ginny.frontend.ui.screens.settings.SettingsModal
 import com.ginny.frontend.ui.screens.systems.SystemsScreen
 import com.ginny.frontend.ui.theme.GinnyThemes
@@ -57,13 +67,20 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
     val goBack = { screen = Screen.Systems }
     BackHandler(enabled = screen != Screen.Systems && !settingsOpen, onBack = goBack)
 
+    // Juego abierto (su modal), o null. Se declara después del BackHandler de pantalla: con los dos
+    // habilitados, B cierra primero el modal.
+    var openGame by remember { mutableStateOf<GameEntry?>(null) }
+    BackHandler(enabled = openGame != null && !settingsOpen) { openGame = null }
+    // La grilla responde solo si no hay nada encima.
+    val gridActive = !settingsOpen && openGame == null
+
     // Une el fondo (que se desenfoca) con los Container (que lo desenfocan detrás de sí).
     val hazeState = remember { HazeState() }
 
     // Desenfoque animado de la interfaz de atrás mientras Configuración está abierta.
     // Modifier.blur funciona en API 31+; en 29-30 no hace nada y queda solo la cortina oscura.
     val backdropBlur by animateDpAsState(
-        targetValue = if (settingsOpen) SettingsBackdropBlur else 0.dp,
+        targetValue = if (settingsOpen || openGame != null) SettingsBackdropBlur else 0.dp,
         label = "settingsBackdropBlur",
     )
 
@@ -97,7 +114,7 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
                         Screen.Systems -> SystemsScreen(
                             onOpenSystem = { scope, title -> screen = Screen.Games(scope, title) },
                             modifier = contentModifier,
-                            active = !settingsOpen,                     // con el modal abierto, la grilla no responde
+                            active = gridActive,                        // con un modal abierto, la grilla no responde
                             onSelectionChanged = onSelectionChanged,
                             onPagingChanged = onPagingChanged,
                         )
@@ -105,8 +122,9 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
                             key(current.scope) {
                                 GamesScreen(
                                     scope = current.scope,
+                                    onOpenGame = { openGame = it },
                                     modifier = contentModifier,
-                                    active = !settingsOpen,
+                                    active = gridActive,
                                     onSelectionChanged = onSelectionChanged,
                                     onPagingChanged = onPagingChanged,
                                 )
@@ -122,6 +140,21 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
                 }
             }
         }
+
+        // ── Modal del juego abierto ────────────────────────────────────────────────────────────
+        // Usa el mismo GamesViewModel que la grilla (misma key → misma instancia).
+        val gamesScope = (screen as? Screen.Games)?.scope
+        val gamesViewModel: GamesViewModel? = gamesScope?.let { s ->
+            val container = appContainer()
+            viewModel(key = s.toString(), factory = viewModelFactory { initializer { GamesViewModel(container, s) } })
+        }
+        val buttonMapping by (gamesViewModel?.buttonMapping ?: remember { MutableStateFlow(ButtonMapping.DEFAULT) }).collectAsState()
+        GameModal(
+            game = openGame,
+            viewModel = gamesViewModel,
+            buttonMapping = buttonMapping,
+            onClose = { openGame = null },
+        )
 
         // ── Modal de Configuración, encima de todo ───────────────────────────────────────────
         SettingsModal(visible = settingsOpen, onClose = onCloseSettings)

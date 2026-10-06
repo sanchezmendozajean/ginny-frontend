@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +38,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -387,6 +390,52 @@ fun GinnyButton(
                 else -> accentText()
             },
             maxLines = 1,
+        )
+    }
+}
+
+/**
+ * Campo de texto de una línea, con la misma forma que [GinnyDropdown]. Guarda su propio texto
+ * mientras se escribe (así el cursor no salta esperando a que se guarde) y avisa cada cambio con
+ * [onValueChange]. [placeholder] se ve mientras está vacío.
+ */
+@Composable
+fun GinnyTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    width: Dp = 240.dp,
+) {
+    val palette = GinnyThemes.current
+    // remember(value) no: el valor guardado llega un instante después de cada tecla y pisaría lo
+    // escrito. Se toma el valor inicial una sola vez.
+    var text by remember { mutableStateOf(value) }
+    val style = TextStyle(fontFamily = GinnyFont, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = palette.ink)
+
+    Box(
+        contentAlignment = Alignment.CenterStart,
+        modifier = modifier
+            .width(width)
+            .height(40.dp)
+            .background(palette.background, CircleShape)
+            .border(1.dp, lineColor(), CircleShape)
+            .padding(horizontal = 16.dp),
+    ) {
+        BasicTextField(
+            value = text,
+            onValueChange = {
+                text = it
+                onValueChange(it)
+            },
+            singleLine = true,
+            textStyle = style,
+            cursorBrush = SolidColor(palette.accent),
+            decorationBox = { inner ->
+                if (text.isEmpty()) Text(placeholder, style = style.copy(color = palette.muted))
+                inner()
+            },
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

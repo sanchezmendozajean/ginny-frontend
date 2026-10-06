@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.ui.components.game.GridEntry
 import com.ginny.frontend.ui.layout.Content
@@ -23,6 +24,7 @@ import com.ginny.frontend.ui.util.appContainer
 @Composable
 fun GamesScreen(
     scope: GamesScope,
+    onOpenGame: (GameEntry) -> Unit,
     modifier: Modifier = Modifier,
     active: Boolean = true,
     onSelectionChanged: (GridEntry?) -> Unit = {},
@@ -54,8 +56,8 @@ fun GamesScreen(
         selectedIndex = viewModel.focusedIndex,
         onSelectedIndexChange = { viewModel.focusedIndex = it },
         buttonMapping = buttonMapping,
-        // Abrir un juego (lanzarlo o ir a sus estados guardados): siguiente paso.
-        onActivate = { },
+        // Abrir un juego: muestra su modal (Jugar, emulador, favorito…).
+        onActivate = { entry -> games.firstOrNull { it.romUri.toString() == entry.key }?.let(onOpenGame) },
         loading = loading,
         active = active,
         modifier = modifier,

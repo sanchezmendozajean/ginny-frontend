@@ -1,7 +1,5 @@
 package com.ginny.frontend.ui.screens.settings
 
-import android.net.Uri
-import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -50,6 +48,7 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
     val settings = viewModel.settings
     val userFolder by settings.userFolderUri.collectAsState(initial = null)
     val romFolder by settings.romFolderUri.collectAsState(initial = null)
+    val romOverrides by settings.romFolderOverrides.collectAsState(initial = emptyMap())
     val savesFolder by settings.retroArchSavesUri.collectAsState(initial = null)
     val lastScanAt by settings.lastScanAt.collectAsState(initial = null)
     val scanning by viewModel.isScanningLibrary.collectAsState()
@@ -79,7 +78,7 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
                 title = "Escanear biblioteca",
                 // La navegación siempre lee del último escaneo, no del disco.
                 subtitle = when {
-                    romFolder == null -> "Elige primero la carpeta de ROMs"
+                    romFolder == null && romOverrides.isEmpty() -> "Elige primero la carpeta de ROMs"
                     lastScanAt != null -> "Último escaneo: ${formatScanTimestamp(lastScanAt!!)}"
                     else -> "Todavía no se escaneó: los sistemas aparecen tras el primer escaneo"
                 },
@@ -90,7 +89,7 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
                     GinnyButton(
                         "Escanear",
                         primary = true,
-                        enabled = romFolder != null,
+                        enabled = romFolder != null || romOverrides.isNotEmpty(),
                         onClick = {
                             showProgress = true
                             viewModel.scanLibrary(context)
@@ -166,20 +165,6 @@ private fun ScanProgress(scanning: Boolean, entries: List<ScanProgressEntry>) {
             }
         }
     }
-}
-
-/**
- * Ruta legible de una carpeta elegida con SAF. El URI trae un id como "primary:Ginny/ROMs"
- * (memoria interna) o "1A2B-3C4D:ROMs" (tarjeta SD); se traduce a "Memoria interna/Ginny/ROMs".
- */
-private fun folderLabel(uri: String?): String {
-    if (uri == null) return "Sin elegir"
-    val docId = runCatching { DocumentsContract.getTreeDocumentId(Uri.parse(uri)) }.getOrNull()
-        ?: return uri
-    val volume = docId.substringBefore(':')
-    val path = docId.substringAfter(':', "")
-    val root = if (volume == "primary") "Memoria interna" else "Tarjeta SD"
-    return if (path.isEmpty()) root else "$root/$path"
 }
 
 private fun formatScanTimestamp(epochMillis: Long): String =

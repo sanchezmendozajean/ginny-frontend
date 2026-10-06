@@ -49,10 +49,12 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun scanLibrary(context: Context) {
         scanJob = viewModelScope.launch {
             val romUri = settings.romFolderUri.first()
-            if (romUri == null) {
+            val overrides = settings.romFolderOverrides.first().mapValues { Uri.parse(it.value) }
+            // Basta con la carpeta de ROMs o con algún sistema que tenga su propia carpeta.
+            if (romUri == null && overrides.isEmpty()) {
                 android.widget.Toast.makeText(
                     context,
-                    "Configurá primero la Carpeta de ROMs.",
+                    "Elige primero la carpeta de ROMs.",
                     android.widget.Toast.LENGTH_LONG,
                 ).show()
                 return@launch
@@ -61,7 +63,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
             _scanProgress.value = emptyList()
             try {
                 val userUri = settings.userFolderUri.first()
-                val games = container.romRepository.scanAllSystems(Uri.parse(romUri), userUri?.let(Uri::parse)) { definition, systemGames ->
+                val games = container.romRepository.scanAllSystems(romUri?.let(Uri::parse), userUri?.let(Uri::parse), overrides) { definition, systemGames ->
                     if (systemGames.isNotEmpty()) {
                         _scanProgress.value = _scanProgress.value + ScanProgressEntry(definition.displayName, systemGames.size)
                     }
@@ -138,6 +140,39 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         )
         settings.setRomFolderUri(uri.toString())
         container.configRepository.requestSync()
+    }
+
+    /** Carpeta de ROMs propia de un sistema (Configuración > Sistemas). Después reescanea ese sistema. */
+    fun onSystemRomFolderPicked(context: Context, systemId: SystemId, uri: Uri) = viewModelScope.launch {
+        // Escritura también, como en la carpeta de ROMs general: "Eliminar juego" borra el archivo.
+        context.contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+        )
+        settings.setRomFolderOverride(systemId, uri.toString())
+        container.configRepository.requestSync()
+        rescanSystem(context, systemId)
+    }
+
+    /** Vuelve a la carpeta de siempre (`<ROMS>/<sistema>`) y reescanea ese sistema. */
+    fun resetSystemRomFolder(context: Context, systemId: SystemId) = viewModelScope.launch {
+        settings.setRomFolderOverride(systemId, null)
+        container.configRepository.requestSync()
+        rescanSystem(context, systemId)
+    }
+
+    /** Actualiza la biblioteca guardada de un solo sistema (su carpeta cambió). */
+    private suspend fun rescanSystem(context: Context, systemId: SystemId) {
+        val romUri = settings.romFolderUri.first()?.let(Uri::parse)
+        val overrideUri = settings.romFolderOverrideFor(systemId).first()?.let(Uri::parse)
+        val userUri = settings.userFolderUri.first()?.let(Uri::parse)
+        val games = container.romRepository.listGames(romUri, userUri, systemId, overrideUri)
+        container.gameIndexRepository.replaceForSystem(systemId, games)
+        android.widget.Toast.makeText(
+            context,
+            "${SystemCatalog.byId.getValue(systemId).displayName}: ${games.size} ${if (games.size == 1) "juego" else "juegos"}",
+            android.widget.Toast.LENGTH_SHORT,
+        ).show()
     }
 
     fun onSavesFolderPicked(context: Context, uri: Uri) = viewModelScope.launch {

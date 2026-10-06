@@ -8,7 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ginny.frontend.R
@@ -46,20 +48,28 @@ private fun FacePosition.iconRotation(): Float = when (this) {
 }
 
 /**
+ * Ícono del mando (ic_buttons) con el círculo de [button] resaltado según la distribución elegida
+ * ([LocalButtonLayout]). Lo usan la leyenda y los botones que se activan con un botón físico.
+ */
+@Composable
+fun FaceButtonIcon(button: FaceButton, tint: Color = GinnyThemes.current.ink, size: Dp = 16.dp) {
+    val rotation = button.positionIn(LocalButtonLayout.current).iconRotation()
+    Icon(id = R.drawable.ic_buttons, degrees = rotation, tint = tint, size = size)
+}
+
+/**
  * Ícono del mando señalando [button] + su acción ("Abrir", "Regresar"…). El círculo resaltado
  * sigue la distribución elegida en Configuración ([LocalButtonLayout]).
  */
 @Composable
 fun ButtonLegend(button: FaceButton, label: String, modifier: Modifier = Modifier) {
     val palette = GinnyThemes.current
-    val rotation = button.positionIn(LocalButtonLayout.current).iconRotation()
-
     Row(
         modifier = modifier.padding(horizontal = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(id = R.drawable.ic_buttons, degrees = rotation, size = 16.dp)
+        FaceButtonIcon(button)
         Text(
             text = label,
             fontFamily = GinnyFont,

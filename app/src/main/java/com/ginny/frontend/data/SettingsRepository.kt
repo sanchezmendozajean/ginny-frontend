@@ -43,6 +43,7 @@ class SettingsRepository(private val context: Context) {
         fun coreFor(systemId: SystemId) = stringPreferencesKey("core_${systemId.name}")
         fun buttonFor(button: LogicalButton) = intPreferencesKey("button_${button.name}")
         fun packageOverrideFor(systemId: SystemId) = stringPreferencesKey("package_override_${systemId.name}")
+        fun romFolderFor(systemId: SystemId) = stringPreferencesKey("rom_folder_${systemId.name}")
     }
 
     val gridRows: Flow<Int> = context.dataStore.data.map { it[Keys.GRID_ROWS]?.coerceIn(1, 4) ?: 2 }
@@ -50,6 +51,24 @@ class SettingsRepository(private val context: Context) {
     val userFolderUri: Flow<String?> = context.dataStore.data.map { it[Keys.USER_FOLDER_URI] }
     val romFolderUri: Flow<String?> = context.dataStore.data.map { it[Keys.ROM_FOLDER_URI] }
     val retroArchSavesUri: Flow<String?> = context.dataStore.data.map { it[Keys.RETROARCH_SAVES_URI] }
+
+    /**
+     * Carpeta de ROMs propia de un sistema (URI de SAF), elegida en Configuración > Sistemas.
+     * null = la de siempre: `<carpeta de ROMs>/<SystemId.folderName>`.
+     */
+    fun romFolderOverrideFor(systemId: SystemId): Flow<String?> =
+        context.dataStore.data.map { it[Keys.romFolderFor(systemId)] }
+
+    /** Todas las carpetas propias, por sistema (solo los que tienen una). Para el escaneo completo. */
+    val romFolderOverrides: Flow<Map<SystemId, String>> = context.dataStore.data.map { prefs ->
+        SystemId.entries.mapNotNull { id -> prefs[Keys.romFolderFor(id)]?.let { id to it } }.toMap()
+    }
+
+    suspend fun setRomFolderOverride(systemId: SystemId, uri: String?) {
+        context.dataStore.edit { prefs ->
+            if (uri == null) prefs.remove(Keys.romFolderFor(systemId)) else prefs[Keys.romFolderFor(systemId)] = uri
+        }
+    }
 
     /** Manual package-name override for systems with more than one real-world app/fork (see
      * [com.ginny.frontend.data.model.SystemDefinition.supportsPackageOverride]). */

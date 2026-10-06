@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ginny.frontend.data.ButtonMapping
+import com.ginny.frontend.data.model.EmulatorTarget
 import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemDefinition
@@ -90,6 +91,27 @@ class GamesViewModel(
         }
     }
 
+    // Emulador, core y package desde el modal del juego. Son del sistema (afectan a todos sus
+    // juegos), igual que en Configuración > Sistemas; también se sincronizan con ginny.cfg.
+    fun setEmulator(systemId: SystemId, emulator: EmulatorTarget) = viewModelScope.launch {
+        settingsRepository.setEmulatorFor(systemId, emulator)
+        container.configRepository.requestSync()
+    }
+
+    fun setCore(systemId: SystemId, coreId: String) = viewModelScope.launch {
+        settingsRepository.setRetroArchCoreFor(systemId, coreId)
+        container.configRepository.requestSync()
+    }
+
+    fun setPackageOverride(systemId: SystemId, pkg: String) = viewModelScope.launch {
+        settingsRepository.setPackageOverride(systemId, pkg)
+        container.configRepository.requestSync()
+    }
+
+    /** "Jugar" desde el modal del juego: abre el emulador configurado para su sistema. */
+    suspend fun launch(context: Context, game: GameEntry): LaunchResult =
+        container.gameLauncher.launch(context, game)
+
     suspend fun toggleFavorite(game: GameEntry) {
         val isFavorite = game.favoriteKey() in favoriteGameKeys.value
         container.settingsRepository.setFavorite(game, !isFavorite)
@@ -108,10 +130,11 @@ class GamesViewModel(
         val definition = SystemCatalog.byId.getValue(systemId)
         viewModelScope.launch {
             val romUri = settingsRepository.romFolderUri.first()
-            if (romUri == null) {
+            val overrideUri = settingsRepository.romFolderOverrideFor(systemId).first()?.let(Uri::parse)
+            if (romUri == null && overrideUri == null) {
                 android.widget.Toast.makeText(
                     context,
-                    "Configurá primero la Carpeta de ROMs.",
+                    "Elige primero la carpeta de ROMs.",
                     android.widget.Toast.LENGTH_LONG,
                 ).show()
                 return@launch
@@ -119,7 +142,7 @@ class GamesViewModel(
             isRescanning = true
             try {
                 val userUri = settingsRepository.userFolderUri.first()
-                val games = container.romRepository.listGames(Uri.parse(romUri), userUri?.let(Uri::parse), systemId)
+                val games = container.romRepository.listGames(romUri?.let(Uri::parse), userUri?.let(Uri::parse), systemId, overrideUri)
                 container.gameIndexRepository.replaceForSystem(systemId, games)
                 container.configRepository.requestSync()
                 android.widget.Toast.makeText(
@@ -140,15 +163,16 @@ class GamesViewModel(
      */
     suspend fun deleteGame(context: Context, game: GameEntry) {
         val romUri = settingsRepository.romFolderUri.first()?.let(Uri::parse)
-        if (romUri == null) {
+        val overrideUri = settingsRepository.romFolderOverrideFor(game.systemId).first()?.let(Uri::parse)
+        if (romUri == null && overrideUri == null) {
             android.widget.Toast.makeText(
                 context,
-                "Configurá primero la Carpeta de ROMs.",
+                "Elige primero la carpeta de ROMs.",
                 android.widget.Toast.LENGTH_LONG,
             ).show()
             return
         }
-        val deleted = container.romRepository.deleteGame(romUri, game)
+        val deleted = container.romRepository.deleteGame(romUri, game, overrideUri)
         if (deleted) {
             settingsRepository.userFolderUri.first()?.let(Uri::parse)?.let { userUri ->
                 container.assetRepository.deleteIcon(userUri, game.systemId, game.romFileName)

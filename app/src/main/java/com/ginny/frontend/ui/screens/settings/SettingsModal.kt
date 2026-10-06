@@ -132,7 +132,7 @@ fun SettingsModal(visible: Boolean, onClose: () -> Unit) {
                         when (section) {
                             SettingsSection.Interfaz -> InterfazOptions(viewModel)
                             SettingsSection.Carpetas -> CarpetasOptions(viewModel)
-                            SettingsSection.Emuladores -> Unit // siguiente paso
+                            SettingsSection.Sistemas -> SistemasOptions(viewModel)
                         }
                     }
                 }

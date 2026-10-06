@@ -35,7 +35,7 @@ import com.ginny.frontend.ui.theme.lighten
 enum class SettingsSection(val label: String) {
     Interfaz("Interfaz"),
     Carpetas("Carpetas"),
-    Emuladores("Emuladores"),
+    Sistemas("Sistemas"), // antes "Emuladores": emulador, core y carpeta de ROMs de cada sistema
 }
 
 /** Ancho de la barra lateral. */
