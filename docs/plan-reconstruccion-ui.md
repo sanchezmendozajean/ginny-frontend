@@ -119,6 +119,11 @@ Resumen para detectar omisiones. La fuente de verdad sigue siendo
 - Toda la paleta derivaba de un solo hue (OKLCH) para soportar temas y modo Ciclo.
 - Rendimiento: hardware de gama baja — evitar animaciones permanentes que recompongan cada frame.
 
+## Etapa 2
+
+La etapa 1 se cerró el 2026-10-06. Lo pendiente está en [pendientes-etapa-2.md](pendientes-etapa-2.md):
+se revisa punto por punto y se anota una decisión para cada uno antes de implementarlo.
+
 ## Registro de avances
 
 Anotar aquí cada elemento terminado y cualquier regla que se decida cambiar o descartar.
