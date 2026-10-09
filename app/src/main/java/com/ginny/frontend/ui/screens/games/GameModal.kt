@@ -10,6 +10,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -47,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ginny.frontend.data.ButtonMapping
@@ -61,6 +63,8 @@ import com.ginny.frontend.ui.components.FaceButtonIcon
 import com.ginny.frontend.ui.components.game.Element
 import com.ginny.frontend.ui.components.settings.GinnyDropdown
 import com.ginny.frontend.ui.components.settings.GinnyTextField
+import com.ginny.frontend.ui.screens.settings.SettingsModalCornerRadius
+import com.ginny.frontend.ui.screens.settings.SettingsModalMargin
 import com.ginny.frontend.ui.screens.settings.SettingsScrimColor
 import com.ginny.frontend.ui.screens.settings.systemFolderLabel
 import com.ginny.frontend.ui.theme.GinnyFont
@@ -71,11 +75,12 @@ import com.ginny.frontend.ui.util.LocalSoundManager
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-/** Ancho del modal (la pantalla mide ~834 dp). */
-private val GameModalWidth = 600.dp
-
-/** Ancho de cada desplegable de la sección Emulador (dos columnas dentro del modal). */
-private val GameModalControlWidth = 264.dp // (600 − 2×20 de margen − 2×10 de la tarjeta − 12 entre ambos) ÷ 2
+/**
+ * Lo que, del ancho de la tarjeta, no es de los dos desplegables de la sección Emulador: margen de
+ * la tarjeta (2×20) + margen de la sección (2×10) + hueco entre ambos (12). Cada desplegable mide
+ * (ancho de la tarjeta − esto) ÷ 2.
+ */
+private val GameModalControlsChrome = 72.dp
 
 /** Rojo de "Eliminar" (OKLCH: tono 25°, el mismo para todos los temas). */
 private val DeleteRed = Color(0xFFC0392B)
@@ -108,7 +113,7 @@ fun GameModal(
         val shown = lastGame.value ?: return@AnimatedVisibility
         val vm = lastViewModel.value ?: return@AnimatedVisibility
 
-        Box(
+        BoxWithConstraints(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
@@ -116,10 +121,14 @@ fun GameModal(
                 // Tocar la cortina (fuera de la tarjeta) cierra; los toques no pasan a la grilla.
                 .pointerInput(Unit) { detectTapGestures { onClose() } },
         ) {
+            // La tarjeta ocupa la pantalla menos el mismo margen que el modal de Configuración, igual
+            // en los cuatro lados; los desplegables se reparten su ancho.
+            val cardWidth = maxWidth - SettingsModalMargin * 2
             GameCard(
                 game = shown,
                 viewModel = vm,
                 buttonMapping = buttonMapping,
+                controlWidth = (cardWidth - GameModalControlsChrome) / 2,
                 onClose = onClose,
             )
         }
@@ -131,6 +140,8 @@ private fun GameCard(
     game: GameEntry,
     viewModel: GamesViewModel,
     buttonMapping: ButtonMapping,
+    /** Ancho de cada desplegable de la sección Emulador (dos columnas). */
+    controlWidth: Dp,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -168,11 +179,13 @@ private fun GameCard(
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
     val currentPlay by rememberUpdatedState(::play)
 
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(SettingsModalCornerRadius)
     Column(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = modifier
-            .width(GameModalWidth)
+            // Mismo margen que el modal de Configuración, igual en horizontal y en vertical.
+            .padding(SettingsModalMargin)
+            .fillMaxSize()
             .shadow(24.dp, shape)
             .background(Color.White, shape)
             // Los toques dentro de la tarjeta no cierran el modal.
@@ -257,7 +270,7 @@ private fun GameCard(
                         selected = emulator,
                         options = system.availableEmulators.map { it.displayName to it },
                         onSelect = { viewModel.setEmulator(system.id, it) },
-                        width = GameModalControlWidth,
+                        width = controlWidth,
                     )
                 }
                 LabeledControl("Core") {
@@ -267,7 +280,7 @@ private fun GameCard(
                             selected = system.retroArchCores.firstOrNull { it.id == coreId }?.id ?: system.retroArchCores.first().id,
                             options = system.retroArchCores.map { it.label to it.id },
                             onSelect = { viewModel.setCore(system.id, it) },
-                            width = GameModalControlWidth,
+                            width = controlWidth,
                         )
                         system.supportsPackageOverride -> {
                             val packageFlow = remember(system.id) { settings.packageOverrideFor(system.id).map { it.orEmpty() } }
@@ -277,14 +290,14 @@ private fun GameCard(
                                     value = it,
                                     onValueChange = { pkg -> viewModel.setPackageOverride(system.id, pkg) },
                                     placeholder = "Package…",
-                                    width = GameModalControlWidth,
+                                    width = controlWidth,
                                 )
                             }
                         }
                         else -> Box(
                             contentAlignment = Alignment.CenterStart,
                             modifier = Modifier
-                                .width(GameModalControlWidth)
+                                .width(controlWidth)
                                 .height(40.dp)
                                 .border(1.dp, palette.ink.copy(alpha = 0.08f), CircleShape)
                                 .padding(horizontal = 16.dp),
@@ -295,6 +308,9 @@ private fun GameCard(
                 }
             }
         }
+
+        // Si sobra alto, queda aquí y las acciones se mantienen pegadas abajo.
+        Spacer(Modifier.weight(1f))
 
         // ── Acciones ────────────────────────────────────────────────────────────────────────
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
