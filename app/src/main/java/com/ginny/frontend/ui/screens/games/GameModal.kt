@@ -152,7 +152,7 @@ private fun GameCard(
     var deleteArmed by remember(game) { mutableStateOf(false) }
 
     fun play() {
-        sound?.playActivateSound()
+        sound?.playLaunchSound()
         scope.launch {
             when (val result = viewModel.launch(context, game)) {
                 LaunchResult.Launched -> onClose()

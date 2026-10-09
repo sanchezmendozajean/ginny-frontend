@@ -44,6 +44,7 @@ class SoundManager(
 
     private var focusSoundId = 0
     private var activateSoundId = 0
+    private var launchSoundId = 0
     private var musicPlayer: MediaPlayer? = null
     private var currentMusicKey: String? = null
 
@@ -57,6 +58,7 @@ class SoundManager(
 
         focusSoundId = soundPool.load(context, R.raw.sfx_focus, 1)
         activateSoundId = soundPool.load(context, R.raw.sfx_activate, 1)
+        launchSoundId = soundPool.load(context, R.raw.sfx_launch, 1)
 
         scope.launch {
             settingsRepository.uiSoundVolume.collect { uiVolume = it }
@@ -109,6 +111,10 @@ class SoundManager(
 
     fun playActivateSound() {
         soundPool.play(activateSoundId, uiVolume, uiVolume, 1, 0, 1f)
+    }
+
+    fun playLaunchSound() {
+        soundPool.play(launchSoundId, uiVolume, uiVolume, 1, 0, 1f)
     }
 
     fun release() {
