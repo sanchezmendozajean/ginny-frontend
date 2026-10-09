@@ -1,0 +1,11 @@
+# Plantilla de scrapper.properties (que está en .gitignore y nunca se commitea).
+# Copia este archivo como `scrapper.properties` (en esta misma carpeta) y completa los valores.
+#
+# Son las credenciales de DESARROLLADOR de Ginny ante ScreenScraper (no las de tu cuenta de usuario:
+# esas se escriben dentro de la app, en Configuración > Scrapper). Se piden en el foro de
+# ScreenScraper: https://www.screenscraper.fr/forumsujets.php?frub=12
+#
+# Se incrustan en el APK al compilar. Sin este archivo la app compila igual, pero el scrapper de
+# ScreenScraper queda desactivado.
+screenscraper.devId=
+screenscraper.devPassword=

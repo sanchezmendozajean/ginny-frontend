@@ -133,6 +133,7 @@ fun SettingsModal(visible: Boolean, onClose: () -> Unit) {
                             SettingsSection.Interfaz -> InterfazOptions(viewModel)
                             SettingsSection.Carpetas -> CarpetasOptions(viewModel)
                             SettingsSection.Sistemas -> SistemasOptions(viewModel)
+                            SettingsSection.Scrapper -> ScrapperOptions(viewModel)
                         }
                     }
                 }

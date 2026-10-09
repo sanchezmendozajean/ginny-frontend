@@ -36,6 +36,7 @@ enum class SettingsSection(val label: String) {
     Interfaz("Interfaz"),
     Carpetas("Carpetas"),
     Sistemas("Sistemas"), // antes "Emuladores": emulador, core y carpeta de ROMs de cada sistema
+    Scrapper("Scrapper"), // credenciales de SteamGridDB / ScreenScraper y qué descargar
 }
 
 /** Ancho de la barra lateral. */

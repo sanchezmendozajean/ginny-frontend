@@ -127,6 +127,62 @@ Al ser **idempotente** (salta lo que ya existe), si el sistema mata el proceso s
 Un servicio en primer plano / WorkManager queda fuera de esta fase (se necesitará si el lote debe
 seguir con la app en segundo plano; hoy `MainActivity` mantiene la pantalla encendida).
 
+## Prueba de reconocimiento de las APIs (2026-10-08)
+
+Peticiones sueltas con `curl` (no es código de la app), con las credenciales del usuario:
+
+- **ScreenScraper sin ID de desarrollador: no funciona.** `jeuInfos.php` responde HTTP 403,
+  "Vérifier vos identifiants développeur". `ssuserInfos.php` responde 403 "Vérifier les identifiants
+  utilisateurs" (no permite concluir si la cuenta es válida: probablemente también exige el par de
+  desarrollador). **Hay que solicitar `devid`/`devpassword`.** Según la documentación oficial
+  (`api.screenscraper.fr/webapi2.php`) se piden presentando el software en el foro:
+  `https://www.screenscraper.fr/forumsujets.php?frub=12&numpage=0`. La API es solo para aplicaciones
+  "completamente gratuitas y distribuidas" (o con autorización previa); `softname` es obligatorio;
+  los hilos simultáneos y el cupo diario dependen del nivel del usuario (contribuciones a la base
+  o apoyo económico); 430 = cupo del día agotado.
+- **SteamGridDB: funciona.** `search/autocomplete/{nombre}` devuelve `id`, `name`, `verified`,
+  `types` y `release_date` (epoch en segundos; sirve de respaldo del año). `grids/game/{id}` con
+  `dimensions=512x512` devolvió 4 resultados y con `1024x1024`, 19 (el filtro funciona; `mime`
+  png o jpeg). Cada grid trae `score`, `style`, `language`, `width`, `height`, `url`, `thumb`.
+  - Hay más 1024 que 512: si solo existe 1024, se **reduce** a 512 (reducir sí está permitido; lo
+    que no se hace es agrandar).
+  - `language` permite preferir `es`/`en` sobre `ja` al elegir entre varios.
+  - Todos los resultados tenían `score: 0` en esta muestra: no ordenar solo por puntuación.
+
+### Prueba con credenciales de desarrollador (2026-10-10)
+
+El equipo de ScreenScraper aprobó la solicitud y creó la cuenta de desarrollador. Con ella, **la
+API funciona**: `ssuserInfos.php` y `jeuInfos.php` (HTTP 200, `success: true`). Hallazgos:
+
+- **Cuenta del usuario:** `maxthreads` = **1**, `maxrequestspermin` = 3072, `maxrequestsperday` =
+  **50 000**, `maxrequestskoperday` = 5 000 (no encontrados), `maxdownloadspeed` = 128.
+  Un solo hilo → peticiones **estrictamente secuenciales**. El cupo diario sobra.
+- **Latencia: ~4-5 s por `jeuInfos`** (tiempo de servidor, no de ancho de banda). Una biblioteca de
+  500 juegos son ~40 min solo en metadatos, más las descargas de media. Refuerza el diseño
+  reanudable y la barra de progreso con estimación.
+- **Peso de la respuesta:** muy variable. Un juego famoso (Super Mario Bros., NES) devolvió
+  **1,26 MB** de JSON (cientos de hacks y traducciones en `roms`); uno común (Bomberman II), 67 KB.
+  Hay que parsear en streaming o aceptar picos de ~1-2 MB por respuesta (sin guardarla entera).
+- **Identificación por nombre funciona:** `systemeid=3` + `romtype=rom` + `romnom=<archivo>` bastó
+  (sin hash). `systeme.id` 3 = NES confirmado.
+- **Campos del juego** (`response.jeu`): `id`, `romid`, `noms[{region,text}]`,
+  `synopsis[{langue,text}]` (en, fr, de, **es**, it, pt), `dates[{region,text}]` (por región:
+  `us`/`jp`/`eu`…), `developpeur{id,text}`, `editeur{id,text}`, `joueurs{text}`, `note{text}`
+  (sobre 20), `genres[{id, noms[{langue,text}]}]`, `medias[...]`.
+- **Medias** (`jeu.medias[]`, cada una con `type`, `region`, `format`, `size`, `url`, `crc`/`md5`/
+  `sha1`): nombres **confirmados** `wheel`, `box-2D`, `box-2D-back`, `box-2D-side`,
+  `video-normalized` y `video` (ambos mp4; 1,6 MB y 2,3 MB en el ejemplo). `video`/`video-normalized`
+  vienen **sin región**. Hay entradas **repetidas** para una misma región (tomar la primera).
+  Las cajas 2D pesan 170-540 KB (frente) y 30-680 KB (trasera/lomo).
+- **Dos tipos de media nuevos y relevantes para la caja 3D:** `box-texture` (textura de la caja
+  completa en una sola imagen, ~0,5-1,2 MB) y `box-3D` (render ya en 3D, no sirve para rotar).
+  `box-texture` podría ahorrar armar la caja con tres imágenes; **decidir en la fase visual** si se
+  descarga además (o en lugar) de las tres caras sueltas.
+- **La `url` de cada media lleva las credenciales incrustadas** (`devid`, `devpassword`, `ssid`,
+  `sspassword`). Confirma la regla de no loguear URLs ni mostrarlas en errores.
+- **Regiones:** en el ejemplo `wor` no apareció (wheel: eu, fr, us); frente de caja: de, eu, …; la
+  región `eu` tenía frente, trasera y lomo a la vez, lo que cuadra con la regla de caja consistente.
+
 ## Pasos de implementación (cada uno es un commit independiente)
 
 ### 0. Base de red
@@ -138,8 +194,9 @@ seguir con la app en segundo plano; hoy `MainActivity` mantiene la pantalla ence
 ### 1. Credenciales + sección "Scrapper" en Configuración
 - `data/scrap/ScrapperSettingsRepository.kt`: DataStore propio `ginny_scrapper`. Campos:
   - SteamGridDB: `apiKey`.
-  - ScreenScraper: `userId`, `userPassword` (opcionales: sin cuenta se usa el cupo anónimo, más
-    limitado) y `devId`, `devPassword` (ver "Preguntas abiertas").
+  - ScreenScraper: `userId`, `userPassword` (se recomienda tenerlos: sin cuenta, ScreenScraper
+    aplica el cupo de usuarios no registrados; **no probado**). `devId`/`devPassword` **no** van
+    aquí: ver Decisiones, punto 1.
 - `AppContainer`: instanciarlo. **No** tocar `GinnyConfigRepository`.
 - UI: `SettingsSection.Scrapper("Scrapper")` + `ScrapperOptions.kt` con un `SettingsGroup` por
   proveedor, usando `GinnyTextField`. Campos secretos **enmascarados**. `SettingsModal` ya hace
@@ -236,10 +293,17 @@ seguir con la app en segundo plano; hoy `MainActivity` mantiene la pantalla ence
 
 ## Decisiones tomadas (2026-10-07)
 
-1. **Credenciales de ScreenScraper** (incluidas las de desarrollador): el usuario las tiene y las
-   dejó en `docs/Notas.secret.md` (ignorado por git vía `*.secret.md`). Se ingresan a mano en la
-   sección Scrapper; **no se copian al código ni a ningún archivo versionado**. Campos en el grupo
-   ScreenScraper (las de desarrollador bajo "Avanzado").
+1. **Credenciales de ScreenScraper.** *(Revisada el 2026-10-10.)*
+   - **Usuario final** (usuario y contraseña de su cuenta): se escriben en Configuración >
+     Scrapper; DataStore propio, fuera de `ginny.cfg` y de las copias de seguridad.
+   - **Desarrollador de Ginny** (`devid`/`devpassword`): **no las escribe el usuario final.**
+     Van **incrustadas en el APK** como campos de `BuildConfig` (`SCREENSCRAPER_DEV_ID`,
+     `SCREENSCRAPER_DEV_PASSWORD`), inyectados al compilar desde `scrapper.properties` (ignorado por
+     git, plantilla `scrapper.properties.example`; mismo patrón que `keystore.properties`). El código
+     fuente y el repositorio nunca las contienen. Se leen vía `ScrapperDevCredentials`; si se
+     compila sin el archivo quedan vacías y ScreenScraper se desactiva (`screenScraperAvailable`).
+     Limitación asumida: dentro de un APK son extraíbles; ScreenScraper puede revocarlas.
+   - Las credenciales reales están en `docs/Notas.secret.md` (ignorado por git vía `*.secret.md`).
 2. **Ícono cuadrado:** grids de SteamGridDB, **512×512 preferido**; si no existe, la **más grande
    disponible que sea cuadrada y menor**, **sin agrandar nunca** (no se reescala hacia arriba). El
    endpoint `icons` queda como último respaldo, con la misma regla.
@@ -265,4 +329,5 @@ seguir con la app en segundo plano; hoy `MainActivity` mantiene la pantalla ence
 
 | Fecha | Paso | Notas |
 |---|---|---|
-| | | |
+| 2026-10-07 | 1. Credenciales + sección "Scrapper" (y la parte de backup del paso 0) | `data/scrap/ScrapperSettingsRepository.kt` (DataStore propio `ginny_scrapper`, fuera de `ginny.cfg`) y `ScrapMedia.kt`. `res/xml/backup_rules.xml` + `data_extraction_rules.xml` excluyen ese archivo de las copias (referenciados en el manifest). `SettingsSection.Scrapper` + `ScrapperOptions.kt`: grupos ScreenScraper (usuario, contraseña, ID y contraseña de desarrollador), SteamGridDB (clave de API), "Qué descargar" (7 interruptores; video apagado por defecto) y General (solo Wi-Fi, mostrar claves). `GinnyTextField` gana `secret`/`masked` (puntos, sin autocorrección). Solo compila (`compileDebugKotlin` + `processDebugManifest`); no probado en dispositivo. **Pendiente del paso 0:** permiso `INTERNET`/`ACCESS_NETWORK_STATE` y OkHttp (se agregan junto a los clientes, para no dejar dependencias sin uso). El botón "Verificar credenciales" queda para cuando existan los clientes. |
+| 2026-10-10 | 1b. Credenciales de desarrollador fuera de la pantalla | `devid`/`devpassword` ya no se piden al usuario: `scrapper.properties` (ignorado por git) → `BuildConfig.SCREENSCRAPER_DEV_ID/PASSWORD` (`buildFeatures.buildConfig = true`) → `data/scrap/ScrapperDevCredentials.kt`. Plantilla `scrapper.properties.example` y sección en el README. Se quitaron los dos campos de `ScrapperOptions`, del `SettingsViewModel` y del `ScrapperSettingsRepository`. Verificado: compila y el `BuildConfig` generado trae ambos valores. |

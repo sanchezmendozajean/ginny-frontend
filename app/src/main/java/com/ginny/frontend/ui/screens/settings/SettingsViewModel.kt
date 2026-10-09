@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.data.model.EmulatorTarget
+import com.ginny.frontend.data.scrap.ScrapMedia
 import com.ginny.frontend.data.model.MusicSelection
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemId
@@ -30,6 +31,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     val settings = container.settingsRepository
     val musicRepository = container.musicRepository
     val assetRepository = container.assetRepository
+    val scrapper = container.scrapperSettingsRepository
     val systems = SystemCatalog.allSortedByName
 
     /** Non-null logical button currently waiting for the next physical key press to bind to it. */
@@ -210,6 +212,14 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         settings.setRetroArchCoreFor(systemId, coreId)
         container.configRepository.requestSync()
     }
+
+    // Scrapper: no llama a configRepository.requestSync() a propósito — las credenciales no deben
+    // terminar en ginny.cfg (texto plano en la Carpeta de Usuario).
+    fun setScreenScraperUser(value: String) = viewModelScope.launch { scrapper.setScreenScraperUser(value) }
+    fun setScreenScraperPassword(value: String) = viewModelScope.launch { scrapper.setScreenScraperPassword(value) }
+    fun setSteamGridDbApiKey(value: String) = viewModelScope.launch { scrapper.setSteamGridDbApiKey(value) }
+    fun setScrapMediaEnabled(media: ScrapMedia, enabled: Boolean) = viewModelScope.launch { scrapper.setMediaEnabled(media, enabled) }
+    fun setScrapOnlyOnWifi(value: Boolean) = viewModelScope.launch { scrapper.setOnlyOnWifi(value) }
 
     fun startListeningForButton(button: LogicalButton) {
         listeningForButton = button

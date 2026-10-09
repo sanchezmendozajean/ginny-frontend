@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +43,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -398,6 +402,9 @@ fun GinnyButton(
  * Campo de texto de una línea, con la misma forma que [GinnyDropdown]. Guarda su propio texto
  * mientras se escribe (así el cursor no salta esperando a que se guarde) y avisa cada cambio con
  * [onValueChange]. [placeholder] se ve mientras está vacío.
+ *
+ * [secret]: es una credencial; el teclado no sugiere ni autocorrige. [masked]: se muestra como
+ * puntos (por defecto, igual que [secret]; el que lo usa puede mostrarlo con `masked = false`).
  */
 @Composable
 fun GinnyTextField(
@@ -406,6 +413,8 @@ fun GinnyTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     width: Dp = 240.dp,
+    secret: Boolean = false,
+    masked: Boolean = secret,
 ) {
     val palette = GinnyThemes.current
     // remember(value) no: el valor guardado llega un instante después de cada tecla y pisaría lo
@@ -430,6 +439,12 @@ fun GinnyTextField(
             },
             singleLine = true,
             textStyle = style,
+            visualTransformation = if (masked) PasswordVisualTransformation() else VisualTransformation.None,
+            keyboardOptions = if (secret) {
+                KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Password)
+            } else {
+                KeyboardOptions.Default
+            },
             cursorBrush = SolidColor(palette.accent),
             decorationBox = { inner ->
                 if (text.isEmpty()) Text(placeholder, style = style.copy(color = palette.muted))

@@ -14,6 +14,8 @@ local.properties
 
 # Release signing (see README "Generar tu propio APK") — never commit real keystores/credentials.
 /keystore.properties
+# Credenciales de desarrollador de ScreenScraper (ver scrapper.properties.example).
+/scrapper.properties
 *.jks
 *.keystore
 *.secret.md

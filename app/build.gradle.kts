@@ -16,6 +16,20 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+// Credenciales de DESARROLLADOR de Ginny ante ScreenScraper, también opcionales y fuera de git
+// (`scrapper.properties`, plantilla en `scrapper.properties.example`). Se incrustan en el APK como
+// campos de BuildConfig: identifican al programa, no al usuario. Sin el archivo quedan vacías y el
+// scrapper de ScreenScraper se desactiva, pero el proyecto compila igual.
+val scrapperPropertiesFile = rootProject.file("scrapper.properties")
+val scrapperProperties = Properties().apply {
+    if (scrapperPropertiesFile.exists()) {
+        scrapperPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+/** Valor como literal de String para `buildConfigField` (con comillas y barras escapadas). */
+fun String.asBuildConfigString(): String = "\"" + trim().replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 android {
     namespace = "com.ginny.frontend"
     compileSdk = 34
@@ -26,6 +40,9 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+
+        buildConfigField("String", "SCREENSCRAPER_DEV_ID", scrapperProperties.getProperty("screenscraper.devId", "").asBuildConfigString())
+        buildConfigField("String", "SCREENSCRAPER_DEV_PASSWORD", scrapperProperties.getProperty("screenscraper.devPassword", "").asBuildConfigString())
     }
 
     signingConfigs {
@@ -60,6 +77,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true // campos de scrapper.properties (ver arriba)
     }
 
     composeOptions {

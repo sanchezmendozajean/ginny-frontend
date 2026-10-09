@@ -131,6 +131,21 @@ retroconsola a largo plazo, generá tu propia key de firma una sola vez:
    Subí ambos valores, guardá el archivo, y recién ahí corré `./gradlew assembleRelease` — el APK
    nuevo sale nombrado con el `versionName` actualizado automáticamente, sin tocar nada más.
 
+### Opcional: credenciales de desarrollador de ScreenScraper
+
+Para que el scrapper pueda usar ScreenScraper, el APK necesita las credenciales de **desarrollador**
+de Ginny (`devid` / `devpassword`; identifican al programa, no a quien lo usa — cada usuario escribe
+su propia cuenta en Configuración > Scrapper). Se piden al equipo de ScreenScraper
+(<https://www.screenscraper.fr/forumsujets.php?frub=12>) y se incrustan al compilar:
+
+1. Copiá `scrapper.properties.example` como `scrapper.properties` (misma carpeta, al lado de
+   `settings.gradle.kts`) — está en `.gitignore`, nunca se commitea.
+2. Completá `screenscraper.devId` y `screenscraper.devPassword`.
+
+Sin ese archivo el proyecto compila igual, pero ScreenScraper queda desactivado en ese APK. Ojo:
+al quedar dentro del APK, cualquiera que lo reciba puede extraerlas (es lo habitual con esta API);
+si algún día se distribuye el APK, ScreenScraper puede revocarlas y emitir otras.
+
 ## Primera configuración (dentro de la app)
 
 Abrí el menú (botón **⋮** en la barra superior, o botón físico **Menú**) y elegí **Configuración**.

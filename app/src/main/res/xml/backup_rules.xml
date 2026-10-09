@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 e inferiores (android:fullBackupContent). Todo se respalda salvo lo excluido aquí. -->
+<full-backup-content>
+    <!-- Credenciales del scrapper (ScrapperSettingsRepository): no deben salir del dispositivo. -->
+    <exclude domain="file" path="datastore/ginny_scrapper.preferences_pb" />
+</full-backup-content>

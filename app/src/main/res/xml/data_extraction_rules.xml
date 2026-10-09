@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 y superiores (android:dataExtractionRules). Todo se respalda salvo lo excluido aquí. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Credenciales del scrapper (ScrapperSettingsRepository): no deben salir del dispositivo. -->
+        <exclude domain="file" path="datastore/ginny_scrapper.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="datastore/ginny_scrapper.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>
