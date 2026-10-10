@@ -14,10 +14,10 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -110,7 +110,7 @@ private fun title(progress: ScrapProgress?, running: Boolean): String = when {
 }
 
 @Composable
-private fun ProgressBody(progress: ScrapProgress, running: Boolean) {
+private fun ColumnScope.ProgressBody(progress: ScrapProgress, running: Boolean) {
     val palette = GinnyThemes.current
     val current = progress.current
 
@@ -133,14 +133,14 @@ private fun ProgressBody(progress: ScrapProgress, running: Boolean) {
     }
 
     if (current != null) {
-        // Alto máximo: con muchas medias activadas la lista se desplaza en vez de salirse de la pantalla.
+        // Ocupa el alto que sobra (sin quitarle nada a la barra ni a los botones): si no cabe, se desplaza.
         Column(
             modifier = Modifier
+                .weight(1f, fill = false)
                 .fillMaxWidth()
                 .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(14.dp))
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-                .heightIn(max = 260.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             InfoLine("Archivo", current.fileName)
