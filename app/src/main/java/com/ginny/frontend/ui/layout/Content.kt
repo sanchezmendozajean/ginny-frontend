@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,8 @@ fun Content(
     active: Boolean = true,
     onSelectionChanged: (GridEntry?) -> Unit = {},
     onPagingChanged: (pageCount: Int, currentPage: Int) -> Unit = { _, _ -> },
+    /** Sube cada vez que se toca "Abrir" en el pie: abre el elemento seleccionado, como A. */
+    activateTick: Int = 0,
 ) {
     val sound = LocalSoundManager.current
 
@@ -74,6 +77,19 @@ fun Content(
     val selectedEntry = if (loading) null else entries.getOrNull(selected)
     LaunchedEffect(selectedEntry) { onSelectionChanged(selectedEntry) }
     LaunchedEffect(pageCount, currentPage) { onPagingChanged(pageCount, currentPage) }
+
+    // "Abrir" tocado en el pie: activa el elemento seleccionado. El valor con el que nace esta pantalla
+    // no cuenta (una pantalla nueva no debe abrir nada sola).
+    val firstTick = remember { activateTick }
+    val currentSelected by rememberUpdatedState(selectedEntry)
+    LaunchedEffect(activateTick) {
+        if (activateTick != firstTick) {
+            currentSelected?.let {
+                sound?.playActivateSound()
+                onActivate(it)
+            }
+        }
+    }
 
     Container(modifier = modifier.fillMaxWidth()) {
         PageArrow(

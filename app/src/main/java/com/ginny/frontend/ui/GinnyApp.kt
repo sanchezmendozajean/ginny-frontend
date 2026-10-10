@@ -57,15 +57,18 @@ val SettingsBackdropBlur = 16.dp
  *
  * [settingsOpen]: si el modal de Configuración está abierto (lo controla MainActivity).
  * [onCloseSettings]: cerrarlo desde la interfaz (ej. tocando "Cerrar").
+ * [onOpenSettings]: abrirlo desde la interfaz (tocando "Opciones" en el pie).
  */
 @Composable
-fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
+fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}, onOpenSettings: () -> Unit = {}) {
     // El tema lo provee GinnyTheme (en MainActivity), leído de Configuración.
     val palette = GinnyThemes.current
     // Lo que el contenido informa y el footer muestra: elemento seleccionado y páginas.
     var selected by remember { mutableStateOf<GridEntry?>(null) }
     var pageCount by remember { mutableIntStateOf(1) }
     var currentPage by remember { mutableIntStateOf(0) }
+    // Sube cada vez que se toca "Abrir" en el pie; la grilla abre entonces el elemento seleccionado.
+    var activateTick by remember { mutableIntStateOf(0) }
 
     // Pantalla actual. B (vía MainActivity → onBackPressedDispatcher), el gesto atrás del sistema
     // o tocar "Regresar" vuelven a Sistemas. En Sistemas no hay a dónde volver: BackHandler queda
@@ -160,6 +163,7 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
                             onOpenSystem = { scope, title -> screen = Screen.Games(scope, title) },
                             modifier = contentModifier,
                             active = gridActive,                        // con un modal abierto, la grilla no responde
+                            activateTick = activateTick,
                             onSelectionChanged = onSelectionChanged,
                             onPagingChanged = onPagingChanged,
                         )
@@ -170,6 +174,7 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
                                     onOpenGame = { openGame = it },
                                     modifier = contentModifier,
                                     active = gridActive,
+                                    activateTick = activateTick,
                                     onSelectionChanged = onSelectionChanged,
                                     onPagingChanged = onPagingChanged,
                                 )
@@ -181,6 +186,8 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
                         pageCount = pageCount,
                         currentPage = currentPage,
                         onBack = if (screen == Screen.Systems) null else goBack,
+                        onOpen = { if (gridActive) activateTick++ },
+                        onOptions = onOpenSettings,
                     )
                 }
             }

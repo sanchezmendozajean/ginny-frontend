@@ -21,6 +21,7 @@ import com.ginny.frontend.ui.components.SelectionInfo
 /**
  * Barra inferior: elemento enfocado a la izquierda; a la derecha, los puntos de página sobre la
  * leyenda de botones. [onBack]: si hay a dónde regresar (fuera de Sistemas), muestra "Regresar".
+ * [onOpen] y [onOptions]: tocar "Abrir" y "Opciones".
  */
 @Composable
 fun GinnyFooter(
@@ -30,6 +31,8 @@ fun GinnyFooter(
     pageCount: Int = 1,
     currentPage: Int = 0,
     onBack: (() -> Unit)? = null,
+    onOpen: () -> Unit = {},
+    onOptions: () -> Unit = {},
 ) {
     Box(
         modifier = modifier
@@ -52,7 +55,12 @@ fun GinnyFooter(
             PageIndicator(pageCount = pageCount, currentPage = currentPage, modifier = Modifier.height(16.dp))
 
             Container(modifier = Modifier.height(28.dp), horizontalPadding = 12.dp) {
-                ButtonLegend(FaceButton.A, "Abrir")
+                // Abrir y Opciones también son tocables (como Regresar): hacen lo mismo que A y Y.
+                ButtonLegend(
+                    FaceButton.A,
+                    "Abrir",
+                    modifier = Modifier.pointerInput(onOpen) { detectTapGestures { onOpen() } },
+                )
                 // Regresar: solo fuera de Sistemas (sin [onBack] no hay a dónde volver). Tocable.
                 if (onBack != null) {
                     ButtonLegend(
@@ -61,7 +69,11 @@ fun GinnyFooter(
                         modifier = Modifier.pointerInput(onBack) { detectTapGestures { onBack() } },
                     )
                 }
-                ButtonLegend(FaceButton.Y, "Opciones")
+                ButtonLegend(
+                    FaceButton.Y,
+                    "Opciones",
+                    modifier = Modifier.pointerInput(onOptions) { detectTapGestures { onOptions() } },
+                )
             }
         }
     }

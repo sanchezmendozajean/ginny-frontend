@@ -27,6 +27,8 @@ fun SystemsScreen(
     active: Boolean = true,
     onSelectionChanged: (GridEntry?) -> Unit = {},
     onPagingChanged: (pageCount: Int, currentPage: Int) -> Unit = { _, _ -> },
+    /** Sube cada vez que se toca "Abrir" en el pie: abre el elemento seleccionado, como A. */
+    activateTick: Int = 0,
 ) {
     val container = appContainer()
     val viewModel: SystemsViewModel = viewModel(
@@ -76,6 +78,7 @@ fun SystemsScreen(
         modifier = modifier,
         onSelectionChanged = onSelectionChanged,
         onPagingChanged = onPagingChanged,
+        activateTick = activateTick,
     )
 }
 

@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
                     GinnyApp(
                         settingsOpen = settingsOpen.value,
                         onCloseSettings = { settingsOpen.value = false },
+                        onOpenSettings = { settingsOpen.value = true },
                     )
                 }
             }
