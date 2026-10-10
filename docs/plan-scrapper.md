@@ -149,6 +149,20 @@ Peticiones sueltas con `curl` (no es código de la app), con las credenciales de
   - `language` permite preferir `es`/`en` sobre `ja` al elegir entre varios.
   - Todos los resultados tenían `score: 0` en esta muestra: no ordenar solo por puntuación.
 
+### Decisiones que salieron de las pruebas (2026-10-10)
+
+- **Año de publicación = la fecha más antigua de todas las regiones** (Super Mario Bros.: 1985, aunque
+  en Europa salió en 1987). La política de región solo rige para las imágenes. El JSON de metadatos
+  guarda además todas las fechas por región.
+- **Caja:** se elige la **primera región (wor → eu → us → jp) que tenga las tres caras**; si ninguna las
+  tiene, se parte de la que tenga frente y se completa con las demás. Así frente, trasera y lomo salen
+  de la misma edición siempre que exista una completa (en la muestra real, `wor` solo tenía frente y
+  `eu` las tres: gana `eu`).
+- **El respaldo por búsqueda cuesta una sola petición:** `jeuRecherche.php` devuelve hasta 3 juegos con
+  todos sus datos y medias, no hace falta una segunda consulta por `gameid`.
+- **Juego inexistente = HTTP 404** con "Erreur : Rom/Iso/Dossier non trouvée !". Los tres valores de
+  `romtype` son `rom`, `iso` y `dossier`.
+
 ### Prueba con credenciales de desarrollador (2026-10-10)
 
 El equipo de ScreenScraper aprobó la solicitud y creó la cuenta de desarrollador. Con ella, **la
@@ -332,3 +346,4 @@ API funciona**: `ssuserInfos.php` y `jeuInfos.php` (HTTP 200, `success: true`). 
 | 2026-10-07 | 1. Credenciales + sección "Scrapper" (y la parte de backup del paso 0) | `data/scrap/ScrapperSettingsRepository.kt` (DataStore propio `ginny_scrapper`, fuera de `ginny.cfg`) y `ScrapMedia.kt`. `res/xml/backup_rules.xml` + `data_extraction_rules.xml` excluyen ese archivo de las copias (referenciados en el manifest). `SettingsSection.Scrapper` + `ScrapperOptions.kt`: grupos ScreenScraper (usuario, contraseña, ID y contraseña de desarrollador), SteamGridDB (clave de API), "Qué descargar" (7 interruptores; video apagado por defecto) y General (solo Wi-Fi, mostrar claves). `GinnyTextField` gana `secret`/`masked` (puntos, sin autocorrección). Solo compila (`compileDebugKotlin` + `processDebugManifest`); no probado en dispositivo. **Pendiente del paso 0:** permiso `INTERNET`/`ACCESS_NETWORK_STATE` y OkHttp (se agregan junto a los clientes, para no dejar dependencias sin uso). El botón "Verificar credenciales" queda para cuando existan los clientes. |
 | 2026-10-10 | 1b. Credenciales de desarrollador fuera de la pantalla | `devid`/`devpassword` ya no se piden al usuario: `scrapper.properties` (ignorado por git) → `BuildConfig.SCREENSCRAPER_DEV_ID/PASSWORD` (`buildFeatures.buildConfig = true`) → `data/scrap/ScrapperDevCredentials.kt`. Plantilla `scrapper.properties.example` y sección en el README. Se quitaron los dos campos de `ScrapperOptions`, del `SettingsViewModel` y del `ScrapperSettingsRepository`. Verificado: compila y el `BuildConfig` generado trae ambos valores. |
 | 2026-10-10 | 0 y 2. Base de red y núcleo común | Permisos `INTERNET` y `ACCESS_NETWORK_STATE`; OkHttp 4.12.0 (la versión que ya traía Coil). `data/scrap/`: `ScrapResult` (Ok / NotFound / AuthFailed / QuotaExhausted / RateLimited / Unavailable / NetworkBlocked; `abortsBatch` para cortar el lote), `ScrapHttp` (cliente único sin log, User-Agent propio, cancelable también a mitad de la lectura), `ScrapRateLimiter` (serializa por proveedor, pausa mínima y reintento con espera creciente ante 429), `ScrapNetwork` ("Solo con Wi-Fi" = red sin tarifa), `ScrapRedactor` (quita devid/devpassword/ssid/sspassword/Bearer de cualquier texto), `NameNormalizer` (normalización + similitud; los números distintos dan 0, para no confundir "Mario Bros" con "Mario Bros 3"). **Primeras pruebas unitarias del proyecto** (`app/src/test`, JUnit 4.13.2, solo JVM): 11 pruebas de `NameNormalizer` y `ScrapRedactor`, todas pasan (`gradlew testDebugUnitTest`). Ninguna toca las APIs. |
+| 2026-10-10 | 4. Cliente de ScreenScraper (+ mapa de sistemas) | `data/scrap/screenscraper/`: `ScreenScraperSystems` (los 28 `systemeid`, **tomados de `systemesListe.php`** y no de memoria; en un mapa aparte, no en `SystemDefinition`, con una prueba que avisa si se agrega un `SystemId` sin entrada; `romTypeFor`: rom / iso / dossier), `ScreenScraperModels`, `ScreenScraperParser` (puro, `org.json`), `ScreenScraperSelector` (política de región/idioma/formato, caja coherente, wheel, video), `ScreenScraperErrors` (código HTTP → `ScrapResult`), `ScreenScraperClient` (`findGame`: por archivo con hash opcional y, si no, por búsqueda con parecido ≥ 0,92; `verifyAccount`; `download` con limitador y solo hacia `*.screenscraper.fr`). **Verificado con respuestas reales** (prueba temporal, no commiteada): la de 1,26 MB se lee en 57 ms, UTF-8 intacto, caja `eu` completa y de una sola región, búsqueda elige el juego correcto entre 3. **34 pruebas unitarias** en total, todas pasan. Pendiente: probar el cliente completo (red) dentro de la app. |

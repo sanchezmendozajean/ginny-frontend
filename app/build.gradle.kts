@@ -147,4 +147,6 @@ dependencies {
 
     // Pruebas unitarias en JVM (lógica pura: NameNormalizer, ScrapRedactor, parsers del scrapper).
     testImplementation("junit:junit:4.13.2")
+    // En JVM, org.json de android.jar es un esqueleto que lanza "not mocked": se usa la implementación real.
+    testImplementation("org.json:json:20240303")
 }

@@ -1,0 +1,58 @@
+{
+  "header": { "APIversion": "2.0", "success": "true", "error": "" },
+  "response": {
+    "ssuser": {
+      "id": "usuario-de-prueba",
+      "maxthreads": "1",
+      "requeststoday": "12",
+      "requestskotoday": "3",
+      "maxrequestsperday": "50000",
+      "maxrequestskoperday": "5000"
+    },
+    "jeu": {
+      "id": "1245",
+      "romid": "1500672",
+      "systeme": { "id": "3", "text": "NES" },
+      "noms": [
+        { "region": "ss", "text": "Super Mario Bros." },
+        { "region": "us", "text": "Super Mario Bros." },
+        { "region": "jp", "text": "Sūpā Mario Burazāzu" },
+        { "region": "eu", "text": "Super Mario Bros." }
+      ],
+      "synopsis": [
+        { "langue": "en", "text": "One day, the kingdom of the peaceful mushroom people was invaded." },
+        { "langue": "es", "text": "Un día, el reino de los pacíficos hombres champiñón fue invadido." }
+      ],
+      "dates": [
+        { "region": "us", "text": "1985-11-17" },
+        { "region": "jp", "text": "1985-09-13" },
+        { "region": "eu", "text": "1987-05-15" }
+      ],
+      "developpeur": { "id": "286", "text": "Nintendo" },
+      "editeur": { "id": "286", "text": "Nintendo" },
+      "joueurs": { "text": "1-2" },
+      "note": { "text": "18" },
+      "genres": [
+        { "id": "7", "noms": [ { "langue": "en", "text": "Platform" }, { "langue": "es", "text": "Plataformas" } ] },
+        { "id": "2915", "noms": [ { "langue": "en", "text": "Platform / Run and Jump" }, { "langue": "es", "text": "Plataformas / Corre y Salta" } ] }
+      ],
+      "roms": [ { "id": "1", "romfilename": "irrelevante.nes" } ],
+      "medias": [
+        { "type": "ss", "parent": "jeu", "url": "https://screenscraper.fr/api2/mediaJeu.php?devid=D&devpassword=P&media=ss", "format": "png", "size": "1000" },
+        { "type": "wheel", "parent": "jeu", "region": "us", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=wheel(us)", "format": "png", "size": "24446" },
+        { "type": "wheel", "parent": "jeu", "region": "eu", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=wheel(eu)", "format": "png", "size": "43811" },
+        { "type": "box-2D", "parent": "jeu", "region": "wor", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=box-2D(wor)", "format": "png", "size": "300000" },
+        { "type": "box-2D", "parent": "jeu", "region": "eu", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=box-2D(eu)", "format": "png", "size": "171462" },
+        { "type": "box-2D", "parent": "jeu", "region": "eu", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=box-2D(eu)-repetida", "format": "png", "size": "171462" },
+        { "type": "box-2D", "parent": "jeu", "region": "jp", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=box-2D(jp)", "format": "png", "size": "250000" },
+        { "type": "box-2D-back", "parent": "jeu", "region": "eu", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=box-2D-back(eu)", "format": "png", "size": "257539" },
+        { "type": "box-2D-back", "parent": "jeu", "region": "jp", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=box-2D-back(jp)", "format": "png", "size": "295190" },
+        { "type": "box-2D-side", "parent": "jeu", "region": "eu", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=box-2D-side(eu)", "format": "png", "size": "41660" },
+        { "type": "box-2D-side", "parent": "jeu", "region": "jp", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=box-2D-side(jp)", "format": "png", "size": "42181" },
+        { "type": "box-texture", "parent": "jeu", "region": "eu", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=box-texture(eu)", "format": "png", "size": "482113" },
+        { "type": "video-normalized", "parent": "jeu", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=video-normalized", "format": "mp4", "size": "1611641" },
+        { "type": "video", "parent": "jeu", "url": "https://screenscraper.fr/api2/mediaJeu.php?media=video", "format": "mp4", "size": "2270802" }
+      ]
+    }
+  }
+}
