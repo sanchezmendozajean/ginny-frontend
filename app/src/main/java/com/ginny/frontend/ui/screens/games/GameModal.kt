@@ -86,24 +86,21 @@ import com.ginny.frontend.ui.util.LocalSoundManager
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-/**
- * Lo que, del ancho de la tarjeta, no es de los dos desplegables de la sección Emulador: margen de
- * la tarjeta (2×20) + margen de la sección (2×10) + hueco entre ambos (12). Cada desplegable mide
- * (ancho de la tarjeta − esto) ÷ 2.
- */
-private val GameModalControlsChrome = 72.dp
-
 /** Cuánto desplaza el contenido cada pulsación de arriba/abajo de la cruceta. */
 private const val ScrollStepPx = 260f
+
+/** Separación entre la columna izquierda del cuerpo y la caja. */
+private val BodyGap = 16.dp
 
 /** Rojo de "Eliminar" (OKLCH: tono 25°, el mismo para todos los temas). */
 internal val DeleteRed = Color(0xFFC0392B)
 
 /**
  * Modal de un juego, al abrirlo desde la grilla de Juegos (diseño de referencia del usuario,
- * 2026-10-05): portada, nombre y sistema; archivo (nombre y carpeta); emulador y core del
+ * 2026-10-05): portada, nombre y sistema; información scrapeada (sinopsis, estudio, año...) con la
+ * caja en 3D a la derecha; archivo (nombre y carpeta); emulador y core del
  * sistema; Favorito (solo táctil); Regresar (B) y Jugar (A). El menú de tres puntos de la esquina
- * superior derecha tiene Scrappear y Eliminar.
+ * inferior izquierda tiene Scrappear y Eliminar.
  *
  * B lo maneja GinnyApp (BackHandler, vía MainActivity), igual que en el resto de la app. A se
  * maneja aquí. El modal se queda con el foco: la cruceta no mueve la grilla de atrás.
@@ -157,7 +154,6 @@ fun GameModal(
                 game = shown,
                 viewModel = vm,
                 buttonMapping = buttonMapping,
-                controlWidth = (cardWidth - GameModalControlsChrome) / 2,
                 onClose = onClose,
                 onOpenDialog = { dialog = it },
                 inputBlocked = dialog != null || blocked,
@@ -202,8 +198,6 @@ private fun GameCard(
     buttonMapping: ButtonMapping,
     /** Ancho de la tarjeta (sin los márgenes de pantalla): reparte el espacio entre la información y la caja. */
     cardWidth: Dp,
-    /** Ancho de cada desplegable de la sección Emulador (dos columnas). */
-    controlWidth: Dp,
     onClose: () -> Unit,
     /** Abre un diálogo del menú de tres puntos. */
     onOpenDialog: (GameDialog) -> Unit,
@@ -236,6 +230,11 @@ private fun GameCard(
     val contentWidth = cardWidth - 40.dp
     val showBox = shouldShowSideBox(assets, contentWidth)
     val boxWidth = sideBoxWidth(contentWidth)
+
+    // Ancho de cada desplegable de Emulador (dos columnas iguales). Se calcula sobre la columna izquierda
+    // —la caja, si está, le quita su parte— menos el margen de la sección (2×10), el borde (2) y el hueco (12).
+    val leftColumnWidth = if (showBox) contentWidth - boxWidth - BodyGap else contentWidth
+    val controlWidth = (leftColumnWidth - 20.dp - 2.dp - 12.dp) / 2
 
     fun play() {
         sound?.playLaunchSound()
@@ -284,7 +283,7 @@ private fun GameCard(
             .padding(20.dp),
     ) {
         // ── Cuerpo: [encabezado + contenido con scroll] a la izquierda y la caja a la derecha ──────
-        Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(BodyGap)) {
         Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 // ── Encabezado: portada · nombre y sistema · cerrar ─────────────────────────────────
                 Row(verticalAlignment = Alignment.CenterVertically) {

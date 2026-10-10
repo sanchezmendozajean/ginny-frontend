@@ -20,7 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
@@ -43,8 +44,8 @@ private const val AutoSpinDegreesPerSecond = 6f
 /** Posición de partida: en 3/4 de perfil, con el frente a la derecha y el lomo a la vista. */
 private const val StartYawDegrees = 35f
 
-/** Inclinación fija: deja ver un poco la tapa. */
-private const val PitchDegrees = 8f
+/** Sin inclinación: la cámara mira la caja de frente, así el centro de fuga queda en su centro (perspectiva simétrica arriba y abajo). */
+private const val PitchDegrees = 0f
 
 /** Cuánto gira la caja por cada píxel que se arrastra (suave: no sigue al dedo a lo loco). */
 private const val DegreesPerDragPixel = 0.4f
@@ -123,14 +124,27 @@ fun GameBox3D(textures: BoxTextures, modifier: Modifier = Modifier) {
             }
         },
     ) {
-        // Sombra suave en el suelo, debajo de la caja.
+        // La caja se centra en el lienzo, en vertical también: con el centro de fuga en el centro de la caja
+        // la perspectiva es simétrica arriba y abajo.
         val centerX = size.width / 2
-        val centerY = size.height * 0.47f
+        val centerY = size.height / 2
         val scale = min(size.height / (geometry.height * 1.35f), size.width / (geometry.maxHalfExtent * 2f * 1.25f))
-        drawOval(
-            color = Color.Black.copy(alpha = 0.16f),
-            topLeft = Offset(centerX - scale * 0.42f, centerY + scale * 0.55f),
-            size = Size(scale * 0.84f, scale * 0.12f),
+
+        // Sombra difusa detrás de la caja: un círculo con degradado radial, tenue y fijo (no gira ni se
+        // anima con la caja).
+        val glowRadius = scale * 0.85f
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0f to Color.Black.copy(alpha = 0.22f),
+                    0.55f to Color.Black.copy(alpha = 0.10f),
+                    1f to Color.Transparent,
+                ),
+                center = Offset(centerX, centerY),
+                radius = glowRadius,
+            ),
+            radius = glowRadius,
+            center = Offset(centerX, centerY),
         )
 
         val faces = geometry.visibleFaces(
