@@ -43,6 +43,8 @@ app/src/main/java/com/ginny/frontend/
 │   ├── AssetRepository.kt     # Íconos, logos y diccionario de nombres (names.json) desde la
 │   │                          # carpeta de Usuario (Assets/<sistema>/...)
 │   ├── SaveStateRepository.kt # Detección de miniaturas de save-state de RetroArch
+│   ├── scrap/                 # Scrapper (ScreenScraper + SteamGridDB): clientes, almacenamiento en
+│   │                          # Assets/, orquestador del lote. Ver "Scrapper" más abajo
 │   ├── StorageBootstrapper.kt # Crea Assets/<sistema>/{icons/, system.png} en la carpeta de Usuario
 │   └── ButtonMapping.kt       # Mapeo lógico->keycode físico remapeable
 ├── launch/                   # Patrón Strategy: un LauncherStrategy por emulador
@@ -435,6 +437,46 @@ real" a `GamesScope` (`Single(systemId)` o `Favorites`, cruza todos los sistemas
 `GameIndexRepository.observeAllGames()` filtrado por `favoriteGameKeys`) — como `GameEntry` ya
 traía su propio `systemId`, lanzar un juego favorito con el emulador/core de *su* sistema no
 requirió tocar `GameLauncher`.
+
+## Scrapper (agregado 2026-10-10)
+
+Ginny Frontend obtiene por sí mismo los metadatos y el arte de cada juego (el Assets Manager se
+actualizará después para hacer lo mismo). Plan completo, decisiones y hallazgos de las pruebas contra
+las APIs reales: [plan-scrapper.md](plan-scrapper.md). Todo vive en `data/scrap/`.
+
+- **Proveedores.** ScreenScraper (metadatos, wheel, caja frente/trasera/lomo, video; sistema
+  `screenscraper/`) y SteamGridDB (ícono cuadrado; sistema `steamgriddb/`). Cada uno tiene su cliente,
+  parser puro, selección y traducción de códigos HTTP.
+- **Resultados tipados, sin excepciones** (`ScrapResult`): `Ok`, `NotFound`, `AuthFailed`,
+  `QuotaExhausted`, `RateLimited`, `Unavailable`, `StorageFailed`, `NetworkBlocked`.
+- **Red.** `ScrapHttp` (OkHttp, sin log: las URLs de ScreenScraper llevan credenciales; cancelable
+  también a mitad de una lectura), `ScrapRateLimiter` (serializa por proveedor; la cuenta de ScreenScraper
+  permite 1 hilo; reintento con espera ante 429), `ScrapNetwork` ("Solo con Wi-Fi"), `ScrapRedactor`
+  (quita credenciales de cualquier texto).
+- **Credenciales.** Las del usuario (cuenta de ScreenScraper, clave de SteamGridDB) están en un DataStore
+  propio (`ScrapperSettingsRepository`), **fuera de `ginny.cfg`** (texto plano en la Carpeta de Usuario,
+  que se sincroniza) y excluido de las copias de seguridad (`res/xml/backup_rules.xml`,
+  `data_extraction_rules.xml`). Las de **desarrollador** de ScreenScraper van incrustadas en el APK
+  (`BuildConfig`, desde `scrapper.properties`, ignorado por git; ver `ScrapperDevCredentials` y el README).
+- **Almacenamiento** (`ScrapStorage` / `SystemAssets`, SAF). Escribe en `Assets/<sistema>/`; ver el
+  contrato abajo. **Nunca sobrescribe** imágenes, escribe en `.part` y renombra (un corte no deja
+  archivos truncados), lista cada carpeta una sola vez y convierte cualquier excepción en
+  `StorageFailed`. El ícono se reduce a 512 px y se guarda como PNG (`IconProcessor`), nunca se agranda.
+- **Orquestación** (`ScrapRepository.run` → `Flow<ScrapProgress>`; `ScrapRunner` lo ejecuta en el scope de
+  la aplicación). Secuencial, reanudable y cancelable. La decisión de qué pedir es código puro y probado
+  (`ScrapPlanner`): no se repite lo guardado ni lo que el proveedor dijo que no tiene; "no encontrado"
+  dura 30 días; forzar ignora esas cachés pero no sobrescribe archivos. Un proveedor con credenciales
+  rechazadas o cupo agotado se deja de usar y el lote sigue con el otro.
+- **Contrato de `Assets/<sistema>/`** (compartido con el Assets Manager). Cada archivo se llama
+  `<romFileName>.<extensión>`, con `romFileName` = nombre del archivo de la ROM **con su extensión** (o de
+  la carpeta, en Switch): `icons/` (PNG cuadrado, el de siempre), `wheel/`, `box-front/`, `box-back/`,
+  `box-spine/` (PNG/JPG/WebP en su formato original), `video/` (MP4) y `metadata/` (JSON, `GameMetadata`:
+  nombre estándar, sinopsis, fecha de primera publicación y por región, desarrollador, editor, géneros,
+  jugadores, nota, región de cada imagen, `status` found / not_found / pending y `missingMedia`).
+  Las carpetas se crean al primer uso, no al elegir la Carpeta de Usuario.
+- **Pruebas unitarias en JVM** (`app/src/test`, JUnit + `org.json`): la lógica pura (parsers, selección,
+  planificador, normalizador de nombres, hash, redactor, metadatos). La capa SAF, `IconProcessor` y los
+  clientes por red no tienen pruebas automáticas: usan APIs de Android o la red.
 
 ## Limitaciones conocidas / seguidas para v2
 
