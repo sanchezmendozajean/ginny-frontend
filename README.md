@@ -385,7 +385,8 @@ También se muestran dentro de la app, en Configuración → Créditos.
 
 - **Música** (Pixabay, [Pixabay Content License](https://pixabay.com/service/license-summary/)):
   "Monday Marimba" de faespencer y "Calm Bay" de danielhren.
-- **Efectos de sonido** (Pixabay): "System Notification 02" de Universfield y "Game Start" de
+- **Efectos de sonido** (Pixabay): "Scuba Snap" de pensieri_profondi (editado), "System Notification 02" de
+  Universfield y "Game Start" de
   koiroylers (editado).
 - **Metadatos, wheel, cajas y video**: [ScreenScraper](https://www.screenscraper.fr).
 - **Íconos**: [SteamGridDB](https://www.steamgriddb.com).
@@ -393,3 +394,9 @@ También se muestran dentro de la app, en Configuración → Créditos.
 
 La licencia de Pixabay permite usar estos audios dentro de una aplicación, pero no redistribuirlos
 sueltos: si reutilizas el código, no copies los `.mp3` de `app/src/main/res/raw/` como archivos aparte.
+
+## Licencia
+
+El código de Ginny Frontend se distribuye bajo la [licencia MIT](LICENSE). Esa licencia cubre solo el
+código: la música, los efectos, la tipografía y el arte descargado de ScreenScraper y SteamGridDB
+mantienen las suyas (ver Créditos).

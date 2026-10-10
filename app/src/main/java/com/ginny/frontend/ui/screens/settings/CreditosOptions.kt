@@ -23,6 +23,7 @@ private val Music = listOf(
 
 private val SoundEffects = listOf(
     Credit("System Notification 02", "Pixabay", "Universfield"),
+    Credit("Scuba Snap (editado)", "Pixabay", "pensieri_profondi"),
     Credit("Game Start (editado)", "Pixabay", "koiroylers"),
 )
 
