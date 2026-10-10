@@ -15,6 +15,7 @@ object NameNormalizer {
     private val trailingExtension = Regex("""\.[a-z0-9]{1,4}$""")
     private val trailingArticle = Regex("""^(.*),\s*(the|a|an)$""")
     private val leadingArticle = Regex("""^(the|a|an)\s+""")
+    private val whitespace = Regex("""\s+""")
     private val diacritics = Regex("""\p{Mn}+""")
     private val nonAlphanumeric = Regex("""[^a-z0-9]+""")
 
@@ -35,6 +36,14 @@ object NameNormalizer {
         text = text.replace(nonAlphanumeric, " ").trim()
         return text.replace(leadingArticle, "").trim()
     }
+
+    /**
+     * El nombre listo para escribirlo en un buscador: sin lo que va entre paréntesis o corchetes
+     * (`(USA)`, `[!]`), que confunde la búsqueda, y con los espacios colapsados. Conserva mayúsculas,
+     * acentos y puntuación (a diferencia de [normalize], que es para comparar).
+     */
+    fun stripTags(name: String): String =
+        name.replace(bracketed, " ").replace(whitespace, " ").trim()
 
     /**
      * Parecido entre dos nombres, de 0.0 a 1.0: 1.0 si normalizados son iguales; 0.0 si los

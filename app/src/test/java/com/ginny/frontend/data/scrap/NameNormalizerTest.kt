@@ -49,6 +49,14 @@ class NameNormalizerTest {
     }
 
     @Test
+    fun `stripTags deja el nombre listo para buscar`() {
+        assertEquals("Sonic The Hedgehog", NameNormalizer.stripTags("Sonic The Hedgehog (USA, Europe) [!]"))
+        assertEquals("Pokémon Rojo", NameNormalizer.stripTags("  Pokémon   Rojo (Spain)  "))
+        assertEquals("Dr. Mario", NameNormalizer.stripTags("Dr. Mario"))
+        assertEquals("", NameNormalizer.stripTags("(USA)"))
+    }
+
+    @Test
     fun `vacio no coincide con nada`() {
         assertEquals(0.0, NameNormalizer.similarity("", "Metroid"), 0.0)
         assertEquals(0.0, NameNormalizer.similarity("(USA)", "Metroid"), 0.0)

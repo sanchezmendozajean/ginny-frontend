@@ -5,6 +5,7 @@ import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.data.scrap.NameNormalizer
 import com.ginny.frontend.data.scrap.ScrapHttp
+import com.ginny.frontend.data.scrap.ScrapIo
 import com.ginny.frontend.data.scrap.ScrapProvider
 import com.ginny.frontend.data.scrap.ScrapRateLimiter
 import com.ginny.frontend.data.scrap.ScrapRedactor
@@ -95,9 +96,10 @@ class ScreenScraperClient(
      * Descarga una media a [out] (la `url` que dio la API; ya lleva credenciales). Devuelve los bytes
      * escritos. Pasa por el mismo limitador que las consultas: ScreenScraper cuenta cada descarga
      * como un hilo. Rechaza cualquier URL que no sea de ScreenScraper, para no enviar credenciales a
-     * otro servidor.
+     * otro servidor. Si la media supera [maxBytes] devuelve un fallo y [out] puede tener datos
+     * parciales: quien lo llama debe descartar el destino.
      */
-    suspend fun download(media: ScreenScraperMedia, out: OutputStream): ScrapResult<Long> {
+    suspend fun download(media: ScreenScraperMedia, out: OutputStream, maxBytes: Long = MAX_MEDIA_BYTES): ScrapResult<Long> {
         val url = media.url.toHttpUrlOrNull()
         if (url == null || !url.isHttps || !(url.host == "screenscraper.fr" || url.host.endsWith(".screenscraper.fr"))) {
             return ScrapResult.Unavailable(provider, "dirección de descarga no válida")
@@ -115,7 +117,7 @@ class ScreenScraperClient(
                         ScrapResult.Unavailable(provider, ScrapRedactor.redact(snippet))
                     }
                 }
-                ScrapResult.Ok(body.byteStream().use { it.copyTo(out) })
+                ScrapIo.copyBody(provider, body, out, maxBytes)
             }
         }
     }
@@ -179,14 +181,10 @@ class ScreenScraperClient(
     private suspend fun jeuRechercheUrl(lookup: RomLookup, systemeId: Int): HttpUrl? =
         baseUrl("jeuRecherche.php")?.newBuilder()
             ?.addQueryParameter("systemeid", systemeId.toString())
-            ?.addQueryParameter("recherche", searchText(lookup.displayName))
+            ?.addQueryParameter("recherche", NameNormalizer.stripTags(lookup.displayName))
             ?.build()
 
     // ── Coincidencia por nombre ───────────────────────────────────────────────────────────────
-
-    /** El nombre sin lo que va entre paréntesis o corchetes (`(USA)`, `[!]`), que confunde la búsqueda. */
-    private fun searchText(displayName: String): String =
-        displayName.replace(Regex("""\([^)]*\)|\[[^\]]*]"""), " ").replace(Regex("""\s+"""), " ").trim()
 
     /**
      * Entre los candidatos de una búsqueda, el que más se parece al nombre buscado (comparando con
@@ -209,6 +207,9 @@ class ScreenScraperClient(
 
         /** Parecido mínimo (0.0-1.0) para aceptar un juego hallado por búsqueda y no por archivo. */
         const val MIN_SEARCH_SIMILARITY = 0.92
+
+        /** Tope de una media descargada: la mayor (un video normalizado) ronda los 2 MB. */
+        const val MAX_MEDIA_BYTES = 50L * 1024 * 1024
 
         private val API_BASE: HttpUrl = "https://api.screenscraper.fr/api2/".toHttpUrlOrNull()!!
     }
