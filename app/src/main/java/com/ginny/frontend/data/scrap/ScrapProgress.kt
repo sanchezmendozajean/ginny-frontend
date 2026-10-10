@@ -27,7 +27,7 @@ data class ScrapCurrent(
     val index: Int,
     val fileName: String,
     val systemName: String,
-    /** Lo que se está haciendo ahora ("Consultando ScreenScraper…"); null cuando el juego ya terminó. */
+    /** Lo que se está haciendo ahora ("Consultando ScreenScraper..."); null cuando el juego ya terminó. */
     val step: String? = null,
     /** Si el usuario eligió descargar metadatos (si no, esa línea no se muestra). */
     val metadataWanted: Boolean = true,

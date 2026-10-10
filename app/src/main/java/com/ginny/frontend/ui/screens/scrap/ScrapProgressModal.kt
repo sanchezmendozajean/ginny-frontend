@@ -85,7 +85,7 @@ fun ScrapProgressModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () 
 
                 val shown = progress
                 if (shown == null) {
-                    Text("Preparando el lote…", fontFamily = GinnyFont, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = palette.muted)
+                    Text("Preparando el lote...", fontFamily = GinnyFont, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = palette.muted)
                 } else {
                     ProgressBody(shown, running)
                 }
@@ -167,7 +167,7 @@ private fun ProgressBody(progress: ScrapProgress, running: Boolean) {
 private fun yesNo(value: Boolean?): String = when (value) {
     true -> "Sí"
     false -> "No"
-    null -> "…"
+    null -> "..."
 }
 
 private fun stateText(current: ScrapCurrent): String = current.step ?: when (current.outcome) {

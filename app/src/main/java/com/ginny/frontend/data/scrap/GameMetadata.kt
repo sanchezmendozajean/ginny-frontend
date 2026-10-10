@@ -28,7 +28,7 @@ data class GameMetadata(
     /** Nombre estándar del juego (el que usa ScreenScraper). */
     val name: String? = null,
     val synopsis: String? = null,
-    /** Nombre del [com.ginny.frontend.data.model.SystemId] de Ginny (`NES`, `SNES`…). */
+    /** Nombre del [com.ginny.frontend.data.model.SystemId] de Ginny (`NES`, `SNES`...). */
     val system: String? = null,
     /** Fecha de primera publicación (`1985-09-13` o solo `1985`). */
     val releaseDate: String? = null,
@@ -51,7 +51,7 @@ data class GameMetadata(
 ) {
     enum class Status { FOUND, NOT_FOUND, PENDING }
 
-    /** true si ya guarda algo de lo que se muestra del juego (descripción, año, estudio…). */
+    /** true si ya guarda algo de lo que se muestra del juego (descripción, año, estudio...). */
     val hasDetails: Boolean
         get() = synopsis != null || releaseYear != null || developer != null || publisher != null || genres.isNotEmpty()
 

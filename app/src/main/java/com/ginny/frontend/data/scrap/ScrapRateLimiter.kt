@@ -30,7 +30,7 @@ class ScrapRateLimiter(private val minIntervalMs: Long) {
 
     /**
      * Ejecuta [block] y, si devuelve [ScrapResult.RateLimited] (HTTP 429), espera y reintenta hasta
-     * [maxRetries] veces con espera creciente (2 s, 4 s, 8 s…). Si sigue limitado, devuelve ese
+     * [maxRetries] veces con espera creciente (2 s, 4 s, 8 s...). Si sigue limitado, devuelve ese
      * mismo resultado.
      */
     suspend fun <T> withBackoff(maxRetries: Int = 3, block: suspend () -> ScrapResult<T>): ScrapResult<T> {

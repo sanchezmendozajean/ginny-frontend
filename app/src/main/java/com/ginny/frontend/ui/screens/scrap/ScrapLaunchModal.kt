@@ -118,7 +118,7 @@ fun ScrapLaunchModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () ->
                     if (systems.isEmpty()) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.weight(1f).fillMaxWidth()) {
                             Text(
-                                text = if (inspecting) "Revisando la biblioteca…" else "No hay juegos en la biblioteca. Escanéala primero en Configuración > Carpetas.",
+                                text = if (inspecting) "Revisando la biblioteca..." else "No hay juegos en la biblioteca. Escanéala primero en Configuración > Carpetas.",
                                 fontFamily = GinnyFont,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp,
@@ -161,7 +161,7 @@ fun ScrapLaunchModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () ->
                             Text(
                                 text = when {
                                     running -> "Ya hay un scrapeo en curso."
-                                    inspecting -> "Revisando lo que ya hay guardado… ${stats.size} de ${systems.size} sistemas"
+                                    inspecting -> "Revisando lo que ya hay guardado... ${stats.size} de ${systems.size} sistemas"
                                     else -> "Se procesarán $toProcess ${if (toProcess == 1) "juego" else "juegos"}."
                                 },
                                 fontFamily = GinnyFont,
@@ -235,7 +235,7 @@ private fun SystemChoiceRow(id: SystemId, stats: SystemScrapStats?, logo: androi
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = if (stats == null) "Revisando…" else counts(stats),
+                text = if (stats == null) "Revisando..." else counts(stats),
                 fontFamily = GinnyFont,
                 fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,

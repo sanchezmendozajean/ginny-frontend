@@ -177,7 +177,7 @@ class ScrapRepository(
                 ),
             )
         }
-        publish("Preparando…")
+        publish("Preparando...")
 
         val plan = ScrapPlanner.plan(previous, present, session.wanted, session.force, now, session.overwrite)
         val useScreenScraper = plan.needsScreenScraper && ScrapProvider.SCREENSCRAPER !in session.disabled
@@ -225,7 +225,7 @@ class ScrapRepository(
         val rom = game.romFileName
 
         if (useScreenScraper) {
-            publish("Consultando ScreenScraper…")
+            publish("Consultando ScreenScraper...")
             when (val found = screenScraper.findGame(lookupFor(game))) {
                 is ScrapResult.Ok -> {
                     session.connectionWorked()
@@ -245,7 +245,7 @@ class ScrapRepository(
                             state.mark(media, false)
                             continue
                         }
-                        publish("Descargando ${media.label.lowercase()}…")
+                        publish("Descargando ${media.label.lowercase()}...")
                         when (val saved = saveScreenScraperMedia(assets, rom, media, chosen, session.overwrite)) {
                             is ScrapResult.Ok -> {
                                 state.obtained += media
@@ -284,12 +284,12 @@ class ScrapRepository(
         if (useSteamGridDb) {
             // El nombre estándar de ScreenScraper busca mucho mejor que el del archivo.
             val name = state.canonicalName ?: game.displayName
-            publish("Buscando el ícono en SteamGridDB…")
+            publish("Buscando el ícono en SteamGridDB...")
             when (val found = steamGridDb.findIcon(name, state.year)) {
                 is ScrapResult.Ok -> {
                     session.connectionWorked()
                     val match = found.value
-                    publish("Descargando ícono…")
+                    publish("Descargando ícono...")
                     when (val saved = saveIcon(assets, rom, match.image, session.overwrite)) {
                         is ScrapResult.Ok -> {
                             state.obtained += ScrapMedia.ICON

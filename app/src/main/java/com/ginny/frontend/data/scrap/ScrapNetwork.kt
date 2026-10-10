@@ -10,7 +10,7 @@ class ScrapNetwork(context: Context) {
 
     /**
      * [ScrapResult.Ok] si se puede descargar; si no, [ScrapResult.NetworkBlocked] con el motivo.
-     * Con [onlyOnWifi] solo se acepta una red **sin tarifa** (Wi-Fi, Ethernet…): es más fiable que
+     * Con [onlyOnWifi] solo se acepta una red **sin tarifa** (Wi-Fi, Ethernet...): es más fiable que
      * mirar el tipo de transporte, porque una red de datos compartida por VPN sigue siendo de datos.
      */
     fun check(onlyOnWifi: Boolean): ScrapResult<Unit> {

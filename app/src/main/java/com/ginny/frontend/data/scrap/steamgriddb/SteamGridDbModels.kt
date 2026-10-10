@@ -15,11 +15,11 @@ data class SteamGridDbImage(
     val url: String,
     val width: Int,
     val height: Int,
-    /** `image/png`, `image/jpeg`… */
+    /** `image/png`, `image/jpeg`... */
     val mime: String,
-    /** `alternate`, `white_logo`, `official`, `custom`… */
+    /** `alternate`, `white_logo`, `official`, `custom`... */
     val style: String?,
-    /** Idioma del arte (`en`, `ja`…); null si no lo indica. */
+    /** Idioma del arte (`en`, `ja`...); null si no lo indica. */
     val language: String?,
     val score: Int,
     /** true si salió de `grids`; false si de `icons` (el respaldo). */

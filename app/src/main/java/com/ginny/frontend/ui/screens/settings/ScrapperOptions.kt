@@ -112,13 +112,13 @@ private fun VerifyRow(state: SettingsViewModel.VerifyState?, hint: String, onVer
     SettingsRow(
         title = "Verificar",
         subtitle = when {
-            running -> "Comprobando…"
+            running -> "Comprobando..."
             state?.message != null -> (if (state.ok) "✓ " else "✗ ") + state.message
             else -> hint
         },
         subtitleMaxLines = 3,
     ) {
-        GinnyButton(if (running) "Comprobando…" else "Verificar", enabled = !running, onClick = onVerify)
+        GinnyButton(if (running) "Comprobando..." else "Verificar", enabled = !running, onClick = onVerify)
     }
 }
 

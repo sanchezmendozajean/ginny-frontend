@@ -19,7 +19,7 @@ private const val PART_SUFFIX = ".part"
 private const val PART_MIME_TYPE = "application/octet-stream"
 
 /**
- * Escribe lo que descarga el scrapper en `Assets/<sistema>/…` de la Carpeta de Usuario (ver
+ * Escribe lo que descarga el scrapper en `Assets/<sistema>/...` de la Carpeta de Usuario (ver
  * [AssetFolder] para las carpetas y el formato de los nombres).
  */
 class ScrapStorage(

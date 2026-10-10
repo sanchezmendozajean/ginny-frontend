@@ -12,7 +12,7 @@ object MetadataMerge {
 
     /**
      * ScreenScraper conoce el juego. [includeDetails] = el usuario eligió descargar los metadatos
-     * (descripción, fechas, estudio…); si no, solo se guarda lo que identifica al juego.
+     * (descripción, fechas, estudio...); si no, solo se guarda lo que identifica al juego.
      */
     fun found(
         previous: GameMetadata?,

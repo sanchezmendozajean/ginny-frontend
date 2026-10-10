@@ -20,7 +20,7 @@ data class ScreenScraperGame(
     val releaseDates: Map<String, String>,
     val developer: String?,
     val publisher: String?,
-    /** Texto tal cual lo da la API: `1`, `1-2`… */
+    /** Texto tal cual lo da la API: `1`, `1-2`... */
     val players: String?,
     /** Nota de 0.0 a 1.0 (ScreenScraper la da sobre 20). */
     val rating: Double?,
@@ -31,11 +31,11 @@ data class ScreenScraperGame(
 
 /** Una imagen, un video, etc. de [ScreenScraperGame.medias]. */
 data class ScreenScraperMedia(
-    /** `wheel`, `box-2D`, `box-2D-back`, `box-2D-side`, `video-normalized`, `video`… */
+    /** `wheel`, `box-2D`, `box-2D-back`, `box-2D-side`, `video-normalized`, `video`... */
     val type: String,
-    /** `wor`, `eu`, `us`, `jp`…; null en los que no tienen región (los videos). */
+    /** `wor`, `eu`, `us`, `jp`...; null en los que no tienen región (los videos). */
     val region: String?,
-    /** Extensión del archivo: `png`, `jpg`, `mp4`… */
+    /** Extensión del archivo: `png`, `jpg`, `mp4`... */
     val format: String,
     val sizeBytes: Long?,
     /** **Lleva las credenciales incrustadas**: no se guarda ni se muestra (ver `ScrapRedactor`). */

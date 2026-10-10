@@ -9,7 +9,7 @@ enum class ScrapProvider(val label: String) {
 /**
  * Resultado de una operación del scrapper: o salió bien ([Ok]) o es uno de los [Failure] tipados.
  * Los clientes no lanzan excepciones por lo que es normal que pase (no hay coincidencia, se acabó el
- * cupo, no hay red…): lo devuelven, y quien orquesta decide qué hacer (seguir con el juego
+ * cupo, no hay red...): lo devuelven, y quien orquesta decide qué hacer (seguir con el juego
  * siguiente, esperar o cortar el lote).
  */
 sealed interface ScrapResult<out T> {
