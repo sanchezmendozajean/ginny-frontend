@@ -1,9 +1,22 @@
 package com.ginny.frontend.launch
 
+import android.app.Activity
+import android.app.ActivityOptions
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import com.ginny.frontend.data.model.EmulatorTarget
 import com.ginny.frontend.data.model.GameEntry
+
+/** La Activity que hay detrás de un Context (la interfaz usa el de Compose, que puede venir envuelto). */
+private fun Context.findActivity(): Activity? {
+    var current: Context? = this
+    while (current is ContextWrapper) {
+        if (current is Activity) return current
+        current = current.baseContext
+    }
+    return null
+}
 
 /** What to launch a game with: the game itself, the RetroArch core (if applicable) and an optional save slot. */
 data class LaunchRequest(
@@ -37,7 +50,13 @@ interface LauncherStrategy {
             return LaunchResult.EmulatorNotInstalled(emulator, storeUrl())
         }
         return runCatching {
-            context.startActivity(buildIntent(context, request, packageNameOverride))
+            // Sin la animación de transición del sistema (la ventana deslizándose): la pantalla ya está en
+            // negro y el emulador debe aparecer de golpe. Se pide de dos maneras porque Android no siempre
+            // respeta una sola, sobre todo al cambiar de aplicación.
+            val noAnimation = ActivityOptions.makeCustomAnimation(context, 0, 0).toBundle()
+            context.startActivity(buildIntent(context, request, packageNameOverride), noAnimation)
+            @Suppress("DEPRECATION") // sigue funcionando en Android 14+; la alternativa nueva no cubre este caso
+            context.findActivity()?.overridePendingTransition(0, 0)
             LaunchResult.Launched
         }.getOrElse { e ->
             LaunchResult.Failed(e.message ?: "No se pudo iniciar ${emulator.displayName}")

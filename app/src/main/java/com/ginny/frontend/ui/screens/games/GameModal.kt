@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -60,6 +61,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.activity.ComponentActivity
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -103,6 +109,12 @@ private const val LaunchSpinMs = 1000L
 
 /** "Jugar": cuánto tarda la pantalla en quedar negra antes de lanzar el juego. */
 private const val LaunchFadeMs = 700
+
+/** Cuánto tarda la pantalla en aclararse al volver del emulador. */
+private const val RestoreFadeMs = 500
+
+/** Si pasado este tiempo desde el lanzamiento la app no llegó a ponerse en pausa, se aclara la pantalla. */
+private const val LaunchStuckMs = 5000L
 
 /** Rojo de "Eliminar" (OKLCH: tono 25°, el mismo para todos los temas). */
 internal val DeleteRed = Color(0xFFC0392B)
@@ -266,8 +278,37 @@ private fun GameCard(
 
     // Secuencia de "Jugar": suena el efecto y la caja recibe un golpe de giro; pasado [LaunchSpinMs] la pantalla
     // se funde a negro y recién entonces se lanza el emulador. B (cierra el modal) la cancela.
+    //
+    // El modal **no se cierra** al lanzar: la capa negra vive en él y, si desapareciera, la interfaz volvería a
+    // verse mientras Android anima el cambio de aplicación. Al regresar al frontend se aclara solo (ver abajo).
     var launching by remember(game) { mutableStateOf(false) }
     var spinTrigger by remember(game) { mutableIntStateOf(0) }
+    /** Ya se pidió lanzar el emulador (la pantalla está en negro esperando a que la app pase a segundo plano). */
+    var launchRequested by remember(game) { mutableStateOf(false) }
+    /** La app llegó a ponerse en pausa después de pedir el lanzamiento (el emulador tomó la pantalla). */
+    var leftApp by remember(game) { mutableStateOf(false) }
+
+    /** Aclara la pantalla otra vez (al volver del emulador, o si el lanzamiento no llegó a ocurrir). */
+    suspend fun restoreScreen() {
+        launchRequested = false
+        leftApp = false
+        darkness.animateTo(0f, tween(RestoreFadeMs))
+        launching = false
+    }
+
+    // Al volver del emulador (la actividad se reanuda tras haber pasado a segundo plano), la pantalla se aclara.
+    val lifecycleOwner = remember(context) { context.findComponentActivity() }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> if (launchRequested) leftApp = true
+                Lifecycle.Event.ON_RESUME -> if (launchRequested && leftApp) scope.launch { restoreScreen() }
+                else -> Unit
+            }
+        }
+        lifecycleOwner?.lifecycle?.addObserver(observer)
+        onDispose { lifecycleOwner?.lifecycle?.removeObserver(observer) }
+    }
 
     fun play() {
         if (launching) return // un segundo toque (o A) no reinicia la secuencia
@@ -277,17 +318,20 @@ private fun GameCard(
         scope.launch {
             delay(LaunchSpinMs)
             darkness.animateTo(1f, tween(LaunchFadeMs, easing = LinearEasing))
+            launchRequested = true
             when (val result = viewModel.launch(context, game)) {
-                LaunchResult.Launched -> onClose()
+                LaunchResult.Launched -> {
+                    // Seguro por si el emulador nunca llega a tomar la pantalla: no dejar al usuario en negro.
+                    delay(LaunchStuckMs)
+                    if (!leftApp) restoreScreen()
+                }
                 is LaunchResult.EmulatorNotInstalled -> {
                     Toast.makeText(context, "${result.emulator.displayName} no está instalado.", Toast.LENGTH_LONG).show()
-                    darkness.animateTo(0f, tween(250))
-                    launching = false
+                    restoreScreen()
                 }
                 is LaunchResult.Failed -> {
                     Toast.makeText(context, "No se pudo abrir: ${result.message}", Toast.LENGTH_LONG).show()
-                    darkness.animateTo(0f, tween(250))
-                    launching = false
+                    restoreScreen()
                 }
             }
         }
@@ -614,4 +658,14 @@ private fun GameMenuButton(onScrap: () -> Unit, onDelete: () -> Unit, modifier: 
             )
         }
     }
+}
+
+/** La ComponentActivity que hay detrás de un Context (el de Compose puede venir envuelto), o null. */
+private fun Context.findComponentActivity(): ComponentActivity? {
+    var current: Context? = this
+    while (current is ContextWrapper) {
+        if (current is ComponentActivity) return current
+        current = current.baseContext
+    }
+    return null
 }
