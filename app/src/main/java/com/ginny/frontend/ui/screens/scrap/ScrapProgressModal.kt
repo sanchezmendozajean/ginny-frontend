@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -49,8 +48,6 @@ import com.ginny.frontend.ui.screens.settings.SettingsScrimColor
 import com.ginny.frontend.ui.theme.GinnyFont
 import com.ginny.frontend.ui.theme.GinnyThemes
 
-/** Ancho máximo de la tarjeta del modal de avance. */
-private val ProgressCardMaxWidth = 560.dp
 
 /**
  * Avance del scrapeo, al estilo del de ESDE pero sin log: una barra, "Elemento N de M" y los datos
@@ -70,8 +67,7 @@ fun ScrapProgressModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () 
             Column(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier
-                    .widthIn(max = ProgressCardMaxWidth)
-                    .fillMaxWidth()
+                    .fillMaxSize() // mismo tamaño que Configuración: pantalla completa menos el margen
                     .background(Color.White.copy(alpha = 0.85f), shape)
                     .pointerInput(Unit) { detectTapGestures { } } // tocar la tarjeta no la cierra
                     .padding(24.dp),
@@ -87,13 +83,14 @@ fun ScrapProgressModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () 
                 val shown = progress
                 if (shown == null) {
                     Text("Preparando el lote...", fontFamily = GinnyFont, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = palette.muted)
+                    Spacer(Modifier.weight(1f)) // empuja los botones al fondo
                 } else {
                     ProgressHeader(shown, running)
                     // La única parte que cede alto: si no cabe, se desplaza y los botones quedan siempre a la vista.
                     Column(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier
-                            .weight(1f, fill = false)
+                            .weight(1f)
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState()),
                     ) {
