@@ -16,14 +16,48 @@ enum class ScrapOutcome {
 }
 
 /**
+ * El juego que se está procesando (o el último, ya terminado), tal como lo muestra el modal de avance.
+ *
+ * [metadata] y cada valor de [media] son tres estados: `true` = el juego lo tiene (ya estaba o se
+ * acaba de conseguir), `false` = no se consiguió, `null` = todavía no se sabe. Solo aparecen las medias
+ * que el usuario eligió descargar.
+ */
+data class ScrapCurrent(
+    /** Posición en el lote, desde 1. */
+    val index: Int,
+    val fileName: String,
+    val systemName: String,
+    /** Lo que se está haciendo ahora ("Consultando ScreenScraper…"); null cuando el juego ya terminó. */
+    val step: String? = null,
+    /** Si el usuario eligió descargar metadatos (si no, esa línea no se muestra). */
+    val metadataWanted: Boolean = true,
+    val metadata: Boolean? = null,
+    val media: Map<ScrapMedia, Boolean?> = emptyMap(),
+    /** null mientras se procesa. */
+    val outcome: ScrapOutcome? = null,
+) {
+    /** Resumen de todas las imágenes (ícono, wheel, cajas): sí si las tiene todas, no si falta alguna. */
+    val images: Boolean?
+        get() {
+            val values = media.filterKeys { it != ScrapMedia.VIDEO }.values
+            return when {
+                values.isEmpty() -> null
+                values.any { it == false } -> false
+                values.any { it == null } -> null
+                else -> true
+            }
+        }
+}
+
+/**
  * Estado de un lote de scrapeo, para mostrárselo al usuario. [processed] cuenta los juegos ya vistos
  * (incluidos los saltados), así que `processed / total` es el avance real.
  */
 data class ScrapProgress(
     val total: Int,
     val processed: Int = 0,
-    /** Nombre del juego que se está procesando. */
-    val current: String? = null,
+    /** El juego en curso (o el último procesado). */
+    val current: ScrapCurrent? = null,
     val scraped: Int = 0,
     val notFound: Int = 0,
     val skipped: Int = 0,
@@ -34,7 +68,7 @@ data class ScrapProgress(
     val stopReason: String? = null,
     val finished: Boolean = false,
 ) {
-    fun withCurrent(name: String) = copy(current = name)
+    fun withCurrent(current: ScrapCurrent) = copy(current = current)
 
     fun after(outcome: ScrapOutcome) = copy(
         processed = processed + 1,
@@ -44,7 +78,7 @@ data class ScrapProgress(
         failed = failed + if (outcome == ScrapOutcome.FAILED) 1 else 0,
     )
 
-    fun stopped(reason: String) = copy(current = null, stopReason = reason, finished = true)
+    fun stopped(reason: String) = copy(current = current?.copy(step = null), stopReason = reason, finished = true)
 
-    fun completed() = copy(current = null, finished = true)
+    fun completed() = copy(current = current?.copy(step = null), finished = true)
 }

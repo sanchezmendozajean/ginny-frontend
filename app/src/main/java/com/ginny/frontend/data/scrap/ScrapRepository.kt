@@ -56,13 +56,50 @@ class ScrapRepository(
     suspend fun systemGames(systemId: SystemId): List<GameEntry> = gameIndex.observeGames(systemId).first()
 
     /**
+     * Calcula, sistema por sistema, cuántos juegos tienen algo por pedir y cuántos el proveedor no
+     * tenía, mirando lo que ya hay guardado en `Assets/`. Emite un [SystemScrapStats] por sistema a
+     * medida que termina (leer los metadatos de cada juego por SAF es lento en bibliotecas grandes).
+     */
+    fun inspect(games: List<GameEntry>): Flow<SystemScrapStats> = flow {
+        val wanted = scrapperSettings.enabledMedia.first()
+        val now = clock()
+        for ((systemId, systemGames) in games.groupBy { it.systemId }) {
+            currentCoroutineContext().ensureActive()
+            val assets = (storage.openSystem(systemId) as? ScrapResult.Ok)?.value
+            val pending = mutableSetOf<String>()
+            val notFound = mutableSetOf<String>()
+            for (game in systemGames) {
+                currentCoroutineContext().ensureActive()
+                val rom = game.romFileName
+                if (assets == null) {
+                    pending += rom // sin acceso a Assets no se sabe nada: se lo da por pendiente
+                    continue
+                }
+                val previous = assets.readMetadata(rom)
+                val present = presentMedia(assets, rom)
+                when {
+                    !ScrapPlanner.plan(previous, present, wanted, force = false, now = now).isEmpty -> pending += rom
+                    !ScrapPlanner.plan(previous, present, wanted, force = true, now = now).isEmpty -> notFound += rom
+                }
+            }
+            emit(SystemScrapStats(systemId, systemGames.size, pending, notFound))
+        }
+    }
+
+    private suspend fun presentMedia(assets: SystemAssets, rom: String): Set<ScrapMedia> =
+        ScrapMedia.entries
+            .filter { it != ScrapMedia.METADATA && assets.has(AssetFolder.of(it), rom) }
+            .toSet()
+
+    /**
      * Scrapea [games] en orden y va emitiendo el avance. El último estado emitido trae
      * [ScrapProgress.finished] = true (y [ScrapProgress.stopReason] si se cortó antes de terminar).
-     * [force]: ignora las cachés negativas (juegos "no encontrados" y medias ausentes); **no**
-     * sobrescribe archivos que ya existen.
+     * [force]: ignora las cachés negativas (juegos "no encontrados" y medias ausentes). [overwrite]:
+     * vuelve a pedir también lo que ya está guardado y lo reemplaza (si la descarga nueva falla, lo
+     * anterior queda intacto); sin él, **nunca** se sobrescribe un archivo existente.
      */
-    fun run(games: List<GameEntry>, force: Boolean = false): Flow<ScrapProgress> = flow {
-        val session = Session(wanted = scrapperSettings.enabledMedia.first(), force = force)
+    fun run(games: List<GameEntry>, force: Boolean = false, overwrite: Boolean = false): Flow<ScrapProgress> = flow {
+        val session = Session(wanted = scrapperSettings.enabledMedia.first(), force = force, overwrite = overwrite)
         val onlyOnWifi = scrapperSettings.onlyOnWifi.first()
         var progress = ScrapProgress(total = games.size)
         emit(progress)
@@ -70,7 +107,7 @@ class ScrapRepository(
         var openSystem: SystemId? = null
         var assets: SystemAssets? = null
 
-        for (game in games) {
+        for ((position, game) in games.withIndex()) {
             currentCoroutineContext().ensureActive()
 
             (network.check(onlyOnWifi) as? ScrapResult.Failure)?.let {
@@ -90,10 +127,10 @@ class ScrapRepository(
                 }
             }
 
-            progress = progress.withCurrent(game.displayName)
-            emit(progress)
+            val systemName = SystemCatalog.byId.getValue(game.systemId).displayName
+            val report: suspend (ScrapCurrent) -> Unit = { emit(progress.withCurrent(it)) }
 
-            when (val result = processGame(game, assets, session)) {
+            when (val result = processGame(game, assets, session, position + 1, systemName, report)) {
                 is GameResult.Done -> progress = progress.after(result.outcome).copy(warnings = session.warnings.toList())
                 is GameResult.Stop -> {
                     emit(progress.copy(warnings = session.warnings.toList()).stopped(result.reason))
@@ -107,28 +144,62 @@ class ScrapRepository(
 
     // ── Un juego ──────────────────────────────────────────────────────────────────────────────
 
-    private suspend fun processGame(game: GameEntry, assets: SystemAssets, session: Session): GameResult {
+    private suspend fun processGame(
+        game: GameEntry,
+        assets: SystemAssets,
+        session: Session,
+        index: Int,
+        systemName: String,
+        report: suspend (ScrapCurrent) -> Unit,
+    ): GameResult {
         val rom = game.romFileName
         val now = clock()
         val previous = assets.readMetadata(rom)
-        val present = ScrapMedia.entries
-            .filter { it != ScrapMedia.METADATA && assets.has(AssetFolder.of(it), rom) }
-            .toSet()
+        val present = presentMedia(assets, rom)
 
-        val plan = ScrapPlanner.plan(previous, present, session.wanted, session.force, now)
+        val state = GameState(previous, now, present)
+        val shown = session.wanted.filter { it != ScrapMedia.METADATA }
+        // Lo que se muestra al empezar: lo que el juego ya tiene (con "sobrescribir", se vuelve a pedir todo).
+        val metadataWanted = ScrapMedia.METADATA in session.wanted
+        state.metadataShown = if (metadataWanted && previous?.hasDetails == true && !session.overwrite) true else null
+        shown.forEach { state.mediaShown[it] = if (it in present && !session.overwrite) true else null }
+        suspend fun publish(step: String?, outcome: ScrapOutcome? = null) {
+            report(
+                ScrapCurrent(
+                    index = index,
+                    fileName = rom,
+                    systemName = systemName,
+                    step = step,
+                    metadataWanted = metadataWanted,
+                    metadata = state.metadataShown,
+                    media = state.mediaShown.toMap(),
+                    outcome = outcome,
+                ),
+            )
+        }
+        publish("Preparando…")
+
+        val plan = ScrapPlanner.plan(previous, present, session.wanted, session.force, now, session.overwrite)
         val useScreenScraper = plan.needsScreenScraper && ScrapProvider.SCREENSCRAPER !in session.disabled
         val useSteamGridDb = plan.needsSteamGridDb && ScrapProvider.STEAMGRIDDB !in session.disabled
-        if (!useScreenScraper && !useSteamGridDb) return GameResult.Done(ScrapOutcome.SKIPPED)
+        if (!useScreenScraper && !useSteamGridDb) {
+            state.settleUnknowns()
+            publish(null, ScrapOutcome.SKIPPED)
+            return GameResult.Done(ScrapOutcome.SKIPPED)
+        }
 
-        val state = GameState(previous, now)
         val stopReason = try {
-            runProviders(game, assets, plan, useScreenScraper, useSteamGridDb, session, state)
+            runProviders(game, assets, plan, useScreenScraper, useSteamGridDb, session, state) { step -> publish(step) }
         } finally {
             // Aunque se cancele o se corte el lote, lo averiguado hasta aquí se guarda: así la próxima
             // corrida no vuelve a preguntar lo mismo.
             withContext(NonCancellable) { persistMetadata(rom, assets, state) }
         }
-        if (stopReason != null) return GameResult.Stop(stopReason)
+        state.settleUnknowns()
+        if (stopReason != null) {
+            publish(null)
+            return GameResult.Stop(stopReason)
+        }
 
         val outcome = when {
             state.gotSomething || state.screenScraperKnowsGame == true -> ScrapOutcome.SCRAPED
@@ -136,6 +207,7 @@ class ScrapRepository(
             state.screenScraperKnowsGame == false -> ScrapOutcome.NOT_FOUND
             else -> ScrapOutcome.SKIPPED
         }
+        publish(null, outcome)
         return GameResult.Done(outcome)
     }
 
@@ -148,15 +220,18 @@ class ScrapRepository(
         useSteamGridDb: Boolean,
         session: Session,
         state: GameState,
+        publish: suspend (step: String) -> Unit,
     ): String? {
         val rom = game.romFileName
 
         if (useScreenScraper) {
+            publish("Consultando ScreenScraper…")
             when (val found = screenScraper.findGame(lookupFor(game))) {
                 is ScrapResult.Ok -> {
                     session.connectionWorked()
                     val match = found.value
                     state.screenScraperKnowsGame = true
+                    if (ScrapMedia.METADATA in session.wanted) state.metadataShown = true
                     state.metadata = MetadataMerge.found(
                         state.previous, match, game.systemId, state.now, includeDetails = ScrapMedia.METADATA in session.wanted,
                     )
@@ -167,17 +242,24 @@ class ScrapRepository(
                     for ((media, chosen) in selection) {
                         if (chosen == null) {
                             state.newlyMissing += media
+                            state.mark(media, false)
                             continue
                         }
-                        when (val saved = saveScreenScraperMedia(assets, rom, media, chosen)) {
+                        publish("Descargando ${media.label.lowercase()}…")
+                        when (val saved = saveScreenScraperMedia(assets, rom, media, chosen, session.overwrite)) {
                             is ScrapResult.Ok -> {
                                 state.obtained += media
                                 state.gotSomething = true
+                                state.mark(media, true)
                                 regionKey(media)?.let { key -> chosen.region?.let { state.regions[key] = it } }
                             }
-                            ScrapResult.NotFound -> state.newlyMissing += media
+                            ScrapResult.NotFound -> {
+                                state.newlyMissing += media
+                                state.mark(media, false)
+                            }
                             is ScrapResult.Failure -> {
                                 state.hadError = true
+                                state.mark(media, false)
                                 failureStop(saved, ScrapProvider.SCREENSCRAPER, session)?.let { return it }
                             }
                         }
@@ -187,7 +269,10 @@ class ScrapRepository(
                     session.connectionWorked()
                     state.screenScraperKnowsGame = false
                     state.metadata = MetadataMerge.notFound(state.previous, state.now)
-                    state.newlyMissing += plan.fetch.intersect(ScrapPlanner.SCREENSCRAPER_MEDIA)
+                    val missing = plan.fetch.intersect(ScrapPlanner.SCREENSCRAPER_MEDIA)
+                    state.newlyMissing += missing
+                    missing.forEach { state.mark(it, false) }
+                    if (ScrapMedia.METADATA in session.wanted) state.metadataShown = state.previous?.hasDetails == true
                 }
                 is ScrapResult.Failure -> {
                     state.hadError = true
@@ -199,22 +284,29 @@ class ScrapRepository(
         if (useSteamGridDb) {
             // El nombre estándar de ScreenScraper busca mucho mejor que el del archivo.
             val name = state.canonicalName ?: game.displayName
+            publish("Buscando el ícono en SteamGridDB…")
             when (val found = steamGridDb.findIcon(name, state.year)) {
                 is ScrapResult.Ok -> {
                     session.connectionWorked()
                     val match = found.value
-                    when (val saved = saveIcon(assets, rom, match.image)) {
+                    publish("Descargando ícono…")
+                    when (val saved = saveIcon(assets, rom, match.image, session.overwrite)) {
                         is ScrapResult.Ok -> {
                             state.obtained += ScrapMedia.ICON
                             state.gotSomething = true
+                            state.mark(ScrapMedia.ICON, true)
                             state.metadata = MetadataMerge.withIcon(
                                 state.metadata ?: MetadataMerge.pending(state.previous, state.now), match.game.id, match.image.id,
                             )
                             gameIndex.updateIcon(game, saved.value)
                         }
-                        ScrapResult.NotFound -> state.newlyMissing += ScrapMedia.ICON
+                        ScrapResult.NotFound -> {
+                            state.newlyMissing += ScrapMedia.ICON
+                            state.mark(ScrapMedia.ICON, false)
+                        }
                         is ScrapResult.Failure -> {
                             state.hadError = true
+                            state.mark(ScrapMedia.ICON, false)
                             failureStop(saved, ScrapProvider.STEAMGRIDDB, session)?.let { return it }
                         }
                     }
@@ -222,9 +314,11 @@ class ScrapRepository(
                 ScrapResult.NotFound -> {
                     session.connectionWorked()
                     state.newlyMissing += ScrapMedia.ICON
+                    state.mark(ScrapMedia.ICON, false)
                 }
                 is ScrapResult.Failure -> {
                     state.hadError = true
+                    state.mark(ScrapMedia.ICON, false)
                     failureStop(found, ScrapProvider.STEAMGRIDDB, session)?.let { return it }
                 }
             }
@@ -247,11 +341,12 @@ class ScrapRepository(
         rom: String,
         media: ScrapMedia,
         chosen: ScreenScraperMedia,
+        overwrite: Boolean,
     ): ScrapResult<Uri> =
-        assets.write(AssetFolder.of(media), rom, chosen.format) { out -> screenScraper.download(chosen, out) }
+        assets.write(AssetFolder.of(media), rom, chosen.format, overwrite) { out -> screenScraper.download(chosen, out) }
 
     /** Descarga el ícono, lo deja como PNG cuadrado de hasta 512 y lo guarda. */
-    private suspend fun saveIcon(assets: SystemAssets, rom: String, image: SteamGridDbImage): ScrapResult<Uri> {
+    private suspend fun saveIcon(assets: SystemAssets, rom: String, image: SteamGridDbImage, overwrite: Boolean): ScrapResult<Uri> {
         val buffer = ByteArrayOutputStream()
         when (val downloaded = steamGridDb.download(image, buffer)) {
             is ScrapResult.Failure -> return downloaded
@@ -261,7 +356,7 @@ class ScrapRepository(
             is ScrapResult.Failure -> return processed
             is ScrapResult.Ok -> processed.value
         }
-        return assets.write(AssetFolder.ICONS, rom, "png") { out ->
+        return assets.write(AssetFolder.ICONS, rom, "png", overwrite) { out ->
             out.write(png)
             ScrapResult.Ok(png.size.toLong())
         }
@@ -334,7 +429,7 @@ class ScrapRepository(
     // ── Estado interno ────────────────────────────────────────────────────────────────────────
 
     /** Estado de todo el lote. */
-    private class Session(val wanted: Set<ScrapMedia>, val force: Boolean) {
+    private class Session(val wanted: Set<ScrapMedia>, val force: Boolean, val overwrite: Boolean) {
         val disabled = mutableSetOf<ScrapProvider>()
         val warnings = mutableListOf<String>()
         var consecutiveFailures = 0
@@ -349,7 +444,22 @@ class ScrapRepository(
     }
 
     /** Lo que se va averiguando de un juego mientras se lo procesa. */
-    private class GameState(val previous: GameMetadata?, val now: Long) {
+    private class GameState(val previous: GameMetadata?, val now: Long, val present: Set<ScrapMedia>) {
+        // Lo que ve el usuario en el modal de avance (true = lo tiene, false = no, null = aún no se sabe).
+        var metadataShown: Boolean? = null
+        val mediaShown = LinkedHashMap<ScrapMedia, Boolean?>()
+
+        /** Una media consultada: tiene "sí" si se consiguió o si ya había un archivo de antes. */
+        fun mark(media: ScrapMedia, obtained: Boolean) {
+            if (media in mediaShown) mediaShown[media] = obtained || media in present
+        }
+
+        /** Al terminar el juego, lo que no se llegó a consultar queda según lo que ya tenía guardado. */
+        fun settleUnknowns() {
+            for (media in mediaShown.keys.toList()) if (mediaShown[media] == null) mediaShown[media] = media in present
+            if (metadataShown == null) metadataShown = previous?.hasDetails == true
+        }
+
         var metadata: GameMetadata? = null
         val obtained = mutableSetOf<ScrapMedia>()
         val newlyMissing = mutableSetOf<ScrapMedia>()

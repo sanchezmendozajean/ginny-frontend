@@ -36,6 +36,13 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.runtime.collectAsState
 import com.ginny.frontend.ui.screens.settings.SettingsModal
+import com.ginny.frontend.ui.screens.scrap.ScrapLaunchModal
+import com.ginny.frontend.ui.screens.scrap.ScrapProgressModal
+import com.ginny.frontend.ui.screens.scrap.ScrapViewModel
+import android.widget.Toast
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalContext
 import com.ginny.frontend.ui.screens.systems.SystemsScreen
 import com.ginny.frontend.ui.theme.GinnyThemes
 import dev.chrisbanes.haze.HazeState
@@ -71,8 +78,42 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
     // habilitados, B cierra primero el modal.
     var openGame by remember { mutableStateOf<GameEntry?>(null) }
     BackHandler(enabled = openGame != null && !settingsOpen) { openGame = null }
+
+    // Scrapper: el modal que lo lanza (lista de sistemas) y el que muestra su avance. Se declaran aquí,
+    // después de los otros BackHandler, para que B cierre primero lo que está más arriba.
+    val appContainer = appContainer()
+    val scrapViewModel: ScrapViewModel = viewModel(
+        factory = viewModelFactory { initializer { ScrapViewModel(appContainer) } },
+    )
+    val scrapping by scrapViewModel.isRunning.collectAsState()
+    var scrapLaunchOpen by remember { mutableStateOf(false) }
+    var scrapProgressOpen by remember { mutableStateOf(false) }
+    val closeScrapLaunch = {
+        scrapLaunchOpen = false
+        scrapViewModel.cancelPrepare()
+    }
+    BackHandler(enabled = scrapLaunchOpen, onBack = closeScrapLaunch)
+    BackHandler(enabled = scrapProgressOpen) { scrapProgressOpen = false }
+
+    // Al terminar un lote con el modal de avance cerrado, un aviso breve (el ícono animado desaparece).
+    val context = LocalContext.current
+    val progressOpenNow by rememberUpdatedState(scrapProgressOpen)
+    var wasScrapping by remember { mutableStateOf(false) }
+    LaunchedEffect(scrapping) {
+        if (wasScrapping && !scrapping && !progressOpenNow) {
+            val result = scrapViewModel.progress.value
+            val text = when {
+                result == null -> null
+                result.stopReason != null -> "Scrapeo detenido: ${result.stopReason}"
+                else -> "Scrapeo terminado: ${result.scraped} con datos nuevos de ${result.total}."
+            }
+            if (text != null) Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+        }
+        wasScrapping = scrapping
+    }
+
     // La grilla responde solo si no hay nada encima.
-    val gridActive = !settingsOpen && openGame == null
+    val gridActive = !settingsOpen && openGame == null && !scrapProgressOpen
 
     // Une el fondo (que se desenfoca) con los Container (que lo desenfocan detrás de sí).
     val hazeState = remember { HazeState() }
@@ -80,7 +121,7 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
     // Desenfoque animado de la interfaz de atrás mientras Configuración está abierta.
     // Modifier.blur funciona en API 31+; en 29-30 no hace nada y queda solo la cortina oscura.
     val backdropBlur by animateDpAsState(
-        targetValue = if (settingsOpen || openGame != null) SettingsBackdropBlur else 0.dp,
+        targetValue = if (settingsOpen || openGame != null || scrapProgressOpen) SettingsBackdropBlur else 0.dp,
         label = "settingsBackdropBlur",
     )
 
@@ -102,7 +143,11 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
                         .padding(18.dp),                                // margen con los bordes de la pantalla
                     verticalArrangement = Arrangement.spacedBy(12.dp),  // separación entre las tres filas
                 ) {
-                    GinnyHeader(title = (screen as? Screen.Games)?.title)
+                    GinnyHeader(
+                        title = (screen as? Screen.Games)?.title,
+                        scrapping = scrapping,
+                        onScrapClick = { scrapProgressOpen = true },
+                    )
 
                     val contentModifier = Modifier.weight(1f)           // ocupa todo el alto sobrante
                     val onSelectionChanged: (GridEntry?) -> Unit = { selected = it }
@@ -157,6 +202,27 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
         )
 
         // ── Modal de Configuración, encima de todo ───────────────────────────────────────────
-        SettingsModal(visible = settingsOpen, onClose = onCloseSettings)
+        SettingsModal(
+            visible = settingsOpen,
+            onClose = onCloseSettings,
+            nestedModalOpen = scrapLaunchOpen || scrapProgressOpen,
+            onOpenScrapLaunch = {
+                scrapLaunchOpen = true
+                scrapViewModel.prepareLaunch()
+            },
+            onOpenScrapProgress = { scrapProgressOpen = true },
+        )
+
+        // ── Modales del scrapper, encima de Configuración ────────────────────────────────────
+        ScrapLaunchModal(
+            visible = scrapLaunchOpen,
+            viewModel = scrapViewModel,
+            onClose = closeScrapLaunch,
+            onStarted = {
+                scrapLaunchOpen = false
+                scrapProgressOpen = true
+            },
+        )
+        ScrapProgressModal(visible = scrapProgressOpen, viewModel = scrapViewModel, onClose = { scrapProgressOpen = false })
     }
 }

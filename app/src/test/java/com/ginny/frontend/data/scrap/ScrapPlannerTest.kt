@@ -34,6 +34,22 @@ class ScrapPlannerTest {
     ) = ScrapPlanner.plan(previous, present, wanted, force, now)
 
     @Test
+    fun `sobrescribir vuelve a pedir lo que ya esta guardado y los metadatos`() {
+        val p = ScrapPlanner.plan(found(), allFiles, defaults, force = false, now = now, overwrite = true)
+        assertEquals(allFiles, p.fetch)
+        assertTrue(p.needsScreenScraper && p.needsSteamGridDb)
+    }
+
+    @Test
+    fun `sobrescribir tambien ignora las caches negativas`() {
+        val notFound = GameMetadata(status = Status.NOT_FOUND, scrapedAt = now - day)
+        assertTrue(plan(notFound).isEmpty.not() || plan(notFound).needsSteamGridDb) // el ícono sigue pendiente
+        val p = ScrapPlanner.plan(notFound, emptySet(), defaults, force = false, now = now, overwrite = true)
+        assertTrue(p.needsScreenScraper)
+        assertEquals(allFiles, p.fetch)
+    }
+
+    @Test
     fun `un juego nuevo pide todo a los dos proveedores`() {
         val p = plan(previous = null)
         assertEquals(allFiles, p.fetch)

@@ -60,7 +60,14 @@ val SettingsModalCornerRadius = 28.dp
  * anterior: así funciona sin importar qué tenga el foco. Aparece y desaparece con un fade.
  */
 @Composable
-fun SettingsModal(visible: Boolean, onClose: () -> Unit) {
+fun SettingsModal(
+    visible: Boolean,
+    onClose: () -> Unit,
+    /** Hay otro modal (el de scrapeo) encima: Configuración le cede el foco y lo recupera al cerrarse. */
+    nestedModalOpen: Boolean = false,
+    onOpenScrapLaunch: () -> Unit = {},
+    onOpenScrapProgress: () -> Unit = {},
+) {
     AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
         val palette = GinnyThemes.current
         val sound = LocalSoundManager.current
@@ -83,7 +90,7 @@ fun SettingsModal(visible: Boolean, onClose: () -> Unit) {
         // Mientras está abierto, el modal se queda con el foco: así la cruceta no mueve el cursor
         // de la grilla que está detrás.
         val focusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+        LaunchedEffect(nestedModalOpen) { if (!nestedModalOpen) focusRequester.requestFocus() }
 
         Box(
             modifier = Modifier
@@ -133,7 +140,7 @@ fun SettingsModal(visible: Boolean, onClose: () -> Unit) {
                             SettingsSection.Interfaz -> InterfazOptions(viewModel)
                             SettingsSection.Carpetas -> CarpetasOptions(viewModel)
                             SettingsSection.Sistemas -> SistemasOptions(viewModel)
-                            SettingsSection.Scrapper -> ScrapperOptions(viewModel)
+                            SettingsSection.Scrapper -> ScrapperOptions(viewModel, onOpenScrapLaunch, onOpenScrapProgress)
                         }
                     }
                 }

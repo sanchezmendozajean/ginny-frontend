@@ -14,6 +14,8 @@ import com.ginny.frontend.data.model.SystemId
  * - El nombre estándar de ScreenScraper mejora la búsqueda en SteamGridDB, así que si todavía no se
  *   consultó y hace falta el ícono, se pregunta primero a ScreenScraper.
  * - Forzar **no sobrescribe** archivos existentes: solo ignora las cachés negativas.
+ * - **Sobrescribir** vuelve a pedir todo lo que el usuario eligió descargar, esté o no guardado (e
+ *   implica forzar).
  */
 object ScrapPlanner {
 
@@ -38,6 +40,7 @@ object ScrapPlanner {
      * @param previous metadatos guardados de este juego, o null si no hay.
      * @param present medias que ya están guardadas como archivo.
      * @param wanted lo que el usuario eligió descargar.
+     * @param overwrite pedir de nuevo también lo que ya está guardado (reemplazándolo).
      */
     fun plan(
         previous: GameMetadata?,
@@ -45,20 +48,22 @@ object ScrapPlanner {
         wanted: Set<ScrapMedia>,
         force: Boolean,
         now: Long,
+        overwrite: Boolean = false,
     ): Plan {
+        val ignoreCaches = force || overwrite
         val neverAsked = previous == null || previous.status == GameMetadata.Status.PENDING
         val negativeIsFresh = previous?.status == GameMetadata.Status.NOT_FOUND &&
-            !force && now - previous.scrapedAt < NOT_FOUND_RETRY_MS
+            !ignoreCaches && now - previous.scrapedAt < NOT_FOUND_RETRY_MS
 
         val missing = previous?.missingMedia.orEmpty()
         val toFetch = wanted
-            .filter { it != ScrapMedia.METADATA && it !in present && (force || it !in missing) }
+            .filter { it != ScrapMedia.METADATA && (overwrite || it !in present) && (ignoreCaches || it !in missing) }
             .toSet()
             .let { all -> if (negativeIsFresh) all - SCREENSCRAPER_MEDIA else all }
 
         val needsSteamGridDb = ScrapMedia.ICON in toFetch
         val refreshDetails = ScrapMedia.METADATA in wanted && (
-            neverAsked ||
+            neverAsked || overwrite ||
                 (previous?.status == GameMetadata.Status.NOT_FOUND && !negativeIsFresh) ||
                 (previous?.status == GameMetadata.Status.FOUND && !previous.hasDetails)
             )

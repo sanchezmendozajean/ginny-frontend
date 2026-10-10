@@ -120,7 +120,13 @@ class MainActivity : ComponentActivity() {
                 // B no hace nada (el "atrás" por defecto cerraría la app).
                 LogicalButton.B -> {
                     if (settingsOpen.value) {
-                        settingsOpen.value = false
+                        // Con Configuración abierta, los únicos callbacks activos son los de los modales
+                        // de scrapeo (encima de ella): B cierra primero esos.
+                        if (onBackPressedDispatcher.hasEnabledCallbacks()) {
+                            onBackPressedDispatcher.onBackPressed()
+                        } else {
+                            settingsOpen.value = false
+                        }
                     } else if (onBackPressedDispatcher.hasEnabledCallbacks()) {
                         onBackPressedDispatcher.onBackPressed()
                     }

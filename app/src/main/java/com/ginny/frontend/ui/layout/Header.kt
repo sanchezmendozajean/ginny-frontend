@@ -15,13 +15,22 @@ import com.ginny.frontend.ui.components.SystemLabel
  * derecha la hora y la batería.
  */
 @Composable
-fun GinnyHeader(modifier: Modifier = Modifier, title: String? = null) {
+fun GinnyHeader(
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    scrapping: Boolean = false,
+    onScrapClick: () -> Unit = {},
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(32.dp)
     ) {
         SystemLabel(systemName = title)
-        DeviceStatus(modifier = Modifier.align(Alignment.CenterEnd)) // a la derecha
+        DeviceStatus( // a la derecha
+            modifier = Modifier.align(Alignment.CenterEnd),
+            scrapping = scrapping,
+            onScrapClick = onScrapClick,
+        )
     }
 }

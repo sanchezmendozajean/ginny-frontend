@@ -12,7 +12,6 @@ import androidx.lifecycle.viewModelScope
 import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.data.model.EmulatorTarget
 import com.ginny.frontend.data.scrap.ScrapMedia
-import com.ginny.frontend.data.scrap.ScrapProgress
 import com.ginny.frontend.data.scrap.ScrapProvider
 import com.ginny.frontend.data.scrap.ScrapResult
 import com.ginny.frontend.data.scrap.ScrapperDevCredentials
@@ -228,13 +227,7 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     // ── Scrapeo de la biblioteca ──────────────────────────────────────────────────────────────
     // El lote vive en el scope de la aplicación (ScrapRunner): salir de Configuración no lo detiene.
 
-    val scrapProgress: StateFlow<ScrapProgress?> = container.scrapRunner.progress
     val isScrapping: StateFlow<Boolean> = container.scrapRunner.isRunning
-
-    /** [force]: vuelve a consultar lo que antes no se encontró (no sobrescribe archivos). */
-    fun startScrap(force: Boolean) = container.scrapRunner.startLibrary(force)
-
-    fun stopScrap() = container.scrapRunner.stop()
 
     // ── Verificar credenciales ────────────────────────────────────────────────────────────────
 

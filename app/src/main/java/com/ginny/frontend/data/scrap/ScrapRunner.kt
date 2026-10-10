@@ -1,5 +1,6 @@
 package com.ginny.frontend.data.scrap
 
+import com.ginny.frontend.data.model.SystemId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -18,6 +19,11 @@ class ScrapRunner(
     private val repository: ScrapRepository,
     private val scope: CoroutineScope,
 ) {
+    /** Calcula lo pendiente de cada sistema (ver [ScrapRepository.inspect]). */
+    suspend fun libraryGames() = repository.libraryGames()
+
+    fun inspect(games: List<com.ginny.frontend.data.model.GameEntry>) = repository.inspect(games)
+
     private val _progress = MutableStateFlow<ScrapProgress?>(null)
     val progress: StateFlow<ScrapProgress?> = _progress
 
@@ -27,20 +33,24 @@ class ScrapRunner(
     private var job: Job? = null
 
     /**
-     * Scrapea toda la biblioteca escaneada. [force]: vuelve a consultar los juegos que ScreenScraper no
-     * conocía y las medias que no tenía (no sobrescribe archivos). No hace nada si ya hay un lote en curso.
+     * Scrapea los juegos de [systems] que entran en [scope] (según [stats], lo calculado por
+     * [ScrapRepository.inspect]). [ScrapScope.force] decide si se ignoran las cachés de "no encontrado";
+     * [overwrite] reemplaza también lo ya guardado. No hace nada si ya hay un lote en curso.
      */
-    fun startLibrary(force: Boolean) {
+    fun start(systems: Set<SystemId>, scope: ScrapScope, overwrite: Boolean, stats: Map<SystemId, SystemScrapStats>) {
         if (!_isRunning.compareAndSet(expect = false, update = true)) return
-        job = scope.launch {
+        _progress.value = null
+        job = this.scope.launch {
             try {
-                val games = repository.libraryGames()
+                val games = repository.libraryGames().filter { game ->
+                    game.systemId in systems && stats[game.systemId]?.includes(scope, game.romFileName) != false
+                }
                 if (games.isEmpty()) {
                     _progress.value = ScrapProgress(total = 0)
-                        .stopped("No hay juegos en la biblioteca. Escanéala primero en Configuración > Carpetas.")
+                        .stopped("No hay juegos que scrapear con esta selección.")
                     return@launch
                 }
-                repository.run(games, force).collect { _progress.value = it }
+                repository.run(games, force = scope.force, overwrite = overwrite).collect { _progress.value = it }
             } catch (e: CancellationException) {
                 // El usuario lo detuvo: se conserva el último avance, marcado como detenido.
                 _progress.value = _progress.value?.takeIf { !it.finished }?.stopped("Detenido.")

@@ -33,12 +33,15 @@ import java.util.Locale
  * (regla del spec: mejor no mostrar nada que un dato falso); la hora siempre se muestra.
  */
 @Composable
-fun DeviceStatus(modifier: Modifier = Modifier) {
+fun DeviceStatus(modifier: Modifier = Modifier, scrapping: Boolean = false, onScrapClick: () -> Unit = {}) {
     val palette = GinnyThemes.current
     val time = rememberClockText()
     val battery = rememberBatteryStatus()
 
     Container(modifier = modifier) {
+        // Mientras el scrapper trabaja, a la izquierda de la hora: tocarlo abre el modal de avance.
+        if (scrapping) ScrapActivityIcon(onClick = onScrapClick)
+
         Text(
             text = time,
             fontFamily = GinnyFont,

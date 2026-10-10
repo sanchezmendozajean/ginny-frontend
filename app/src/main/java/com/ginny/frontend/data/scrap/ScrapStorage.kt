@@ -78,8 +78,10 @@ class SystemAssets internal constructor(
     suspend fun has(folder: AssetFolder, romFileName: String): Boolean = find(folder, romFileName) != null
 
     /**
-     * Guarda en `<carpeta>/<romFileName>.<extension>` lo que escriba [produce]. **Nunca sobrescribe**:
-     * si ya hay un archivo de ese juego en la carpeta, no llama a [produce] y devuelve el existente.
+     * Guarda en `<carpeta>/<romFileName>.<extension>` lo que escriba [produce]. **Por defecto no
+     * sobrescribe**: si ya hay un archivo de ese juego en la carpeta, no llama a [produce] y devuelve el
+     * existente. Con [overwrite] lo reemplaza, pero solo cuando lo nuevo ya se descargó completo: si la
+     * descarga falla, el archivo anterior queda intacto.
      *
      * Escribe primero en un `.part` y recién al terminar bien lo renombra, así un corte a mitad (cierre
      * de la app, cancelación, error de red) no deja un archivo truncado que luego se tome por bueno; los
@@ -89,14 +91,17 @@ class SystemAssets internal constructor(
         folder: AssetFolder,
         romFileName: String,
         extension: String,
+        overwrite: Boolean = false,
         produce: suspend (OutputStream) -> ScrapResult<Long>,
     ): ScrapResult<Uri> = guarded {
         withContext(Dispatchers.IO) {
             val state = state(folder, create = true)
                 ?: return@withContext ScrapResult.StorageFailed("no se pudo crear la carpeta ${folder.dirName}")
             val ext = extension.lowercase().trimStart('.')
-            folder.extensions.firstNotNullOfOrNull { state.files["${romFileName.lowercase()}.$it"] }
-                ?.let { return@withContext ScrapResult.Ok(it.uri) }
+            if (!overwrite) {
+                folder.extensions.firstNotNullOfOrNull { state.files["${romFileName.lowercase()}.$it"] }
+                    ?.let { return@withContext ScrapResult.Ok(it.uri) }
+            }
 
             val finalName = "$romFileName.$ext"
             val part = state.dir.createFile(PART_MIME_TYPE, finalName + PART_SUFFIX)
@@ -108,6 +113,12 @@ class SystemAssets internal constructor(
                     ?: return@withContext ScrapResult.StorageFailed("no se pudo abrir $finalName para escribir")
                 val result = out.use { produce(it) }
                 if (result is ScrapResult.Failure) return@withContext result
+                if (overwrite) {
+                    // Recién ahora, con lo nuevo completo, se retira lo anterior (con cualquier extensión).
+                    for (old in folder.extensions) {
+                        state.files.remove("${romFileName.lowercase()}.$old")?.let { runCatching { it.delete() } }
+                    }
+                }
                 if (!part.renameTo(finalName)) {
                     return@withContext ScrapResult.StorageFailed("no se pudo renombrar $finalName")
                 }
