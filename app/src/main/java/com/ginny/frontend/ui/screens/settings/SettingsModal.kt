@@ -141,6 +141,7 @@ fun SettingsModal(
                             SettingsSection.Carpetas -> CarpetasOptions(viewModel)
                             SettingsSection.Sistemas -> SistemasOptions(viewModel)
                             SettingsSection.Scrapper -> ScrapperOptions(viewModel, onOpenScrapLaunch, onOpenScrapProgress)
+                            SettingsSection.Creditos -> CreditosOptions()
                         }
                     }
                 }

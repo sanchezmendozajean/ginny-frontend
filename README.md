@@ -378,3 +378,18 @@ Usuario (ver sección "Estructura de carpetas esperada").
 
 La tipografía M PLUS Rounded 1c (`app/src/main/res/font/mplus_rounded1c_*.ttf`) está bajo SIL
 Open Font License — ver [licenses/MPLUSRounded1c-OFL.txt](licenses/MPLUSRounded1c-OFL.txt).
+
+## Créditos
+
+También se muestran dentro de la app, en Configuración → Créditos.
+
+- **Música** (Pixabay, [Pixabay Content License](https://pixabay.com/service/license-summary/)):
+  "Monday Marimba" de faespencer y "Calm Bay" de danielhren.
+- **Efectos de sonido** (Pixabay): "System Notification 02" de Universfield y "Game Start" de
+  koiroylers (editado).
+- **Metadatos, wheel, cajas y video**: [ScreenScraper](https://www.screenscraper.fr).
+- **Íconos**: [SteamGridDB](https://www.steamgriddb.com).
+- **Bibliotecas** (Apache 2.0): Jetpack Compose / AndroidX, Coil, OkHttp y Haze.
+
+La licencia de Pixabay permite usar estos audios dentro de una aplicación, pero no redistribuirlos
+sueltos: si reutilizas el código, no copies los `.mp3` de `app/src/main/res/raw/` como archivos aparte.
