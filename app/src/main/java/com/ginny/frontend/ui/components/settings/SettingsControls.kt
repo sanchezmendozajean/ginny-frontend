@@ -114,6 +114,8 @@ fun SettingsRow(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    /** Líneas máximas del subtítulo (los mensajes largos, como un aviso o un error, necesitan más). */
+    subtitleMaxLines: Int = 2,
     trailing: @Composable RowScope.() -> Unit,
 ) {
     val palette = GinnyThemes.current
@@ -139,7 +141,7 @@ fun SettingsRow(
                     fontWeight = FontWeight.Medium,
                     fontSize = 12.sp,
                     color = palette.muted,
-                    maxLines = 2,
+                    maxLines = subtitleMaxLines,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -265,6 +267,25 @@ fun GinnySlider(value: Float, onValueChange: (Float) -> Unit, modifier: Modifier
                 .shadow(2.dp, CircleShape)
                 .background(Color.White, CircleShape)
                 .border(3.dp, palette.accent, CircleShape),
+        )
+    }
+}
+
+/** Barra de avance de 0…1 (solo se muestra, no se toca). */
+@Composable
+fun GinnyProgressBar(fraction: Float, modifier: Modifier = Modifier) {
+    val palette = GinnyThemes.current
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(6.dp)
+            .background(palette.ink.copy(alpha = 0.08f), CircleShape),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(fraction.coerceIn(0f, 1f))
+                .height(6.dp)
+                .background(Brush.horizontalGradient(listOf(palette.accent.lighten(0.08f), palette.accent)), CircleShape),
         )
     }
 }

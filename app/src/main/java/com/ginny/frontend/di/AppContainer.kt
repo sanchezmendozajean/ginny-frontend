@@ -13,8 +13,13 @@ import com.ginny.frontend.data.RomRepository
 import com.ginny.frontend.data.SaveStateRepository
 import com.ginny.frontend.data.SettingsRepository
 import com.ginny.frontend.data.StorageBootstrapper
+import com.ginny.frontend.data.scrap.ScrapNetwork
+import com.ginny.frontend.data.scrap.ScrapRepository
+import com.ginny.frontend.data.scrap.ScrapRunner
 import com.ginny.frontend.data.scrap.ScrapStorage
 import com.ginny.frontend.data.scrap.ScrapperSettingsRepository
+import com.ginny.frontend.data.scrap.screenscraper.ScreenScraperClient
+import com.ginny.frontend.data.scrap.steamgriddb.SteamGridDbClient
 import com.ginny.frontend.launch.GameLauncher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,10 +43,20 @@ class AppContainer(context: Context) {
     /** Credenciales y opciones del scrapper. Deliberadamente fuera de [configRepository] (ginny.cfg). */
     val scrapperSettingsRepository = ScrapperSettingsRepository(context)
     val scrapStorage = ScrapStorage(context, settingsRepository)
+    val screenScraperClient = ScreenScraperClient(scrapperSettingsRepository)
+    val steamGridDbClient = SteamGridDbClient(scrapperSettingsRepository)
+    private val scrapNetwork = ScrapNetwork(context)
+    private val scrapRepository = ScrapRepository(
+        context, scrapperSettingsRepository, gameIndexRepository, scrapStorage,
+        screenScraperClient, steamGridDbClient, scrapNetwork,
+    )
 
     /** Lives as long as the process — backs [GinnyConfigRepository]'s debounced auto-sync and the
-     * one-shot read of `ginny.cfg` on app start below. */
+     * one-shot read of `ginny.cfg` on app start below, and runs scrapper batches (see [scrapRunner]). */
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** Lotes de scrapeo: viven en el scope de la aplicación, no en una pantalla. */
+    val scrapRunner = ScrapRunner(scrapRepository, applicationScope)
 
     init {
         configRepository.startAutoSync(applicationScope)

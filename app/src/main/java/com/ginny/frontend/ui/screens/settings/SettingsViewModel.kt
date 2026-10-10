@@ -12,6 +12,10 @@ import androidx.lifecycle.viewModelScope
 import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.data.model.EmulatorTarget
 import com.ginny.frontend.data.scrap.ScrapMedia
+import com.ginny.frontend.data.scrap.ScrapProgress
+import com.ginny.frontend.data.scrap.ScrapProvider
+import com.ginny.frontend.data.scrap.ScrapResult
+import com.ginny.frontend.data.scrap.ScrapperDevCredentials
 import com.ginny.frontend.data.model.MusicSelection
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.SystemId
@@ -220,6 +224,58 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun setSteamGridDbApiKey(value: String) = viewModelScope.launch { scrapper.setSteamGridDbApiKey(value) }
     fun setScrapMediaEnabled(media: ScrapMedia, enabled: Boolean) = viewModelScope.launch { scrapper.setMediaEnabled(media, enabled) }
     fun setScrapOnlyOnWifi(value: Boolean) = viewModelScope.launch { scrapper.setOnlyOnWifi(value) }
+
+    // ── Scrapeo de la biblioteca ──────────────────────────────────────────────────────────────
+    // El lote vive en el scope de la aplicación (ScrapRunner): salir de Configuración no lo detiene.
+
+    val scrapProgress: StateFlow<ScrapProgress?> = container.scrapRunner.progress
+    val isScrapping: StateFlow<Boolean> = container.scrapRunner.isRunning
+
+    /** [force]: vuelve a consultar lo que antes no se encontró (no sobrescribe archivos). */
+    fun startScrap(force: Boolean) = container.scrapRunner.startLibrary(force)
+
+    fun stopScrap() = container.scrapRunner.stop()
+
+    // ── Verificar credenciales ────────────────────────────────────────────────────────────────
+
+    /** Resultado de "Verificar" de un proveedor. */
+    data class VerifyState(val running: Boolean = false, val ok: Boolean = false, val message: String? = null)
+
+    private val _verify = MutableStateFlow<Map<ScrapProvider, VerifyState>>(emptyMap())
+    val verify: StateFlow<Map<ScrapProvider, VerifyState>> = _verify
+
+    private fun setVerify(provider: ScrapProvider, state: VerifyState) {
+        _verify.value = _verify.value + (provider to state)
+    }
+
+    fun verifyScreenScraper() = viewModelScope.launch {
+        setVerify(ScrapProvider.SCREENSCRAPER, VerifyState(running = true))
+        val state = if (!ScrapperDevCredentials.screenScraperAvailable) {
+            VerifyState(message = "Este APK se compiló sin las credenciales de desarrollador de ScreenScraper (ver README).")
+        } else {
+            when (val result = container.screenScraperClient.verifyAccount()) {
+                is ScrapResult.Ok -> {
+                    val user = result.value
+                    VerifyState(
+                        ok = true,
+                        message = "Cuenta válida · hoy ${user.requestsToday ?: "?"} de ${user.maxRequestsPerDay ?: "?"} peticiones · " +
+                            "${user.maxThreads ?: "?"} ${if (user.maxThreads == 1) "hilo" else "hilos"}",
+                    )
+                }
+                is ScrapResult.Failure -> VerifyState(message = result.message)
+            }
+        }
+        setVerify(ScrapProvider.SCREENSCRAPER, state)
+    }
+
+    fun verifySteamGridDb() = viewModelScope.launch {
+        setVerify(ScrapProvider.STEAMGRIDDB, VerifyState(running = true))
+        val state = when (val result = container.steamGridDbClient.verifyKey()) {
+            is ScrapResult.Ok -> VerifyState(ok = true, message = "Clave válida")
+            is ScrapResult.Failure -> VerifyState(message = result.message)
+        }
+        setVerify(ScrapProvider.STEAMGRIDDB, state)
+    }
 
     fun startListeningForButton(button: LogicalButton) {
         listeningForButton = button
