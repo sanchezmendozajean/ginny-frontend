@@ -19,3 +19,5 @@ local.properties
 *.jks
 *.keystore
 *.secret.md
+# Audios originales de Pixabay (su licencia prohibe redistribuirlos sueltos). Los que usa la app van en res/raw.
+/docs/*.mp3
