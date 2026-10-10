@@ -101,6 +101,12 @@ class ScrapViewModel(private val container: AppContainer) : ViewModel() {
         _selected.value = _selected.value.let { if (id in it) it - id else it + id }
     }
 
+    /** Marca todos los sistemas o, si ya lo están, ninguno. */
+    fun toggleAll() {
+        selectionTouched = true
+        _selected.value = if (_selected.value.size == _systems.value.size) emptySet() else _systems.value.toSet()
+    }
+
     fun setScope(value: ScrapScope) {
         _scope.value = value
     }

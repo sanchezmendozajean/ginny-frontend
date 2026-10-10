@@ -42,6 +42,8 @@ import com.ginny.frontend.data.scrap.ScrapScope
 import com.ginny.frontend.data.scrap.SystemScrapStats
 import com.ginny.frontend.ui.components.settings.GinnyButton
 import com.ginny.frontend.ui.components.settings.GinnyDropdown
+import com.ginny.frontend.ui.components.settings.GinnyProgressBar
+import androidx.compose.foundation.layout.widthIn
 import com.ginny.frontend.ui.screens.settings.SettingsModalCornerRadius
 import com.ginny.frontend.ui.theme.GinnyFont
 import com.ginny.frontend.ui.theme.GinnyThemes
@@ -142,20 +144,35 @@ fun ScrapLaunchModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () ->
                         }
                     }
 
-                    // Resumen a la izquierda y botones a la derecha, en la misma fila.
+                    // Casilla "todos" y resumen a la izquierda; botones a la derecha, en la misma fila.
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = when {
-                                running -> "Ya hay un scrapeo en curso."
-                                inspecting -> "Revisando lo que ya hay guardado…"
-                                else -> "Se procesarán $toProcess ${if (toProcess == 1) "juego" else "juegos"}."
-                            },
-                            fontFamily = GinnyFont,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = palette.muted,
-                            modifier = Modifier.weight(1f).padding(end = 12.dp),
-                        )
+                        if (systems.isNotEmpty()) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(32.dp) // zona de toque más grande que la casilla
+                                    .pointerInput(Unit) { detectTapGestures { viewModel.toggleAll() } },
+                            ) {
+                                Checkbox(checked = selected.size == systems.size, size = 18.dp)
+                            }
+                            Spacer(Modifier.width(8.dp))
+                        }
+                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = when {
+                                    running -> "Ya hay un scrapeo en curso."
+                                    inspecting -> "Revisando lo que ya hay guardado… ${stats.size} de ${systems.size} sistemas"
+                                    else -> "Se procesarán $toProcess ${if (toProcess == 1) "juego" else "juegos"}."
+                                },
+                                fontFamily = GinnyFont,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = palette.muted,
+                            )
+                            if (inspecting && systems.isNotEmpty()) {
+                                GinnyProgressBar(fraction = stats.size.toFloat() / systems.size, modifier = Modifier.widthIn(max = 320.dp))
+                            }
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             GinnyButton("Cancelar", onClick = onClose)
                             GinnyButton(
@@ -237,12 +254,12 @@ private fun counts(stats: SystemScrapStats): String = buildString {
 }
 
 @Composable
-private fun Checkbox(checked: Boolean) {
+private fun Checkbox(checked: Boolean, size: androidx.compose.ui.unit.Dp = 22.dp) {
     val palette = GinnyThemes.current
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(22.dp)
+            .size(size)
             .background(if (checked) palette.accent else Color.Transparent, CircleShape)
             .border(2.dp, if (checked) palette.accent else palette.ink.copy(alpha = 0.25f), CircleShape),
     ) {
