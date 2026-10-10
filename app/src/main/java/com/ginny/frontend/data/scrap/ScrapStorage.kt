@@ -53,6 +53,33 @@ class ScrapStorage(
         return system.deleteGame(romFileName)
     }
 
+    /**
+     * Lee lo que ya hay guardado de un juego para **mostrarlo**: sus metadatos y las imágenes de la
+     * caja y el wheel. Es solo lectura: no crea carpetas (a diferencia de [openSystem]). Si falta la
+     * Carpeta de Usuario, la carpeta del sistema o el juego no se scrapeó, devuelve [GameAssets.EMPTY].
+     */
+    suspend fun readGameAssets(systemId: SystemId, romFileName: String): GameAssets = try {
+        withContext(Dispatchers.IO) {
+            val userUri = settings.userFolderUri.first()?.let(Uri::parse) ?: return@withContext GameAssets.EMPTY
+            val root = SafUtils.treeDocument(context, userUri) ?: return@withContext GameAssets.EMPTY
+            val assetsDir = SafUtils.findChild(root, ASSETS_DIR_NAME)?.takeIf { it.isDirectory } ?: return@withContext GameAssets.EMPTY
+            val systemDir = SafUtils.findChild(assetsDir, systemId.folderName)?.takeIf { it.isDirectory }
+                ?: return@withContext GameAssets.EMPTY
+            val system = SystemAssets(context, systemDir)
+            GameAssets(
+                metadata = system.readMetadata(romFileName),
+                boxFront = system.find(AssetFolder.BOX_FRONT, romFileName)?.uri,
+                boxBack = system.find(AssetFolder.BOX_BACK, romFileName)?.uri,
+                boxSpine = system.find(AssetFolder.BOX_SPINE, romFileName)?.uri,
+                wheel = system.find(AssetFolder.WHEEL, romFileName)?.uri,
+            )
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        GameAssets.EMPTY // permiso perdido o proveedor SAF caído: se muestra como "sin datos"
+    }
+
     private fun fatal(detail: String) = ScrapResult.StorageFailed(detail, fatal = true)
 }
 
@@ -216,3 +243,19 @@ private suspend inline fun <T> guarded(block: () -> ScrapResult<T>): ScrapResult
     } catch (e: Exception) {
         ScrapResult.StorageFailed(ScrapRedactor.redact(e.message ?: e.javaClass.simpleName))
     }
+
+/** Lo guardado de un juego que la interfaz puede mostrar (ver [ScrapStorage.readGameAssets]). */
+data class GameAssets(
+    val metadata: GameMetadata?,
+    val boxFront: Uri?,
+    val boxBack: Uri?,
+    val boxSpine: Uri?,
+    val wheel: Uri?,
+) {
+    /** Si hay al menos una cara de la caja para armarla en 3D. */
+    val hasBox: Boolean get() = boxFront != null || boxBack != null || boxSpine != null
+
+    companion object {
+        val EMPTY = GameAssets(null, null, null, null, null)
+    }
+}

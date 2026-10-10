@@ -220,6 +220,7 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}, on
                 scrapProgressOpen = true
             },
             blocked = scrapProgressOpen,
+            scrapping = scrapping,
         )
         }
 

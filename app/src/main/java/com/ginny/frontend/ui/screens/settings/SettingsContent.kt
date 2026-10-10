@@ -55,7 +55,7 @@ fun SettingsContent(
  * BlendMode.DstIn, que conserva el contenido solo donde el degradado es opaco. Todo se lee en la
  * fase de dibujo, así desplazar no recompone nada.
  */
-private fun Modifier.fadingEdges(scroll: ScrollState, height: Dp): Modifier = this
+internal fun Modifier.fadingEdges(scroll: ScrollState, height: Dp): Modifier = this
     .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
     .drawWithContent {
         drawContent()

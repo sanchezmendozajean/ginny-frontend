@@ -161,6 +161,10 @@ class GamesViewModel(
      * folder (if any), and the cached Room row — irreversible, no backup, per the confirmation
      * step shown before this is called. Scope-agnostic: resolves everything from [game.systemId].
      */
+    /** Lo guardado del juego que se muestra en su modal: metadatos y texturas de la caja. */
+    suspend fun loadGameAssets(game: GameEntry): com.ginny.frontend.data.scrap.GameAssets =
+        container.scrapStorage.readGameAssets(game.systemId, game.romFileName)
+
     suspend fun deleteGame(context: Context, game: GameEntry) {
         val romUri = settingsRepository.romFolderUri.first()?.let(Uri::parse)
         val overrideUri = settingsRepository.romFolderOverrideFor(game.systemId).first()?.let(Uri::parse)
