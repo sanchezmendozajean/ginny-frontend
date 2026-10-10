@@ -1,5 +1,6 @@
 package com.ginny.frontend.data.scrap.screenscraper
 
+import com.ginny.frontend.data.scrap.ScrapMedia
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -72,6 +73,38 @@ class ScreenScraperSelectorTest {
 
         val onlyOriginalWebm = game(media("video", null, "webm"))
         assertNull(ScreenScraperSelector.pickVideo(onlyOriginalWebm))
+    }
+
+    // ── Por tipo de media ─────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `select devuelve una media por cada tipo pedido de ScreenScraper e ignora los demas`() {
+        val wanted = setOf(
+            ScrapMedia.WHEEL, ScrapMedia.BOX_FRONT, ScrapMedia.BOX_BACK, ScrapMedia.BOX_SPINE, ScrapMedia.VIDEO,
+            ScrapMedia.ICON, ScrapMedia.METADATA, // no salen de ScreenScraper
+        )
+        val selection = ScreenScraperSelector.select(sample(), wanted)
+        assertEquals(
+            setOf(ScrapMedia.WHEEL, ScrapMedia.BOX_FRONT, ScrapMedia.BOX_BACK, ScrapMedia.BOX_SPINE, ScrapMedia.VIDEO),
+            selection.keys,
+        )
+        assertEquals("eu", selection.getValue(ScrapMedia.BOX_FRONT)!!.region)
+        assertEquals("eu", selection.getValue(ScrapMedia.BOX_BACK)!!.region)
+        assertEquals("video-normalized", selection.getValue(ScrapMedia.VIDEO)!!.type)
+    }
+
+    @Test
+    fun `select marca con null lo que ScreenScraper no tiene`() {
+        val selection = ScreenScraperSelector.select(game(media("box-2D", "eu")), setOf(ScrapMedia.BOX_FRONT, ScrapMedia.BOX_SPINE, ScrapMedia.VIDEO))
+        assertTrue(selection.containsKey(ScrapMedia.BOX_SPINE))
+        assertNull(selection.getValue(ScrapMedia.BOX_SPINE))
+        assertNull(selection.getValue(ScrapMedia.VIDEO))
+        assertEquals("eu", selection.getValue(ScrapMedia.BOX_FRONT)!!.region)
+    }
+
+    @Test
+    fun `select de nada es vacio`() {
+        assertTrue(ScreenScraperSelector.select(sample(), emptySet()).isEmpty())
     }
 
     // ── Caja ──────────────────────────────────────────────────────────────────────────────────

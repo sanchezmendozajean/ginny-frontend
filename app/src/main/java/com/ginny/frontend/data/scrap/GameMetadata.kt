@@ -10,7 +10,8 @@ import org.json.JSONObject
  *
  * [status] habla de **ScreenScraper**: [Status.NOT_FOUND] es una caché negativa que evita volver a
  * preguntar en cada corrida por un juego que no conoce; se reintenta pasado un tiempo o al forzar.
- * Un juego puede ser [Status.NOT_FOUND] y aun así tener ícono de SteamGridDB.
+ * [Status.PENDING] significa que ScreenScraper todavía no se consultó (p. ej. solo se buscó el ícono
+ * en SteamGridDB). Un juego puede ser [Status.NOT_FOUND] o [Status.PENDING] y tener ícono.
  *
  * Los campos de texto y fecha son los **elegidos** por la política de región/idioma, no todo lo que
  * ScreenScraper devolvió; [releaseDates] conserva las fechas de todas las regiones.
@@ -48,7 +49,11 @@ data class GameMetadata(
      */
     val missingMedia: Set<ScrapMedia> = emptySet(),
 ) {
-    enum class Status { FOUND, NOT_FOUND }
+    enum class Status { FOUND, NOT_FOUND, PENDING }
+
+    /** true si ya guarda algo de lo que se muestra del juego (descripción, año, estudio…). */
+    val hasDetails: Boolean
+        get() = synopsis != null || releaseYear != null || developer != null || publisher != null || genres.isNotEmpty()
 
     fun toJson(): String = JSONObject().apply {
         put("version", VERSION)

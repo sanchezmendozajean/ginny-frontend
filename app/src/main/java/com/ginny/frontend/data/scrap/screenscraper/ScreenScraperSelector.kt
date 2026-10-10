@@ -1,5 +1,7 @@
 package com.ginny.frontend.data.scrap.screenscraper
 
+import com.ginny.frontend.data.scrap.ScrapMedia
+
 /**
  * Elige, de lo que ScreenScraper sabe de un juego, lo que Ginny va a usar. Código puro.
  *
@@ -73,6 +75,30 @@ object ScreenScraperSelector {
 
         return BoxSelection(front = face(fronts), back = face(backs), spine = face(spines))
     }
+
+    /**
+     * La media de ScreenScraper que corresponde a cada tipo de [wanted] (null = ScreenScraper no la
+     * tiene para este juego). Solo considera los tipos que salen de ScreenScraper; el ícono y los
+     * metadatos no figuran. La caja se elige una sola vez para que sus tres caras sean de la misma edición.
+     */
+    fun select(game: ScreenScraperGame, wanted: Set<ScrapMedia>): Map<ScrapMedia, ScreenScraperMedia?> {
+        val box = if (wanted.any { it in BOX_MEDIA }) pickBox(game) else null
+        val result = LinkedHashMap<ScrapMedia, ScreenScraperMedia?>()
+        for (media in ScrapMedia.entries) {
+            if (media !in wanted) continue
+            when (media) {
+                ScrapMedia.WHEEL -> result[media] = pickWheel(game)
+                ScrapMedia.BOX_FRONT -> result[media] = box?.front
+                ScrapMedia.BOX_BACK -> result[media] = box?.back
+                ScrapMedia.BOX_SPINE -> result[media] = box?.spine
+                ScrapMedia.VIDEO -> result[media] = pickVideo(game)
+                ScrapMedia.METADATA, ScrapMedia.ICON -> Unit
+            }
+        }
+        return result
+    }
+
+    private val BOX_MEDIA = setOf(ScrapMedia.BOX_FRONT, ScrapMedia.BOX_BACK, ScrapMedia.BOX_SPINE)
 
     // ── Textos ────────────────────────────────────────────────────────────────────────────────
 
