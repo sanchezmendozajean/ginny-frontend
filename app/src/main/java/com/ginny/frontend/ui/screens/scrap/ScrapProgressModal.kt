@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -112,6 +113,9 @@ fun ScrapProgressModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () 
     }
 }
 
+/** Cuántas medias se muestran por fila en el modal de avance. */
+private const val MEDIA_PER_ROW = 3
+
 private fun title(progress: ScrapProgress?, running: Boolean): String = when {
     running -> "Scrapeando"
     progress?.stopReason != null -> "Scrapeo detenido"
@@ -166,7 +170,14 @@ private fun ProgressDetails(progress: ScrapProgress) {
             if (current.metadataWanted) InfoLine("Metadatos", yesNo(current.metadata))
             // Siempre presente si hay imágenes elegidas (con "..." mientras no se sabe): la lista no salta.
             if (current.media.keys.any { it != ScrapMedia.VIDEO }) InfoLine("Imágenes", yesNo(current.images))
-            current.media.forEach { (media, has) -> InfoLine("· ${media.label}", yesNo(has), muted = true) }
+            // Las medias, de a tres por fila para no ocupar tanto alto.
+            current.media.entries.chunked(MEDIA_PER_ROW).forEach { rowItems ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    rowItems.forEach { (media, has) -> MediaCell(media.label, yesNo(has), Modifier.weight(1f)) }
+                    // Completa la última fila para que las columnas coincidan.
+                    repeat(MEDIA_PER_ROW - rowItems.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
             InfoLine("Estado", stateText(current))
         }
     }
@@ -195,6 +206,25 @@ private fun stateText(current: ScrapCurrent): String = current.step ?: when (cur
     ScrapOutcome.SKIPPED -> "Ya estaba completo"
     ScrapOutcome.FAILED -> "Con error (se reintentará)"
     null -> "—"
+}
+
+/** Una media (ícono, wheel, caja…) con su Sí/No, para la cuadrícula de tres por fila. */
+@Composable
+private fun MediaCell(label: String, value: String, modifier: Modifier = Modifier) {
+    val palette = GinnyThemes.current
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = label,
+            fontFamily = GinnyFont,
+            fontWeight = FontWeight.Medium,
+            fontSize = 13.sp,
+            color = palette.muted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false).padding(end = 6.dp),
+        )
+        Text(text = value, fontFamily = GinnyFont, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = palette.ink, maxLines = 1)
+    }
 }
 
 @Composable
