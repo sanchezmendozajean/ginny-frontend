@@ -14,7 +14,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
+
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -87,7 +87,17 @@ fun ScrapProgressModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () 
                 if (shown == null) {
                     Text("Preparando el lote...", fontFamily = GinnyFont, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = palette.muted)
                 } else {
-                    ProgressBody(shown, running)
+                    ProgressHeader(shown, running)
+                    // La única parte que cede alto: si no cabe, se desplaza y los botones quedan siempre a la vista.
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        ProgressDetails(shown)
+                    }
                 }
 
                 Row(
@@ -109,8 +119,9 @@ private fun title(progress: ScrapProgress?, running: Boolean): String = when {
     else -> "Scrapeo"
 }
 
+/** Lo que siempre se ve: "Elemento N de M", el porcentaje y la barra. */
 @Composable
-private fun ColumnScope.ProgressBody(progress: ScrapProgress, running: Boolean) {
+private fun ProgressHeader(progress: ScrapProgress, running: Boolean) {
     val palette = GinnyThemes.current
     val current = progress.current
 
@@ -131,22 +142,30 @@ private fun ColumnScope.ProgressBody(progress: ScrapProgress, running: Boolean) 
         }
         GinnyProgressBar(fraction = if (progress.total > 0) progress.processed.toFloat() / progress.total else 0f)
     }
+}
+
+/**
+ * Los datos del juego, los contadores y los avisos. Va dentro de la zona desplazable: su alto cambia
+ * mientras corre el lote y no debe quitarle espacio a los botones.
+ */
+@Composable
+private fun ProgressDetails(progress: ScrapProgress) {
+    val palette = GinnyThemes.current
+    val current = progress.current
 
     if (current != null) {
-        // Ocupa el alto que sobra (sin quitarle nada a la barra ni a los botones): si no cabe, se desplaza.
         Column(
             modifier = Modifier
-                .weight(1f, fill = false)
                 .fillMaxWidth()
                 .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(14.dp))
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             InfoLine("Archivo", current.fileName)
             InfoLine("Sistema", current.systemName)
             if (current.metadataWanted) InfoLine("Metadatos", yesNo(current.metadata))
-            current.images?.let { InfoLine("Imágenes", yesNo(it)) }
+            // Siempre presente si hay imágenes elegidas (con "..." mientras no se sabe): la lista no salta.
+            if (current.media.keys.any { it != ScrapMedia.VIDEO }) InfoLine("Imágenes", yesNo(current.images))
             current.media.forEach { (media, has) -> InfoLine("· ${media.label}", yesNo(has), muted = true) }
             InfoLine("Estado", stateText(current))
         }
