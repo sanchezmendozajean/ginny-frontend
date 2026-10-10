@@ -25,55 +25,41 @@ import com.ginny.frontend.ui.theme.GinnyFont
 import com.ginny.frontend.ui.theme.GinnyThemes
 import java.util.Locale
 
-/** Desde este ancho de tarjeta, la información va a la izquierda y la caja a la derecha. */
+/** Desde este ancho útil de tarjeta se dibuja la caja, a la derecha del contenido. */
 private val SideBySideMinWidth = 560.dp
 
 /** Qué parte del ancho ocupa la caja cuando va a la derecha. */
 private const val BoxWidthFraction = 0.38f
 
-/** Alto del área de la caja en 3D. */
-private val BoxHeight = 280.dp
 
 /**
- * Lo primero del contenido del modal: la información del juego a la izquierda y su caja en 3D a la
- * derecha. Si la tarjeta es angosta, la caja pasa arriba. Sin ninguna cara de caja guardada, la
- * información ocupa todo el ancho.
- *
- * [assets] es null mientras se lee lo guardado (se reserva el espacio de la caja para que nada salte).
+ * Si la caja en 3D se muestra a la derecha del cuerpo del modal: solo en pantallas anchas ([contentWidth]
+ * es el ancho útil de la tarjeta) y si el juego tiene alguna cara de caja guardada. En pantallas angostas
+ * la caja no se dibuja.
+ */
+internal fun shouldShowSideBox(assets: GameAssets?, contentWidth: Dp): Boolean =
+    assets?.hasBox == true && contentWidth >= SideBySideMinWidth
+
+/** Ancho de la columna de la caja, a partir del ancho útil de la tarjeta. */
+internal fun sideBoxWidth(contentWidth: Dp): Dp = contentWidth * BoxWidthFraction
+
+/**
+ * La caja en 3D con las texturas guardadas, a la altura que le den ([modifier]). Mientras se decodifican
+ * las imágenes deja el espacio vacío, para que nada salte.
  */
 @Composable
-internal fun GameInfoRow(assets: GameAssets?, contentWidth: Dp) {
-    val boxAssets = assets?.takeIf { it.hasBox }
-    val sideBySide = contentWidth >= SideBySideMinWidth
-
-    when {
-        boxAssets != null && sideBySide -> Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
-            Box(modifier = Modifier.weight(1f)) { GameInfoPanel(assets) }
-            GameBoxView(boxAssets, Modifier.width(contentWidth * BoxWidthFraction))
-        }
-        boxAssets != null -> Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            GameBoxView(boxAssets, Modifier.fillMaxWidth())
-            GameInfoPanel(assets)
-        }
-        else -> GameInfoPanel(assets)
-    }
-}
-
-/** La caja en 3D con las texturas guardadas; mientras se decodifican, un espacio vacío del mismo tamaño. */
-@Composable
-private fun GameBoxView(assets: GameAssets, modifier: Modifier) {
+internal fun GameSideBox(assets: GameAssets, modifier: Modifier) {
     val textures = rememberBoxTextures(assets.boxFront, assets.boxBack, assets.boxSpine)
-    val sized = modifier.height(BoxHeight)
     when {
-        textures == null -> Spacer(sized)
-        textures.isEmpty -> Spacer(Modifier.height(0.dp)) // había archivos pero no se pudieron leer
-        else -> GameBox3D(textures, sized)
+        textures == null -> Spacer(modifier)
+        textures.isEmpty -> Unit // había archivos pero no se pudieron leer
+        else -> GameBox3D(textures, modifier)
     }
 }
 
 /** Sinopsis y datos del juego (estudio, editor, año, género, jugadores y valoración). */
 @Composable
-private fun GameInfoPanel(assets: GameAssets?) {
+internal fun GameInfoPanel(assets: GameAssets?) {
     val palette = GinnyThemes.current
     val metadata = assets?.metadata
 

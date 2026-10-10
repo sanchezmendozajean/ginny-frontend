@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -231,6 +232,10 @@ private fun GameCard(
     var assets by remember(game) { mutableStateOf<GameAssets?>(null) }
     LaunchedEffect(game, scrapping) { assets = viewModel.loadGameAssets(game) }
     val scroll = rememberScrollState()
+    // La caja solo se dibuja en pantallas anchas y si el juego tiene alguna cara guardada.
+    val contentWidth = cardWidth - 40.dp
+    val showBox = shouldShowSideBox(assets, contentWidth)
+    val boxWidth = sideBoxWidth(contentWidth)
 
     fun play() {
         sound?.playLaunchSound()
@@ -278,132 +283,143 @@ private fun GameCard(
             }
             .padding(20.dp),
     ) {
-        // ── Encabezado: portada · nombre y sistema · cerrar ─────────────────────────────────
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Element(size = 72.dp, title = game.displayName, image = game.iconUri)
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = game.displayName,
-                    fontFamily = GinnyFont,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 20.sp,
-                    color = palette.ink,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .background(palette.background, CircleShape)
-                        .padding(start = 6.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .background(
-                                Brush.linearGradient(listOf(palette.accent.lighten(0.1f), palette.accent)),
-                                RoundedCornerShape(5.dp),
-                            ),
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(system.displayName, fontFamily = GinnyFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = palette.muted)
-                }
-            }
-            // Esquina superior derecha: menú de tres puntos (Scrappear, Eliminar).
-            GameMenuButton(
-                onScrap = { onOpenDialog(GameDialog.ScrapOptions) },
-                onDelete = { onOpenDialog(GameDialog.ConfirmDelete) },
-                modifier = Modifier.align(Alignment.Top),
-            )
-        }
-
-        // ── Contenido: se desplaza; arriba y abajo se desvanece lo que sigue por ese lado ─────────
-        Column(
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier
-                .weight(1f)
-                .fadingEdges(scroll, SettingsFadeHeight)
-                .verticalScroll(scroll),
-        ) {
-            // Información del juego (izquierda) y su caja en 3D (derecha). Archivo y Emulador, debajo.
-            GameInfoRow(assets = assets, contentWidth = cardWidth - 40.dp)
-
-            // ── Archivo ─────────────────────────────────────────────────────────────────────────
-            ModalSection("Archivo") {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    Text(
-                        text = game.romFileName,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 13.sp,
-                        color = palette.ink,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = systemFolderLabel(override, romFolder, system.id.folderName) + "/",
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
-                        color = palette.muted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            // ── Emulador (es del sistema: cambia para todos sus juegos) ─────────────────────────
-            ModalSection("Emulador") {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-                ) {
-                    LabeledControl("Aplicación") {
-                        GinnyDropdown(
-                            selected = emulator,
-                            options = system.availableEmulators.map { it.displayName to it },
-                            onSelect = { viewModel.setEmulator(system.id, it) },
-                            width = controlWidth,
+        // ── Cuerpo: [encabezado + contenido con scroll] a la izquierda y la caja a la derecha ──────
+        Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                // ── Encabezado: portada · nombre y sistema · cerrar ─────────────────────────────────
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Element(size = 72.dp, title = game.displayName, image = game.iconUri)
+                    Spacer(Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = game.displayName,
+                            fontFamily = GinnyFont,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 20.sp,
+                            color = palette.ink,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                         )
-                    }
-                    LabeledControl("Core") {
-                        val isRetroArch = emulator in EmulatorTarget.RETROARCH_VARIANTS
-                        when {
-                            isRetroArch && system.retroArchCores.isNotEmpty() -> GinnyDropdown(
-                                selected = system.retroArchCores.firstOrNull { it.id == coreId }?.id ?: system.retroArchCores.first().id,
-                                options = system.retroArchCores.map { it.label to it.id },
-                                onSelect = { viewModel.setCore(system.id, it) },
-                                width = controlWidth,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .background(palette.background, CircleShape)
+                                .padding(start = 6.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .background(
+                                        Brush.linearGradient(listOf(palette.accent.lighten(0.1f), palette.accent)),
+                                        RoundedCornerShape(5.dp),
+                                    ),
                             )
-                            system.supportsPackageOverride -> {
-                                val packageFlow = remember(system.id) { settings.packageOverrideFor(system.id).map { it.orEmpty() } }
-                                val stored by packageFlow.collectAsState(initial = null)
-                                stored?.let {
-                                    GinnyTextField(
-                                        value = it,
-                                        onValueChange = { pkg -> viewModel.setPackageOverride(system.id, pkg) },
-                                        placeholder = "Package…",
+                            Spacer(Modifier.width(6.dp))
+                            Text(system.displayName, fontFamily = GinnyFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = palette.muted)
+                        }
+                    }
+                }
+
+                // ── Contenido: se desplaza; arriba y abajo se desvanece lo que sigue por ese lado ─────────
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fadingEdges(scroll, SettingsFadeHeight)
+                        .verticalScroll(scroll),
+                ) {
+                    // Información del juego; Archivo y Emulador, debajo. La caja va aparte, a la derecha.
+                    GameInfoPanel(assets)
+
+                    // ── Archivo ─────────────────────────────────────────────────────────────────────────
+                    ModalSection("Archivo") {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            Text(
+                                text = game.romFileName,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 13.sp,
+                                color = palette.ink,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = systemFolderLabel(override, romFolder, system.id.folderName) + "/",
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 11.sp,
+                                color = palette.muted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+
+                    // ── Emulador (es del sistema: cambia para todos sus juegos) ─────────────────────────
+                    ModalSection("Emulador") {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                        ) {
+                            LabeledControl("Aplicación") {
+                                GinnyDropdown(
+                                    selected = emulator,
+                                    options = system.availableEmulators.map { it.displayName to it },
+                                    onSelect = { viewModel.setEmulator(system.id, it) },
+                                    width = controlWidth,
+                                )
+                            }
+                            LabeledControl("Core") {
+                                val isRetroArch = emulator in EmulatorTarget.RETROARCH_VARIANTS
+                                when {
+                                    isRetroArch && system.retroArchCores.isNotEmpty() -> GinnyDropdown(
+                                        selected = system.retroArchCores.firstOrNull { it.id == coreId }?.id ?: system.retroArchCores.first().id,
+                                        options = system.retroArchCores.map { it.label to it.id },
+                                        onSelect = { viewModel.setCore(system.id, it) },
                                         width = controlWidth,
                                     )
+                                    system.supportsPackageOverride -> {
+                                        val packageFlow = remember(system.id) { settings.packageOverrideFor(system.id).map { it.orEmpty() } }
+                                        val stored by packageFlow.collectAsState(initial = null)
+                                        stored?.let {
+                                            GinnyTextField(
+                                                value = it,
+                                                onValueChange = { pkg -> viewModel.setPackageOverride(system.id, pkg) },
+                                                placeholder = "Package…",
+                                                width = controlWidth,
+                                            )
+                                        }
+                                    }
+                                    else -> Box(
+                                        contentAlignment = Alignment.CenterStart,
+                                        modifier = Modifier
+                                            .width(controlWidth)
+                                            .height(40.dp)
+                                            .border(1.dp, palette.ink.copy(alpha = 0.08f), CircleShape)
+                                            .padding(horizontal = 16.dp),
+                                    ) {
+                                        Text("App independiente", fontFamily = GinnyFont, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = palette.muted)
+                                    }
                                 }
-                            }
-                            else -> Box(
-                                contentAlignment = Alignment.CenterStart,
-                                modifier = Modifier
-                                    .width(controlWidth)
-                                    .height(40.dp)
-                                    .border(1.dp, palette.ink.copy(alpha = 0.08f), CircleShape)
-                                    .padding(horizontal = 16.dp),
-                            ) {
-                                Text("App independiente", fontFamily = GinnyFont, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = palette.muted)
                             }
                         }
                     }
                 }
             }
+
+            // Caja en 3D: a la derecha, a toda la altura del cuerpo y siempre visible (no se desplaza con el
+            // contenido). Solo en pantallas anchas y si el juego tiene alguna cara de caja guardada.
+            val boxAssets = assets
+            if (showBox && boxAssets != null) {
+                GameSideBox(boxAssets, Modifier.width(boxWidth).fillMaxHeight())
+            }
         }
 
         // ── Acciones ────────────────────────────────────────────────────────────────────────
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Esquina inferior izquierda: menú de tres puntos (Scrappear, Eliminar).
+            GameMenuButton(
+                onScrap = { onOpenDialog(GameDialog.ScrapOptions) },
+                onDelete = { onOpenDialog(GameDialog.ConfirmDelete) },
+            )
             // Favorito: solo táctil (sin botón del mando).
             PillButton(
                 background = if (isFavorite) palette.accent.copy(alpha = 0.18f) else palette.background,
