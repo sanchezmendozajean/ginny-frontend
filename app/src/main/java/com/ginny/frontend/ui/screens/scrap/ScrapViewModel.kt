@@ -119,6 +119,10 @@ class ScrapViewModel(private val container: AppContainer) : ViewModel() {
     fun selectedGameCount(stats: Map<SystemId, SystemScrapStats>, selected: Set<SystemId>, scope: ScrapScope): Int =
         selected.sumOf { stats[it]?.countFor(scope) ?: 0 }
 
+    /** Scrapea un solo juego (desde su modal). false = ya había un lote en curso y no se hizo nada. */
+    fun startGame(game: com.ginny.frontend.data.model.GameEntry, overwrite: Boolean): Boolean =
+        runner.startGame(game, overwrite)
+
     fun start() {
         runner.start(_selected.value, _scope.value, _overwrite.value, _stats.value)
     }

@@ -1,6 +1,7 @@
 package com.ginny.frontend.ui.screens.games
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -83,12 +84,13 @@ import kotlinx.coroutines.launch
 private val GameModalControlsChrome = 72.dp
 
 /** Rojo de "Eliminar" (OKLCH: tono 25°, el mismo para todos los temas). */
-private val DeleteRed = Color(0xFFC0392B)
+internal val DeleteRed = Color(0xFFC0392B)
 
 /**
  * Modal de un juego, al abrirlo desde la grilla de Juegos (diseño de referencia del usuario,
  * 2026-10-05): portada, nombre y sistema; archivo (nombre y carpeta); emulador y core del
- * sistema; Favorito y Eliminar (solo táctiles); Regresar (B) y Jugar (A).
+ * sistema; Favorito (solo táctil); Regresar (B) y Jugar (A). El menú de tres puntos de la esquina
+ * superior derecha tiene Scrappear y Eliminar.
  *
  * B lo maneja GinnyApp (BackHandler, vía MainActivity), igual que en el resto de la app. A se
  * maneja aquí. El modal se queda con el foco: la cruceta no mueve la grilla de atrás.
@@ -99,6 +101,10 @@ fun GameModal(
     viewModel: GamesViewModel?,
     buttonMapping: ButtonMapping,
     onClose: () -> Unit,
+    /** Inicia el scrapeo del juego (Sí = "Todo", reemplazando lo guardado). Lo atiende GinnyApp. */
+    onStartScrap: (game: GameEntry, overwrite: Boolean) -> Unit = { _, _ -> },
+    /** Hay otro modal encima (el de avance del scrapeo): el modal del juego no responde a teclas. */
+    blocked: Boolean = false,
 ) {
     AnimatedVisibility(
         visible = game != null && viewModel != null,
@@ -124,13 +130,47 @@ fun GameModal(
             // La tarjeta ocupa la pantalla menos el mismo margen que el modal de Configuración, igual
             // en los cuatro lados; los desplegables se reparten su ancho.
             val cardWidth = maxWidth - SettingsModalMargin * 2
+
+            // Diálogo abierto desde el menú de tres puntos (null = ninguno). Cada juego empieza sin diálogo.
+            var dialog by remember(shown) { mutableStateOf<GameDialog?>(null) }
+            // B cierra primero el diálogo (este callback se registra después que el de GinnyApp).
+            BackHandler(enabled = dialog != null) { dialog = null }
+
             GameCard(
                 game = shown,
                 viewModel = vm,
                 buttonMapping = buttonMapping,
                 controlWidth = (cardWidth - GameModalControlsChrome) / 2,
                 onClose = onClose,
+                onOpenDialog = { dialog = it },
+                inputBlocked = dialog != null || blocked,
             )
+
+            when (dialog) {
+                GameDialog.ScrapOptions -> ScrapGameDialog(
+                    onCancel = { dialog = null },
+                    onStart = { overwrite ->
+                        dialog = null
+                        onStartScrap(shown, overwrite)
+                    },
+                )
+                GameDialog.ConfirmDelete -> {
+                    val context = LocalContext.current
+                    val scope = rememberCoroutineScope()
+                    ConfirmDeleteDialog(
+                        gameName = shown.displayName,
+                        onCancel = { dialog = null },
+                        onConfirm = {
+                            dialog = null
+                            scope.launch {
+                                vm.deleteGame(context, shown)
+                                onClose()
+                            }
+                        },
+                    )
+                }
+                null -> Unit
+            }
         }
     }
 }
@@ -143,6 +183,10 @@ private fun GameCard(
     /** Ancho de cada desplegable de la sección Emulador (dos columnas). */
     controlWidth: Dp,
     onClose: () -> Unit,
+    /** Abre un diálogo del menú de tres puntos. */
+    onOpenDialog: (GameDialog) -> Unit,
+    /** Hay un diálogo u otro modal encima: la tarjeta cede el foco y lo recupera al quedar libre. */
+    inputBlocked: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val palette = GinnyThemes.current
@@ -159,9 +203,6 @@ private fun GameCard(
     val romFolder by settings.romFolderUri.collectAsState(initial = null)
     val override by settings.romFolderOverrideFor(system.id).collectAsState(initial = null)
 
-    // Eliminar pide un segundo toque para confirmar (regla del spec), sin otro diálogo.
-    var deleteArmed by remember(game) { mutableStateOf(false) }
-
     fun play() {
         sound?.playLaunchSound()
         scope.launch {
@@ -176,7 +217,8 @@ private fun GameCard(
     }
 
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    // Al abrirse y cada vez que un diálogo u otro modal que estaba encima se cierra.
+    LaunchedEffect(inputBlocked) { if (!inputBlocked) focusRequester.requestFocus() }
     val currentPlay by rememberUpdatedState(::play)
 
     val shape = RoundedCornerShape(SettingsModalCornerRadius)
@@ -235,6 +277,12 @@ private fun GameCard(
                     Text(system.displayName, fontFamily = GinnyFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = palette.muted)
                 }
             }
+            // Esquina superior derecha: menú de tres puntos (Scrappear, Eliminar).
+            GameMenuButton(
+                onScrap = { onOpenDialog(GameDialog.ScrapOptions) },
+                onDelete = { onOpenDialog(GameDialog.ConfirmDelete) },
+                modifier = Modifier.align(Alignment.Top),
+            )
         }
 
         // ── Archivo ─────────────────────────────────────────────────────────────────────────
@@ -314,7 +362,7 @@ private fun GameCard(
 
         // ── Acciones ────────────────────────────────────────────────────────────────────────
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            // Favorito y Eliminar: solo táctiles (sin botón del mando).
+            // Favorito: solo táctil (sin botón del mando).
             PillButton(
                 background = if (isFavorite) palette.accent.copy(alpha = 0.18f) else palette.background,
                 onClick = { scope.launch { viewModel.toggleFavorite(game) } },
@@ -322,22 +370,6 @@ private fun GameCard(
                 Text(if (isFavorite) "★" else "☆", fontSize = 16.sp, color = accentText(palette.accent))
                 Text(if (isFavorite) "En favoritos" else "Favorito", style = buttonText(accentText(palette.accent)))
             }
-            PillButton(
-                background = if (deleteArmed) DeleteRed else palette.background,
-                onClick = {
-                    if (deleteArmed) {
-                        scope.launch {
-                            viewModel.deleteGame(context, game)
-                            onClose()
-                        }
-                    } else {
-                        deleteArmed = true
-                    }
-                },
-            ) {
-                Text(if (deleteArmed) "¿Eliminar de verdad?" else "Eliminar", style = buttonText(if (deleteArmed) Color.White else DeleteRed))
-            }
-
             Spacer(Modifier.weight(1f))
 
             // Regresar (B) y Jugar (A): con su botón del mando, y también táctiles.
@@ -430,3 +462,55 @@ private fun buttonText(color: Color) = androidx.compose.ui.text.TextStyle(
     fontSize = 14.sp,
     color = color,
 )
+
+/** Diálogos que abre el menú de tres puntos del modal del juego. */
+enum class GameDialog { ScrapOptions, ConfirmDelete }
+
+/**
+ * Tres puntos en la esquina del modal. Al tocarlo se abre un menú con "Scrappear" y "Eliminar" (en
+ * rojo). Los puntos se dibujan (no son un carácter) para que se vean iguales en cualquier fuente.
+ */
+@Composable
+private fun GameMenuButton(onScrap: () -> Unit, onDelete: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = GinnyThemes.current
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        androidx.compose.foundation.Canvas(
+            modifier = Modifier
+                .size(40.dp)
+                .pointerInput(Unit) { detectTapGestures { expanded = true } },
+        ) {
+            val radius = 2.5.dp.toPx()
+            val gap = 7.dp.toPx()
+            repeat(3) { i ->
+                drawCircle(
+                    color = palette.muted,
+                    radius = radius,
+                    center = androidx.compose.ui.geometry.Offset(size.width / 2, size.height / 2 + (i - 1) * gap),
+                )
+            }
+        }
+
+        androidx.compose.material3.DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(Color.White), // sin esto, Material usa un fondo lila por defecto
+        ) {
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text("Scrappear", fontFamily = GinnyFont, fontWeight = FontWeight.Bold, color = palette.ink) },
+                onClick = {
+                    expanded = false
+                    onScrap()
+                },
+            )
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text("Eliminar", fontFamily = GinnyFont, fontWeight = FontWeight.Bold, color = DeleteRed) },
+                onClick = {
+                    expanded = false
+                    onDelete()
+                },
+            )
+        }
+    }
+}

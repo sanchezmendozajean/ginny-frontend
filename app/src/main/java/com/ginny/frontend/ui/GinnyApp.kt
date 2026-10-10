@@ -206,6 +206,14 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}, on
             viewModel = gamesViewModel,
             buttonMapping = buttonMapping,
             onClose = { openGame = null },
+            onStartScrap = { scrapGame, overwrite ->
+                if (!scrapViewModel.startGame(scrapGame, overwrite)) {
+                    Toast.makeText(context, "Ya hay un scrapeo en curso.", Toast.LENGTH_SHORT).show()
+                }
+                // Se muestra el avance en cualquier caso (el del lote nuevo, o el que ya corría).
+                scrapProgressOpen = true
+            },
+            blocked = scrapProgressOpen,
         )
 
         // ── Modal de Configuración, encima de todo ───────────────────────────────────────────

@@ -1,5 +1,6 @@
 package com.ginny.frontend.data.scrap
 
+import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.data.model.SystemId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -38,19 +39,37 @@ class ScrapRunner(
      * [overwrite] reemplaza también lo ya guardado. No hace nada si ya hay un lote en curso.
      */
     fun start(systems: Set<SystemId>, scope: ScrapScope, overwrite: Boolean, stats: Map<SystemId, SystemScrapStats>) {
-        if (!_isRunning.compareAndSet(expect = false, update = true)) return
+        launchBatch(force = scope.force, overwrite = overwrite, emptyMessage = "No hay juegos que scrapear con esta selección.") {
+            repository.libraryGames().filter { game ->
+                game.systemId in systems && stats[game.systemId]?.includes(scope, game.romFileName) != false
+            }
+        }
+    }
+
+    /**
+     * Scrapea un solo juego (desde su modal). Como lo pide el usuario a propósito, siempre ignora las
+     * cachés de "no encontrado". [overwrite] = false → solo lo que falte; true → todo, reemplazando lo
+     * ya guardado. Devuelve false (sin hacer nada) si ya hay un lote en curso.
+     */
+    fun startGame(game: GameEntry, overwrite: Boolean): Boolean =
+        launchBatch(force = true, overwrite = overwrite, emptyMessage = "No hay nada que scrapear.") { listOf(game) }
+
+    private fun launchBatch(
+        force: Boolean,
+        overwrite: Boolean,
+        emptyMessage: String,
+        games: suspend () -> List<GameEntry>,
+    ): Boolean {
+        if (!_isRunning.compareAndSet(expect = false, update = true)) return false
         _progress.value = null
-        job = this.scope.launch {
+        job = scope.launch {
             try {
-                val games = repository.libraryGames().filter { game ->
-                    game.systemId in systems && stats[game.systemId]?.includes(scope, game.romFileName) != false
-                }
-                if (games.isEmpty()) {
-                    _progress.value = ScrapProgress(total = 0)
-                        .stopped("No hay juegos que scrapear con esta selección.")
+                val selected = games()
+                if (selected.isEmpty()) {
+                    _progress.value = ScrapProgress(total = 0).stopped(emptyMessage)
                     return@launch
                 }
-                repository.run(games, force = scope.force, overwrite = overwrite).collect { _progress.value = it }
+                repository.run(selected, force = force, overwrite = overwrite).collect { _progress.value = it }
             } catch (e: CancellationException) {
                 // El usuario lo detuvo: se conserva el último avance, marcado como detenido.
                 _progress.value = _progress.value?.takeIf { !it.finished }?.stopped("Detenido.")
@@ -62,6 +81,7 @@ class ScrapRunner(
                 _isRunning.value = false
             }
         }
+        return true
     }
 
     /** Detiene el lote en curso: aborta la petición actual y no deja archivos a medias. */
