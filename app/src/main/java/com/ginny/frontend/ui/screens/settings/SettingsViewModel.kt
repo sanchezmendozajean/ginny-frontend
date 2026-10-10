@@ -201,6 +201,11 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         container.configRepository.requestSync()
     }
 
+    fun setVideoVolume(v: Float) = viewModelScope.launch {
+        settings.setVideoVolume(v)
+        container.configRepository.requestSync()
+    }
+
     fun setBackgroundMusicTrack(selection: MusicSelection) = viewModelScope.launch {
         settings.setBackgroundMusicTrack(MusicSelection.encode(selection))
         container.configRepository.requestSync()

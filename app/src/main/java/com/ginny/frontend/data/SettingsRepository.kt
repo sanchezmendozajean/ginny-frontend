@@ -33,6 +33,7 @@ class SettingsRepository(private val context: Context) {
         val MUSIC_VOLUME = floatPreferencesKey("music_volume")
         val MUSIC_TRACK = stringPreferencesKey("background_music_track")
         val UI_SOUND_VOLUME = floatPreferencesKey("ui_sound_volume")
+        val VIDEO_VOLUME = floatPreferencesKey("video_volume")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val LAST_SCAN_AT = longPreferencesKey("last_scan_at")
         val THEME_MODE = stringPreferencesKey("theme_mode")
@@ -87,6 +88,9 @@ class SettingsRepository(private val context: Context) {
 
     val musicVolume: Flow<Float> = context.dataStore.data.map { it[Keys.MUSIC_VOLUME] ?: 0.5f }
     val uiSoundVolume: Flow<Float> = context.dataStore.data.map { it[Keys.UI_SOUND_VOLUME] ?: 0.7f }
+
+    /** Volumen de los videos de los juegos (el del modal del juego). */
+    val videoVolume: Flow<Float> = context.dataStore.data.map { it[Keys.VIDEO_VOLUME] ?: 0.5f }
 
     /** Encoded [com.ginny.frontend.data.model.MusicSelection] — null means "use the default bundled track". */
     val backgroundMusicTrack: Flow<String?> = context.dataStore.data.map { it[Keys.MUSIC_TRACK] }
@@ -160,6 +164,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setUiSoundVolume(volume: Float) {
         context.dataStore.edit { it[Keys.UI_SOUND_VOLUME] = volume.coerceIn(0f, 1f) }
+    }
+
+    suspend fun setVideoVolume(volume: Float) {
+        context.dataStore.edit { it[Keys.VIDEO_VOLUME] = volume.coerceIn(0f, 1f) }
     }
 
     suspend fun setOnboardingDone(done: Boolean) {

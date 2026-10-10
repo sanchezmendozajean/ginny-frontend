@@ -72,6 +72,7 @@ class ScrapStorage(
                 boxBack = system.find(AssetFolder.BOX_BACK, romFileName)?.uri,
                 boxSpine = system.find(AssetFolder.BOX_SPINE, romFileName)?.uri,
                 wheel = system.find(AssetFolder.WHEEL, romFileName)?.uri,
+                video = system.find(AssetFolder.VIDEO, romFileName)?.uri,
             )
         }
     } catch (e: CancellationException) {
@@ -251,6 +252,7 @@ data class GameAssets(
     val boxBack: Uri?,
     val boxSpine: Uri?,
     val wheel: Uri?,
+    val video: Uri? = null,
 ) {
     /** Si hay al menos una cara de la caja para armarla en 3D. */
     val hasBox: Boolean get() = boxFront != null || boxBack != null || boxSpine != null

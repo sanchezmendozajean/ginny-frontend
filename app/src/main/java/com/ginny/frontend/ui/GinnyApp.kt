@@ -60,7 +60,13 @@ val SettingsBackdropBlur = 16.dp
  * [onOpenSettings]: abrirlo desde la interfaz (tocando "Opciones" en el pie).
  */
 @Composable
-fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}, onOpenSettings: () -> Unit = {}) {
+fun GinnyApp(
+    settingsOpen: Boolean = false,
+    onCloseSettings: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    /** Avisa a MainActivity de si el modal de un juego está abierto (para que Y lo atienda el modal). */
+    onGameModalOpenChanged: (Boolean) -> Unit = {},
+) {
     // El tema lo provee GinnyTheme (en MainActivity), leído de Configuración.
     val palette = GinnyThemes.current
     // Lo que el contenido informa y el footer muestra: elemento seleccionado y páginas.
@@ -81,6 +87,7 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}, on
     // habilitados, B cierra primero el modal.
     var openGame by remember { mutableStateOf<GameEntry?>(null) }
     BackHandler(enabled = openGame != null && !settingsOpen) { openGame = null }
+    LaunchedEffect(openGame != null) { onGameModalOpenChanged(openGame != null) }
 
     // Scrapper: el modal que lo lanza (lista de sistemas) y el que muestra su avance. Se declaran aquí,
     // después de los otros BackHandler, para que B cierre primero lo que está más arriba.

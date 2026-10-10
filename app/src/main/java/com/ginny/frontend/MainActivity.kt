@@ -40,6 +40,9 @@ class MainActivity : ComponentActivity() {
     /** Si el modal de Configuración está abierto. Es estado de Compose: la UI se actualiza sola. */
     private val settingsOpen = mutableStateOf(false)
 
+    /** Si el modal de un juego está abierto: Y deja de abrir Configuración y lo atiende el modal (Video). */
+    @Volatile private var gameModalOpen = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -70,6 +73,7 @@ class MainActivity : ComponentActivity() {
                         settingsOpen = settingsOpen.value,
                         onCloseSettings = { settingsOpen.value = false },
                         onOpenSettings = { settingsOpen.value = true },
+                        onGameModalOpenChanged = { gameModalOpen = it },
                     )
                 }
             }
@@ -109,12 +113,16 @@ class MainActivity : ComponentActivity() {
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN) {
-            when (buttonMapping.buttonForKeyCode(event.keyCode)) {
+            val button = buttonMapping.buttonForKeyCode(event.keyCode)
+            when (button) {
                 // Menú abre Configuración. Y también, mientras la única pantalla sea Sistemas
                 // (regla del spec: en Juegos, Y abrirá las opciones del juego).
-                LogicalButton.MENU, LogicalButton.Y -> if (!settingsOpen.value) {
-                    settingsOpen.value = true
-                    return true
+                LogicalButton.MENU, LogicalButton.Y -> {
+                    val yBelongsToGameModal = button == LogicalButton.Y && gameModalOpen
+                    if (!settingsOpen.value && !yBelongsToGameModal) {
+                        settingsOpen.value = true
+                        return true
+                    }
                 }
                 // B cierra Configuración; si está cerrada, regresa a la pantalla anterior (lo
                 // maneja el BackHandler de GinnyApp). Solo si hay a dónde volver: en Sistemas,

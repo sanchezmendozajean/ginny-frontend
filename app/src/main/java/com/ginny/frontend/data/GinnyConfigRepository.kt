@@ -147,6 +147,7 @@ class GinnyConfigRepository(
             put("buttonLayout", settings.buttonLayout.first().name)
             put("musicVolume", settings.musicVolume.first().toDouble())
             put("uiSoundVolume", settings.uiSoundVolume.first().toDouble())
+            put("videoVolume", settings.videoVolume.first().toDouble())
             put("backgroundMusicTrack", settings.backgroundMusicTrack.first() ?: JSONObject.NULL)
             put("romFolderUri", settings.romFolderUri.first() ?: JSONObject.NULL)
             put("retroArchSavesUri", settings.retroArchSavesUri.first() ?: JSONObject.NULL)
@@ -168,6 +169,7 @@ class GinnyConfigRepository(
             ?.let { settings.setButtonLayout(it) }
         if (json.has("musicVolume")) settings.setMusicVolume(json.optDouble("musicVolume", 0.5).toFloat())
         if (json.has("uiSoundVolume")) settings.setUiSoundVolume(json.optDouble("uiSoundVolume", 0.7).toFloat())
+        if (json.has("videoVolume")) settings.setVideoVolume(json.optDouble("videoVolume", 0.5).toFloat())
         json.optStringOrNull("backgroundMusicTrack")?.let { settings.setBackgroundMusicTrack(it) }
         json.optStringOrNull("romFolderUri")?.let { settings.setRomFolderUri(it) }
         json.optStringOrNull("retroArchSavesUri")?.let { settings.setRetroArchSavesUri(it) }

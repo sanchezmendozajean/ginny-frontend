@@ -47,6 +47,7 @@ fun InterfazOptions(viewModel: SettingsViewModel) {
     val themeMode by settings.themeMode.collectAsState(initial = ThemeMode.MENTA)
     val musicVolume by settings.musicVolume.collectAsState(initial = 0.5f)
     val uiVolume by settings.uiSoundVolume.collectAsState(initial = 0.7f)
+    val videoVolume by settings.videoVolume.collectAsState(initial = 0.5f)
     val storedTrack by settings.backgroundMusicTrack.collectAsState(initial = null)
     val userFolder by settings.userFolderUri.collectAsState(initial = null)
 
@@ -101,6 +102,10 @@ fun InterfazOptions(viewModel: SettingsViewModel) {
             SettingsDivider()
             SettingsRow(title = "Sonidos de interfaz") {
                 VolumeControl(uiVolume) { viewModel.setUiSoundVolume(it) }
+            }
+            SettingsDivider()
+            SettingsRow(title = "Videos de los juegos") {
+                VolumeControl(videoVolume) { viewModel.setVideoVolume(it) }
             }
             SettingsDivider()
             SettingsRow(title = "Pista de fondo") {

@@ -266,10 +266,20 @@ private fun GameCard(
     var assets by remember(game) { mutableStateOf<GameAssets?>(null) }
     LaunchedEffect(game, scrapping) { assets = viewModel.loadGameAssets(game) }
     val scroll = rememberScrollState()
+    val videoVolume by settings.videoVolume.collectAsState(initial = 0.5f)
+    // Con el video encendido, la caja se desvanece y el video se reproduce en su lugar.
+    var videoOn by remember(game) { mutableStateOf(false) }
     // La caja solo se dibuja en pantallas anchas y si el juego tiene alguna cara guardada.
     val contentWidth = cardWidth - 40.dp
     val showBox = shouldShowSideBox(assets, contentWidth)
     val boxWidth = sideBoxWidth(contentWidth)
+    val hasVideo = showBox && assets?.video != null
+    val videoPlaying = videoOn && hasVideo
+    // Mientras suena el video, la música de fondo se pausa (y vuelve al apagarlo o al cerrar el modal).
+    DisposableEffect(videoPlaying) {
+        if (videoPlaying) sound?.pauseMusic()
+        onDispose { if (videoPlaying) sound?.resumeMusic() }
+    }
 
     // Ancho de cada desplegable de Emulador (dos columnas iguales). Se calcula sobre la columna izquierda
     // —la caja, si está, le quita su parte— menos el margen de la sección (2×10), el borde (2) y el hueco (12).
@@ -313,6 +323,7 @@ private fun GameCard(
     fun play() {
         if (launching) return // un segundo toque (o A) no reinicia la secuencia
         launching = true
+        videoOn = false
         sound?.playLaunchSound()
         spinTrigger++
         scope.launch {
@@ -341,6 +352,7 @@ private fun GameCard(
     // Al abrirse y cada vez que un diálogo u otro modal que estaba encima se cierra.
     LaunchedEffect(inputBlocked) { if (!inputBlocked) focusRequester.requestFocus() }
     val currentPlay by rememberUpdatedState(::play)
+    val currentToggleVideo by rememberUpdatedState({ if (hasVideo && !launching) videoOn = !videoOn })
 
     val shape = RoundedCornerShape(SettingsModalCornerRadius)
     Column(
@@ -355,12 +367,13 @@ private fun GameCard(
             .pointerInput(Unit) { detectTapGestures { } }
             .focusRequester(focusRequester)
             .focusable()
-            // A = Jugar; arriba/abajo de la cruceta desplazan el contenido. Las demás teclas se consumen
+            // A = Jugar; Y (el botón izquierdo) = Video; arriba/abajo de la cruceta desplazan el contenido. Las demás teclas se consumen
             // (B lo maneja MainActivity antes).
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown) {
                     when (buttonMapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)) {
                         LogicalButton.A -> currentPlay()
+                        LogicalButton.Y -> currentToggleVideo()
                         LogicalButton.DPAD_DOWN -> scope.launch { scroll.animateScrollBy(ScrollStepPx) }
                         LogicalButton.DPAD_UP -> scope.launch { scroll.animateScrollBy(-ScrollStepPx) }
                         else -> Unit
@@ -496,7 +509,14 @@ private fun GameCard(
             // contenido). Solo en pantallas anchas y si el juego tiene alguna cara de caja guardada.
             val boxAssets = assets
             if (showBox && boxAssets != null) {
-                GameSideBox(boxAssets, Modifier.width(boxWidth).fillMaxHeight(), spinTrigger)
+                GameSidePanel(
+                    assets = boxAssets,
+                    videoOn = videoPlaying,
+                    videoVolume = videoVolume,
+                    onVideoStopped = { videoOn = false },
+                    modifier = Modifier.width(boxWidth).fillMaxHeight(),
+                    spinTrigger = spinTrigger,
+                )
             }
         }
 
@@ -516,6 +536,14 @@ private fun GameCard(
                 Text(if (isFavorite) "En favoritos" else "Favorito", style = buttonText(accentText(palette.accent)))
             }
             Spacer(Modifier.weight(1f))
+
+            // Video (botón Y, el izquierdo en la distribución por defecto): solo si el juego tiene video. Con el video encendido, vuelve a la caja.
+            if (hasVideo) {
+                PillButton(background = palette.background, onClick = { videoOn = !videoOn }) {
+                    FaceButtonIcon(FaceButton.Y, size = 20.dp)
+                    Text(if (!videoPlaying) "Video" else if (assets?.hasBox == true) "Caja" else "Detener", style = buttonText(palette.ink))
+                }
+            }
 
             // Regresar (B) y Jugar (A): con su botón del mando, y también táctiles.
             PillButton(background = palette.background, onClick = onClose) {
