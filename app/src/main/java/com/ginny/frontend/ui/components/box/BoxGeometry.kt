@@ -123,10 +123,20 @@ class BoxGeometry(val width: Float, val height: Float = 1f, val depth: Float) {
          * frente (o de la trasera, si falta) y el fondo del aspecto del lomo (ancho ÷ alto de su imagen).
          * Los topes solo protegen de imágenes absurdas; no deforman una caja normal.
          */
-        fun fromTextures(frontAspect: Float?, backAspect: Float? = null, spineAspect: Float?): BoxGeometry = BoxGeometry(
-            width = (frontAspect ?: backAspect ?: DefaultWidth).coerceIn(0.2f, 2.5f),
-            depth = (spineAspect ?: DefaultDepth).coerceIn(0.02f, 0.8f),
-        )
+        fun fromTextures(frontAspect: Float?, backAspect: Float? = null, spineAspect: Float?): BoxGeometry {
+            val width = (frontAspect ?: backAspect ?: DefaultWidth).coerceIn(0.2f, 2.5f)
+            // Lomo horizontal (cajas apaisadas, como la de SNES): su imagen es más ancha que alta y recorre
+            // el ancho de la caja, así que el fondo es el alto de la imagen escalado al ancho de la caja.
+            val depth = when {
+                spineAspect == null -> DefaultDepth
+                isSpineHorizontal(spineAspect) -> width / spineAspect
+                else -> spineAspect
+            }
+            return BoxGeometry(width = width, depth = depth.coerceIn(0.02f, 0.8f))
+        }
+
+        /** Un lomo más ancho que alto va en el borde de arriba y de abajo; uno más alto que ancho, a un costado. */
+        fun isSpineHorizontal(spineAspect: Float?): Boolean = spineAspect != null && spineAspect > 1f
 
         /** Ancho (con alto 1) y fondo de una caja cuando no se conocen sus texturas. */
         const val DefaultWidth = 0.72f

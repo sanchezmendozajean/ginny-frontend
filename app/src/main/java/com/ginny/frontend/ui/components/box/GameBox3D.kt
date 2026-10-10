@@ -82,6 +82,10 @@ fun GameBox3D(textures: BoxTextures, modifier: Modifier = Modifier, spinTrigger:
         )
     }
 
+    val spineOnTop = remember(textures) {
+        BoxGeometry.isSpineHorizontal(textures.spine?.let { it.width.toFloat() / it.height })
+    }
+
     var yaw by remember { mutableFloatStateOf(StartYawDegrees) }
     var velocity by remember { mutableFloatStateOf(AutoSpinDegreesPerSecond) }
     var dragging by remember { mutableStateOf(false) }
@@ -177,7 +181,8 @@ fun GameBox3D(textures: BoxTextures, modifier: Modifier = Modifier, spinTrigger:
                 val bitmap = when (projected.face) {
                     BoxFace.FRONT -> textures.front
                     BoxFace.BACK -> textures.back
-                    BoxFace.SPINE -> textures.spine
+                    BoxFace.SPINE -> textures.spine.takeUnless { spineOnTop }
+                    BoxFace.TOP, BoxFace.BOTTOM -> textures.spine.takeIf { spineOnTop }
                     else -> null
                 }
 

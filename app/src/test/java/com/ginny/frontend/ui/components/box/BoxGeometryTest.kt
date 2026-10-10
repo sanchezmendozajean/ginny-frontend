@@ -112,4 +112,15 @@ class BoxGeometryTest {
         assertEquals(BoxGeometry.DefaultWidth, d.width, 1e-6f)
         assertEquals(BoxGeometry.DefaultDepth, d.depth, 1e-6f)
     }
+
+    @Test
+    fun `un lomo apaisado va arriba y su fondo sale del ancho de la caja`() {
+        // Caja de SNES: frente 2:1 apaisado, lomo 8:1 recorriendo el ancho → fondo = 2 / 8.
+        val snes = BoxGeometry.fromTextures(frontAspect = 2f, spineAspect = 8f)
+        assertEquals(2f, snes.width, 1e-6f)
+        assertEquals(0.25f, snes.depth, 1e-6f)
+        assertEquals(true, BoxGeometry.isSpineHorizontal(8f))
+        assertEquals(false, BoxGeometry.isSpineHorizontal(0.09f))
+        assertEquals(false, BoxGeometry.isSpineHorizontal(null))
+    }
 }
