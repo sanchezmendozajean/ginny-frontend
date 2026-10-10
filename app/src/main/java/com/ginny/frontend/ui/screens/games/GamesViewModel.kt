@@ -177,6 +177,8 @@ class GamesViewModel(
             settingsRepository.userFolderUri.first()?.let(Uri::parse)?.let { userUri ->
                 container.assetRepository.deleteIcon(userUri, game.systemId, game.romFileName)
             }
+            // Lo que descargó el scrapper (wheel, cajas, video, metadatos) también se va con el juego.
+            container.scrapStorage.deleteGameAssets(game.systemId, game.romFileName)
             container.gameIndexRepository.deleteGame(game)
             container.settingsRepository.setFavorite(game, false)
             container.configRepository.requestSync()

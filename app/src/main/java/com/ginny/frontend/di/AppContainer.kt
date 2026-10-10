@@ -13,6 +13,7 @@ import com.ginny.frontend.data.RomRepository
 import com.ginny.frontend.data.SaveStateRepository
 import com.ginny.frontend.data.SettingsRepository
 import com.ginny.frontend.data.StorageBootstrapper
+import com.ginny.frontend.data.scrap.ScrapStorage
 import com.ginny.frontend.data.scrap.ScrapperSettingsRepository
 import com.ginny.frontend.launch.GameLauncher
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +37,7 @@ class AppContainer(context: Context) {
 
     /** Credenciales y opciones del scrapper. Deliberadamente fuera de [configRepository] (ginny.cfg). */
     val scrapperSettingsRepository = ScrapperSettingsRepository(context)
+    val scrapStorage = ScrapStorage(context, settingsRepository)
 
     /** Lives as long as the process — backs [GinnyConfigRepository]'s debounced auto-sync and the
      * one-shot read of `ginny.cfg` on app start below. */

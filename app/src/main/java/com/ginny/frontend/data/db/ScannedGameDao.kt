@@ -34,6 +34,13 @@ interface ScannedGameDao {
     @Query("DELETE FROM scanned_games WHERE systemId = :systemId AND romUri = :romUri")
     suspend fun deleteByRomUri(systemId: String, romUri: String)
 
+    /**
+     * Cambia solo el ícono de un juego ya escaneado (el scrapper acaba de guardar uno). Es una
+     * consulta, no cambia el esquema: así el ícono aparece sin tener que reescanear la biblioteca.
+     */
+    @Query("UPDATE scanned_games SET iconUri = :iconUri WHERE systemId = :systemId AND romUri = :romUri")
+    suspend fun updateIconUri(systemId: String, romUri: String, iconUri: String?)
+
     /** Wholesale replace, used by the Settings "Escanear biblioteca" scan — the cache always
      * reflects the most recent full scan rather than being incrementally merged. */
     @Transaction

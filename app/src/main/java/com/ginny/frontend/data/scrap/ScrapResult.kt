@@ -51,6 +51,15 @@ sealed interface ScrapResult<out T> {
         override val message = "${provider.label} no está disponible ($detail)."
     }
 
+    /**
+     * No se pudo leer o escribir en la Carpeta de Usuario (`Assets/`). [fatal]: no tiene sentido
+     * seguir con el lote (no hay carpeta o se perdió el permiso); si no, solo falló ese archivo.
+     */
+    data class StorageFailed(val detail: String, val fatal: Boolean = false) : Failure {
+        override val message = "No se pudo guardar: $detail."
+        override val abortsBatch get() = fatal
+    }
+
     /** El usuario no tiene permitido descargar ahora (sin red, o datos móviles con "Solo con Wi-Fi"). */
     data class NetworkBlocked(val reason: String) : Failure {
         override val message = reason

@@ -42,6 +42,11 @@ class GameIndexRepository(context: Context) {
         dao.replaceForSystem(systemId.name, games.map { it.toEntity() })
     }
 
+    /** Actualiza el ícono mostrado de [game] sin reescanear (lo usa el scrapper al guardar uno nuevo). */
+    suspend fun updateIcon(game: GameEntry, iconUri: Uri?) {
+        dao.updateIconUri(game.systemId.name, game.romUri.toString(), iconUri?.toString())
+    }
+
     suspend fun deleteGame(game: GameEntry) {
         dao.deleteByRomUri(game.systemId.name, game.romUri.toString())
     }
