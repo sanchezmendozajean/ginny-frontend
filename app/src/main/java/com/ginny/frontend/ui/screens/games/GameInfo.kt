@@ -48,12 +48,12 @@ internal fun sideBoxWidth(contentWidth: Dp): Dp = contentWidth * BoxWidthFractio
  * las imágenes deja el espacio vacío, para que nada salte.
  */
 @Composable
-internal fun GameSideBox(assets: GameAssets, modifier: Modifier) {
+internal fun GameSideBox(assets: GameAssets, modifier: Modifier, spinTrigger: Int = 0) {
     val textures = rememberBoxTextures(assets.boxFront, assets.boxBack, assets.boxSpine)
     when {
         textures == null -> Spacer(modifier)
         textures.isEmpty -> Unit // había archivos pero no se pudieron leer
-        else -> GameBox3D(textures, modifier)
+        else -> GameBox3D(textures, modifier, spinTrigger)
     }
 }
 

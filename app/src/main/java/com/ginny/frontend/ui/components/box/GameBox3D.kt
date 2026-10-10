@@ -56,20 +56,23 @@ private const val CameraDistance = 3.2f
 /** Qué tan rápido el giro vuelve al ritmo automático después de soltarla (por segundo). */
 private const val Settle = 2.2f
 
+/** Velocidad del golpe que recibe la caja al jugar; luego se frena sola hasta el giro lento. */
+private const val LaunchSpinDegreesPerSecond = 1000f
+
 private const val BaseBoxColor = 0xFF161616.toInt()
 
 /**
  * Caja de juego en 3D: una caja negra con las texturas de [textures] en el frente, la trasera y el
  * lomo. Gira sola, muy despacio, sobre su eje vertical, empezando en 3/4 de perfil; se puede girar con
  * el dedo arrastrando en horizontal (el arrastre vertical queda libre para desplazar la pantalla), y al
- * soltarla recupera con suavidad el giro automático.
+ * soltarla recupera con suavidad el giro automático. [spinTrigger] le da un golpe de giro (al jugar).
  *
  * No usa ninguna librería 3D: proyecta las caras con [BoxGeometry] y dibuja cada textura sobre su
  * cuadrilátero con una matriz de perspectiva (`Matrix.setPolyToPoly`). El ángulo se lee solo al dibujar,
  * así que girar no recompone nada.
  */
 @Composable
-fun GameBox3D(textures: BoxTextures, modifier: Modifier = Modifier) {
+fun GameBox3D(textures: BoxTextures, modifier: Modifier = Modifier, spinTrigger: Int = 0) {
     val geometry = remember(textures) {
         BoxGeometry.fromTextures(
             frontAspect = textures.front?.let { it.width.toFloat() / it.height },
@@ -95,6 +98,16 @@ fun GameBox3D(textures: BoxTextures, modifier: Modifier = Modifier) {
                     yaw += velocity * dt
                 }
             }
+        }
+    }
+
+    // Cada vez que sube [spinTrigger], la caja recibe un golpe: gira rápido y va desacelerando (la misma
+    // vuelta suave al giro lento que tras soltarla con el dedo). El valor con el que nace no cuenta.
+    val firstTrigger = remember { spinTrigger }
+    LaunchedEffect(spinTrigger) {
+        if (spinTrigger != firstTrigger) {
+            dragging = false
+            velocity = LaunchSpinDegreesPerSecond
         }
     }
 

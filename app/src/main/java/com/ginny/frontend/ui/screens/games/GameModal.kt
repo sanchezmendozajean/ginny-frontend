@@ -3,7 +3,11 @@ package com.ginny.frontend.ui.screens.games
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -34,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -83,6 +88,7 @@ import com.ginny.frontend.ui.theme.GinnyThemes
 import com.ginny.frontend.ui.theme.adjust
 import com.ginny.frontend.ui.theme.lighten
 import com.ginny.frontend.ui.util.LocalSoundManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -91,6 +97,12 @@ private const val ScrollStepPx = 260f
 
 /** Separación entre la columna izquierda del cuerpo y la caja. */
 private val BodyGap = 16.dp
+
+/** "Jugar": cuánto gira la caja (con el sonido) antes de empezar a oscurecer la pantalla. */
+private const val LaunchSpinMs = 1000L
+
+/** "Jugar": cuánto tarda la pantalla en quedar negra antes de lanzar el juego. */
+private const val LaunchFadeMs = 700
 
 /** Rojo de "Eliminar" (OKLCH: tono 25°, el mismo para todos los temas). */
 internal val DeleteRed = Color(0xFFC0392B)
@@ -143,6 +155,9 @@ fun GameModal(
             // en los cuatro lados; los desplegables se reparten su ancho.
             val cardWidth = maxWidth - SettingsModalMargin * 2
 
+            // Oscurecimiento de la pantalla al lanzar el juego (0 = nada, 1 = negro).
+            val darkness = remember(shown) { Animatable(0f) }
+
             // Diálogo abierto desde el menú de tres puntos (null = ninguno). Cada juego empieza sin diálogo.
             var dialog by remember(shown) { mutableStateOf<GameDialog?>(null) }
             // Con un diálogo encima, la tarjeta se desenfoca (si no, se transparenta por la cortina).
@@ -159,6 +174,7 @@ fun GameModal(
                 inputBlocked = dialog != null || blocked,
                 cardWidth = cardWidth,
                 scrapping = scrapping,
+                darkness = darkness,
                 modifier = Modifier.blur(cardBlur),
             )
 
@@ -187,6 +203,16 @@ fun GameModal(
                 }
                 null -> Unit
             }
+
+            // Fundido a negro de toda la pantalla (encima de todo, diálogos incluidos); no deja pasar toques.
+            if (darkness.value > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = darkness.value))
+                        .pointerInput(Unit) { detectTapGestures { } },
+                )
+            }
         }
     }
 }
@@ -205,6 +231,8 @@ private fun GameCard(
     inputBlocked: Boolean,
     /** Hay un scrapeo en curso: al terminar se vuelve a leer lo guardado (información y caja). */
     scrapping: Boolean,
+    /** Oscurecimiento de toda la pantalla (0 = nada, 1 = negro) al lanzar el juego; lo dibuja [GameModal]. */
+    darkness: Animatable<Float, AnimationVector1D>,
     modifier: Modifier = Modifier,
 ) {
     val palette = GinnyThemes.current
@@ -236,15 +264,31 @@ private fun GameCard(
     val leftColumnWidth = if (showBox) contentWidth - boxWidth - BodyGap else contentWidth
     val controlWidth = (leftColumnWidth - 20.dp - 2.dp - 12.dp) / 2
 
+    // Secuencia de "Jugar": suena el efecto y la caja recibe un golpe de giro; pasado [LaunchSpinMs] la pantalla
+    // se funde a negro y recién entonces se lanza el emulador. B (cierra el modal) la cancela.
+    var launching by remember(game) { mutableStateOf(false) }
+    var spinTrigger by remember(game) { mutableIntStateOf(0) }
+
     fun play() {
+        if (launching) return // un segundo toque (o A) no reinicia la secuencia
+        launching = true
         sound?.playLaunchSound()
+        spinTrigger++
         scope.launch {
+            delay(LaunchSpinMs)
+            darkness.animateTo(1f, tween(LaunchFadeMs, easing = LinearEasing))
             when (val result = viewModel.launch(context, game)) {
                 LaunchResult.Launched -> onClose()
-                is LaunchResult.EmulatorNotInstalled ->
+                is LaunchResult.EmulatorNotInstalled -> {
                     Toast.makeText(context, "${result.emulator.displayName} no está instalado.", Toast.LENGTH_LONG).show()
-                is LaunchResult.Failed ->
+                    darkness.animateTo(0f, tween(250))
+                    launching = false
+                }
+                is LaunchResult.Failed -> {
                     Toast.makeText(context, "No se pudo abrir: ${result.message}", Toast.LENGTH_LONG).show()
+                    darkness.animateTo(0f, tween(250))
+                    launching = false
+                }
             }
         }
     }
@@ -408,7 +452,7 @@ private fun GameCard(
             // contenido). Solo en pantallas anchas y si el juego tiene alguna cara de caja guardada.
             val boxAssets = assets
             if (showBox && boxAssets != null) {
-                GameSideBox(boxAssets, Modifier.width(boxWidth).fillMaxHeight())
+                GameSideBox(boxAssets, Modifier.width(boxWidth).fillMaxHeight(), spinTrigger)
             }
         }
 
