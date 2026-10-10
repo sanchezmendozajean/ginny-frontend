@@ -3,6 +3,7 @@ package com.ginny.frontend.ui.screens.games
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -36,6 +37,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -59,6 +61,7 @@ import com.ginny.frontend.data.model.GameEntry
 import com.ginny.frontend.data.model.SystemCatalog
 import com.ginny.frontend.data.model.favoriteKey
 import com.ginny.frontend.launch.LaunchResult
+import com.ginny.frontend.ui.SettingsBackdropBlur
 import com.ginny.frontend.ui.components.FaceButton
 import com.ginny.frontend.ui.components.FaceButtonIcon
 import com.ginny.frontend.ui.components.game.Element
@@ -133,6 +136,8 @@ fun GameModal(
 
             // Diálogo abierto desde el menú de tres puntos (null = ninguno). Cada juego empieza sin diálogo.
             var dialog by remember(shown) { mutableStateOf<GameDialog?>(null) }
+            // Con un diálogo encima, la tarjeta se desenfoca (si no, se transparenta por la cortina).
+            val cardBlur by animateDpAsState(if (dialog != null) SettingsBackdropBlur else 0.dp, label = "gameCardBlur")
             // B cierra primero el diálogo (este callback se registra después que el de GinnyApp).
             BackHandler(enabled = dialog != null) { dialog = null }
 
@@ -144,6 +149,7 @@ fun GameModal(
                 onClose = onClose,
                 onOpenDialog = { dialog = it },
                 inputBlocked = dialog != null || blocked,
+                modifier = Modifier.blur(cardBlur),
             )
 
             when (dialog) {

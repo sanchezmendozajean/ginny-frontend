@@ -201,6 +201,12 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}, on
             viewModel(key = s.toString(), factory = viewModelFactory { initializer { GamesViewModel(container, s) } })
         }
         val buttonMapping by (gamesViewModel?.buttonMapping ?: remember { MutableStateFlow(ButtonMapping.DEFAULT) }).collectAsState()
+        // Si el modal de avance del scrapeo está encima, el del juego se desenfoca.
+        val gameModalBlur by animateDpAsState(
+            targetValue = if (scrapProgressOpen) SettingsBackdropBlur else 0.dp,
+            label = "gameModalUnderScrapBlur",
+        )
+        Box(modifier = Modifier.fillMaxSize().blur(gameModalBlur)) {
         GameModal(
             game = openGame,
             viewModel = gamesViewModel,
@@ -215,6 +221,7 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}, on
             },
             blocked = scrapProgressOpen,
         )
+        }
 
         // ── Modal de Configuración, encima de todo ───────────────────────────────────────────
         // Si hay un modal del scrapper encima, Configuración se desenfoca (si no, sus opciones se
