@@ -11,14 +11,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -45,7 +46,8 @@ import com.ginny.frontend.ui.screens.settings.SettingsModalCornerRadius
 import com.ginny.frontend.ui.theme.GinnyFont
 import com.ginny.frontend.ui.theme.GinnyThemes
 
-private val LaunchCardMaxWidth = 640.dp
+/** Desde este ancho de tarjeta se usan dos sistemas por fila y los combos junto al título. */
+private val WideLayoutMinWidth = 680.dp
 
 /**
  * Modal de "Scrappear": la lista de sistemas con sus juegos (total y pendientes), dos combos —qué
@@ -72,83 +74,101 @@ fun ScrapLaunchModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () ->
 
         ScrapModalScrim(onDismiss = onClose) {
             val shape = RoundedCornerShape(SettingsModalCornerRadius)
-            Column(
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+            // Mismo tamaño que el modal de Configuración: toda la pantalla menos el margen (lo pone el scrim).
+            BoxWithConstraints(
                 modifier = Modifier
-                    .widthIn(max = LaunchCardMaxWidth)
-                    .fillMaxWidth()
-                    .fillMaxHeight()
+                    .fillMaxSize()
                     .background(Color.White.copy(alpha = 0.85f), shape)
-                    .pointerInput(Unit) { detectTapGestures { } }
-                    .padding(24.dp),
+                    .pointerInput(Unit) { detectTapGestures { } },
             ) {
-                Text("Scrappear", fontFamily = GinnyFont, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = palette.ink)
-
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    GinnyDropdown(
-                        selected = scope,
-                        options = ScrapScope.entries.map { it.label to it },
-                        onSelect = viewModel::setScope,
-                        width = 230.dp,
-                    )
-                    GinnyDropdown(
-                        selected = overwrite,
-                        options = listOf("No sobreescribir si existe" to false, "Sobreescribir" to true),
-                        onSelect = viewModel::setOverwrite,
-                        width = 230.dp,
-                    )
-                }
-
-                if (systems.isEmpty()) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.weight(1f).fillMaxWidth()) {
-                        Text(
-                            text = if (inspecting) "Revisando la biblioteca…" else "No hay juegos en la biblioteca. Escanéala primero en Configuración > Carpetas.",
-                            fontFamily = GinnyFont,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
-                            color = palette.muted,
-                        )
+                // Pantalla ancha: combos junto al título y dos sistemas por fila; angosta: una columna.
+                val wide = maxWidth >= WideLayoutMinWidth
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize().padding(24.dp)) {
+                    val title: @Composable () -> Unit = {
+                        Text("Scrappear", fontFamily = GinnyFont, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = palette.ink)
                     }
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                    ) {
-                        items(systems, key = { it.name }) { id ->
-                            SystemChoiceRow(
-                                id = id,
-                                stats = stats[id],
-                                logo = logos[id],
-                                checked = id in selected,
-                                onToggle = { viewModel.toggleSystem(id) },
+                    val combos: @Composable () -> Unit = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            GinnyDropdown(
+                                selected = scope,
+                                options = ScrapScope.entries.map { it.label to it },
+                                onSelect = viewModel::setScope,
+                                width = 230.dp,
+                            )
+                            GinnyDropdown(
+                                selected = overwrite,
+                                options = listOf("No sobreescribir si existe" to false, "Sobreescribir" to true),
+                                onSelect = viewModel::setOverwrite,
+                                width = 230.dp,
                             )
                         }
                     }
-                }
+                    if (wide) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Box(Modifier.weight(1f)) { title() }
+                            combos()
+                        }
+                    } else {
+                        title()
+                        combos()
+                    }
 
-                Text(
-                    text = when {
-                        running -> "Ya hay un scrapeo en curso."
-                        inspecting -> "Revisando lo que ya hay guardado…"
-                        else -> "Se procesarán $toProcess ${if (toProcess == 1) "juego" else "juegos"}."
-                    },
-                    fontFamily = GinnyFont,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    color = palette.muted,
-                )
+                    if (systems.isEmpty()) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.weight(1f).fillMaxWidth()) {
+                            Text(
+                                text = if (inspecting) "Revisando la biblioteca…" else "No hay juegos en la biblioteca. Escanéala primero en Configuración > Carpetas.",
+                                fontFamily = GinnyFont,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                                color = palette.muted,
+                            )
+                        }
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(if (wide) 2 else 1),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                        ) {
+                            items(systems, key = { it.name }) { id ->
+                                SystemChoiceRow(
+                                    id = id,
+                                    stats = stats[id],
+                                    logo = logos[id],
+                                    checked = id in selected,
+                                    onToggle = { viewModel.toggleSystem(id) },
+                                )
+                            }
+                        }
+                    }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), modifier = Modifier.fillMaxWidth()) {
-                    GinnyButton("Cancelar", onClick = onClose)
-                    GinnyButton(
-                        "Iniciar",
-                        primary = true,
-                        enabled = canStart,
-                        onClick = {
-                            viewModel.start()
-                            onStarted()
-                        },
-                    )
+                    // Resumen a la izquierda y botones a la derecha, en la misma fila.
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = when {
+                                running -> "Ya hay un scrapeo en curso."
+                                inspecting -> "Revisando lo que ya hay guardado…"
+                                else -> "Se procesarán $toProcess ${if (toProcess == 1) "juego" else "juegos"}."
+                            },
+                            fontFamily = GinnyFont,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = palette.muted,
+                            modifier = Modifier.weight(1f).padding(end = 12.dp),
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            GinnyButton("Cancelar", onClick = onClose)
+                            GinnyButton(
+                                "Iniciar",
+                                primary = true,
+                                enabled = canStart,
+                                onClick = {
+                                    viewModel.start()
+                                    onStarted()
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -187,23 +207,26 @@ private fun SystemChoiceRow(id: SystemId, stats: SystemScrapStats?, logo: androi
             }
         }
         Spacer(Modifier.width(12.dp))
-        Text(
-            text = name,
-            fontFamily = GinnyFont,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 15.sp,
-            color = palette.ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = if (stats == null) "Revisando…" else counts(stats),
-            fontFamily = GinnyFont,
-            fontWeight = FontWeight.Medium,
-            fontSize = 12.sp,
-            color = palette.muted,
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name,
+                fontFamily = GinnyFont,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 15.sp,
+                color = palette.ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = if (stats == null) "Revisando…" else counts(stats),
+                fontFamily = GinnyFont,
+                fontWeight = FontWeight.Medium,
+                fontSize = 12.sp,
+                color = palette.muted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

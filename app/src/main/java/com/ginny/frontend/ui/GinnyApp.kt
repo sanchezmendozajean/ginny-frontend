@@ -202,6 +202,13 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
         )
 
         // ── Modal de Configuración, encima de todo ───────────────────────────────────────────
+        // Si hay un modal del scrapper encima, Configuración se desenfoca (si no, sus opciones se
+        // transparentan por la cortina como fantasmas).
+        val settingsBlur by animateDpAsState(
+            targetValue = if (scrapLaunchOpen || scrapProgressOpen) SettingsBackdropBlur else 0.dp,
+            label = "settingsUnderScrapBlur",
+        )
+        Box(modifier = Modifier.fillMaxSize().blur(settingsBlur)) {
         SettingsModal(
             visible = settingsOpen,
             onClose = onCloseSettings,
@@ -212,6 +219,7 @@ fun GinnyApp(settingsOpen: Boolean = false, onCloseSettings: () -> Unit = {}) {
             },
             onOpenScrapProgress = { scrapProgressOpen = true },
         )
+        }
 
         // ── Modales del scrapper, encima de Configuración ────────────────────────────────────
         ScrapLaunchModal(
