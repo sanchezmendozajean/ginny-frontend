@@ -38,8 +38,8 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Opciones de la sección Carpetas: biblioteca (carpeta de ROMs + escanear), Carpeta de Usuario
- * (assets y ginny.cfg) y estados guardados de RetroArch. Cada carpeta se elige con el selector de
+ * Opciones de la sección Carpetas: Carpeta de Usuario (assets y ginny.cfg), biblioteca (carpeta de
+ * ROMs + escanear) y estados guardados de RetroArch. Cada carpeta se elige con el selector de
  * carpetas del sistema (SAF); el ViewModel guarda el permiso persistente.
  */
 @Composable
@@ -69,15 +69,31 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        // Orden de configuración: Carpeta de Usuario → ROMs (necesita la de Usuario) → Escanear
+        // (necesita las ROMs).
+        SettingsGroup("Carpeta de Usuario") {
+            SettingsRow(title = "Assets y configuración", subtitle = folderLabel(userFolder)) {
+                GinnyButton("Elegir", primary = userFolder == null, onClick = { pickUserFolder.launch(null) })
+            }
+        }
+
         SettingsGroup("Biblioteca") {
-            SettingsRow(title = "Carpeta de ROMs", subtitle = folderLabel(romFolder)) {
-                GinnyButton("Elegir", onClick = { pickRomFolder.launch(null) })
+            SettingsRow(
+                title = "Carpeta de ROMs",
+                subtitle = if (userFolder == null) "Elige primero la Carpeta de Usuario" else folderLabel(romFolder),
+            ) {
+                GinnyButton(
+                    "Elegir",
+                    enabled = userFolder != null,
+                    onClick = { pickRomFolder.launch(null) },
+                )
             }
             SettingsDivider()
             SettingsRow(
                 title = "Escanear biblioteca",
                 // La navegación siempre lee del último escaneo, no del disco.
                 subtitle = when {
+                    userFolder == null -> "Elige primero la Carpeta de Usuario"
                     romFolder == null && romOverrides.isEmpty() -> "Elige primero la carpeta de ROMs"
                     lastScanAt != null -> "Último escaneo: ${formatScanTimestamp(lastScanAt!!)}"
                     else -> "Todavía no se escaneó: los sistemas aparecen tras el primer escaneo"
@@ -89,7 +105,7 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
                     GinnyButton(
                         "Escanear",
                         primary = true,
-                        enabled = romFolder != null || romOverrides.isNotEmpty(),
+                        enabled = userFolder != null && (romFolder != null || romOverrides.isNotEmpty()),
                         onClick = {
                             showProgress = true
                             viewModel.scanLibrary(context)
@@ -100,12 +116,6 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
             if (showProgress || scanning) {
                 SettingsDivider()
                 ScanProgress(scanning = scanning, entries = scanProgress)
-            }
-        }
-
-        SettingsGroup("Carpeta de Usuario") {
-            SettingsRow(title = "Assets y configuración", subtitle = folderLabel(userFolder)) {
-                GinnyButton("Elegir", onClick = { pickUserFolder.launch(null) })
             }
         }
 

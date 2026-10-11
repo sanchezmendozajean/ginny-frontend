@@ -208,6 +208,7 @@ fun GinnyApp(
                         pageCount = pageCount,
                         currentPage = currentPage,
                         onBack = if (screen == Screen.Systems) null else goBack,
+                        canOpen = selected != null,                     // sin elementos no hay nada que abrir
                         onOpen = { if (gridActive) activateTick++ },
                         onOptions = onOpenSettings,
                     )
