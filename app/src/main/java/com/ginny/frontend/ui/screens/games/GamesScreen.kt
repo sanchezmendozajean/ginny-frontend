@@ -1,5 +1,6 @@
 package com.ginny.frontend.ui.screens.games
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -37,6 +38,8 @@ fun GamesScreen(
     onPagingChanged: (pageCount: Int, currentPage: Int) -> Unit = { _, _ -> },
     /** Cuántos juegos hay (null mientras se lee el escaneo): la barra superior lo muestra junto al nombre del sistema. */
     onCountChanged: (Int?) -> Unit = {},
+    /** Lo que la pantalla secundaria muestra del juego enfocado: su wheel o, si no tiene, su grid (null = nada). */
+    onFocusedArtworkChanged: (Uri?) -> Unit = {},
     /** Sube cada vez que se toca "Abrir" en el pie: abre el elemento seleccionado, como A. */
     activateTick: Int = 0,
 ) {
@@ -74,6 +77,19 @@ fun GamesScreen(
         val metadata = viewModel.loadGameAssets(game).metadata
         subtitles[key] = studioAndYear(metadata?.developer, metadata?.releaseYear) ?: game.romFileName
     }
+    // Imagen para la pantalla secundaria: el wheel del juego enfocado o, si no tiene, su grid (el ícono).
+    val currentOnArtwork by rememberUpdatedState(onFocusedArtworkChanged)
+    LaunchedEffect(picked?.key, games) {
+        val key = picked?.key
+        val game = games.firstOrNull { it.romUri.toString() == key }
+        if (game == null) {
+            currentOnArtwork(null)
+            return@LaunchedEffect
+        }
+        currentOnArtwork(viewModel.loadGameAssets(game).wheel ?: game.iconUri)
+    }
+    DisposableEffect(Unit) { onDispose { currentOnArtwork(null) } }
+
     val currentOnSelectionChanged by rememberUpdatedState(onSelectionChanged)
     LaunchedEffect(picked, subtitles.toMap()) {
         val entry = picked

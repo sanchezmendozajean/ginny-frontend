@@ -39,6 +39,7 @@ class SettingsRepository(private val context: Context) {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val FAVORITE_GAMES = stringSetPreferencesKey("favorite_games")
         val BUTTON_LAYOUT = stringPreferencesKey("button_layout")
+        val SWAP_DISPLAYS = booleanPreferencesKey("swap_displays")
 
         fun emulatorFor(systemId: SystemId) = stringPreferencesKey("emulator_${systemId.name}")
         fun coreFor(systemId: SystemId) = stringPreferencesKey("core_${systemId.name}")
@@ -116,6 +117,16 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setButtonLayout(layout: ButtonLayout) {
         context.dataStore.edit { it[Keys.BUTTON_LAYOUT] = layout.name }
+    }
+
+    /**
+     * Doble pantalla: false = la interfaz va en la pantalla principal del dispositivo y la caja / el video del juego en
+     * la secundaria; true = al revés. Sin pantalla secundaria no tiene efecto.
+     */
+    val swapDisplays: Flow<Boolean> = context.dataStore.data.map { it[Keys.SWAP_DISPLAYS] ?: false }
+
+    suspend fun setSwapDisplays(swap: Boolean) {
+        context.dataStore.edit { it[Keys.SWAP_DISPLAYS] = swap }
     }
 
     suspend fun setGridRows(rows: Int) {

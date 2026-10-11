@@ -1,6 +1,12 @@
 package com.ginny.frontend
 
+import android.app.ActivityOptions
+import android.content.Intent
+import android.content.res.Configuration
+import android.hardware.display.DisplayManager
+import android.os.Build
 import android.os.Bundle
+import android.view.Display
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -20,9 +26,15 @@ import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.data.model.ButtonLayout
 import com.ginny.frontend.ui.GinnyApp
 import com.ginny.frontend.ui.components.LocalButtonLayout
+import com.ginny.frontend.ui.display.SecondaryDisplayActivity
+import com.ginny.frontend.ui.display.mainDisplayId
+import com.ginny.frontend.ui.display.otherDisplay
 import com.ginny.frontend.ui.theme.GinnyTheme
 import com.ginny.frontend.ui.util.LocalSoundManager
 import kotlinx.coroutines.launch
+
+/** Cuánto se espera, tras abrir la actividad de la otra pantalla, para devolverle el foco a la interfaz. */
+private const val FocusReturnDelayMs = 600L
 
 /**
  * Single-activity host. Immersive landscape shell.
@@ -43,6 +55,77 @@ class MainActivity : ComponentActivity() {
     /** Si hay un modal que usa Y (el de un juego: Video; el de avance del scrapeo: Detener): Y deja de abrir Configuración. */
     @Volatile private var gameModalOpen = false
 
+    private lateinit var displayManager: DisplayManager
+    private var swapDisplays = false
+
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) = syncDisplays()
+        override fun onDisplayRemoved(displayId: Int) = syncDisplays()
+        override fun onDisplayChanged(displayId: Int) = Unit
+    }
+
+    /** La pantalla en la que está esta actividad ahora. */
+    private fun currentDisplayId(): Int {
+        @Suppress("DEPRECATION")
+        return (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) display else windowManager.defaultDisplay)
+            ?.displayId ?: Display.DEFAULT_DISPLAY
+    }
+
+    /**
+     * Doble pantalla: deja la interfaz en la pantalla que le toca y la actividad secundaria (caja, video, logos y
+     * wheels) en la otra; sin otra pantalla, la secundaria se cierra.
+     */
+    private fun syncDisplays() {
+        if (isFinishing || isDestroyed) return
+        val current = currentDisplayId()
+        val target = displayManager.mainDisplayId(swapDisplays)
+        if (current != target) {
+            // Misma tarea: el sistema la mueve de pantalla (y avisa en onConfigurationChanged, que vuelve aquí).
+            val options = ActivityOptions.makeBasic().setLaunchDisplayId(target)
+            runCatching {
+                startActivity(
+                    Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    options.toBundle(),
+                )
+            }
+            return
+        }
+
+        val other = displayManager.otherDisplay(current)
+        val secondary = SecondaryDisplayActivity.instance
+        when {
+            other == null -> secondary?.finish()
+            secondary == null || secondary.displayIdNow != other.displayId -> {
+                secondary?.finish()
+                val options = ActivityOptions.makeBasic().setLaunchDisplayId(other.displayId)
+                runCatching {
+                    startActivity(
+                        Intent(this, SecondaryDisplayActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK),
+                        options.toBundle(),
+                    )
+                }
+                // La actividad nueva se queda con el foco de entrada de su pantalla; el mando debe seguir hablando
+                // con la interfaz, así que se le devuelve (la ventana de la secundaria no es enfocable).
+                window.decorView.postDelayed({
+                    if (!isFinishing && !isDestroyed) {
+                        runCatching {
+                            startActivity(
+                                Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                ActivityOptions.makeBasic().setLaunchDisplayId(current).toBundle(),
+                            )
+                        }
+                    }
+                }, FocusReturnDelayMs)
+            }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        syncDisplays()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -52,6 +135,17 @@ class MainActivity : ComponentActivity() {
         val container = (application as GinnyApplication).container
         soundManager = SoundManager(this, container.settingsRepository, container.musicRepository, lifecycleScope)
         soundManager.start()
+
+        // Doble pantalla: la interfaz va en la pantalla que indique "Intercambiar pantalla principal"; si no es la
+        // actual (al abrir, al cambiar la opción o al conectar / desconectar una pantalla), se relanza allí.
+        displayManager = getSystemService(DISPLAY_SERVICE) as DisplayManager
+        displayManager.registerDisplayListener(displayListener, null)
+        lifecycleScope.launch {
+            container.settingsRepository.swapDisplays.collect {
+                swapDisplays = it
+                syncDisplays()
+            }
+        }
 
         // Mapeo de botones remapeable (Configuración): las teclas se interpretan a través de él.
         lifecycleScope.launch {
@@ -82,7 +176,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemBars()
+        if (hasFocus) { hideSystemBars(); syncDisplays() }
     }
 
     private fun hideSystemBars() {
@@ -103,6 +197,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        displayManager.unregisterDisplayListener(displayListener)
+        SecondaryDisplayActivity.instance?.finish()
         soundManager.release()
         super.onDestroy()
     }

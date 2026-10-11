@@ -100,6 +100,11 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         container.configRepository.requestSync()
     }
 
+    fun setSwapDisplays(swap: Boolean) = viewModelScope.launch {
+        settings.setSwapDisplays(swap)
+        container.configRepository.requestSync()
+    }
+
     fun setButtonLayout(layout: ButtonLayout) = viewModelScope.launch {
         settings.setButtonLayout(layout)
         container.configRepository.requestSync()

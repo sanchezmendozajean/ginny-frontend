@@ -145,6 +145,7 @@ class GinnyConfigRepository(
             put("version", CONFIG_VERSION)
             put("gridRows", settings.gridRows.first())
             put("buttonLayout", settings.buttonLayout.first().name)
+            put("swapDisplays", settings.swapDisplays.first())
             put("musicVolume", settings.musicVolume.first().toDouble())
             put("uiSoundVolume", settings.uiSoundVolume.first().toDouble())
             put("videoVolume", settings.videoVolume.first().toDouble())
@@ -167,6 +168,7 @@ class GinnyConfigRepository(
         json.optStringOrNull("buttonLayout")
             ?.let { name -> runCatching { ButtonLayout.valueOf(name) }.getOrNull() }
             ?.let { settings.setButtonLayout(it) }
+        if (json.has("swapDisplays")) settings.setSwapDisplays(json.optBoolean("swapDisplays", false))
         if (json.has("musicVolume")) settings.setMusicVolume(json.optDouble("musicVolume", 0.5).toFloat())
         if (json.has("uiSoundVolume")) settings.setUiSoundVolume(json.optDouble("uiSoundVolume", 0.7).toFloat())
         if (json.has("videoVolume")) settings.setVideoVolume(json.optDouble("videoVolume", 0.5).toFloat())

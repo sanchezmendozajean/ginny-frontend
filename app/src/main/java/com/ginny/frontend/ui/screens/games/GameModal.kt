@@ -37,6 +37,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -48,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -81,6 +84,9 @@ import com.ginny.frontend.ui.SettingsBackdropBlur
 import com.ginny.frontend.ui.components.FaceButton
 import com.ginny.frontend.ui.components.FaceButtonIcon
 import com.ginny.frontend.ui.components.game.Element
+import com.ginny.frontend.ui.display.SecondaryGameDetail
+import com.ginny.frontend.ui.display.SecondaryScreen
+import com.ginny.frontend.ui.display.rememberOtherDisplay
 import com.ginny.frontend.ui.components.settings.GinnyDropdown
 import com.ginny.frontend.ui.components.settings.GinnyTextField
 import com.ginny.frontend.ui.screens.settings.SettingsFadeHeight
@@ -279,9 +285,13 @@ private fun GameCard(
     var videoOn by remember(game) { mutableStateOf(false) }
     // La caja solo se dibuja en pantallas anchas y si el juego tiene alguna cara guardada.
     val contentWidth = cardWidth - 40.dp
-    val showBox = shouldShowSideBox(assets, contentWidth)
+    // Con otra pantalla conectada, la caja y el video van allí (a pantalla completa) y no a la derecha de la tarjeta.
+    val otherDisplay = rememberOtherDisplay()
+    val hasPanelAssets = assets?.hasBox == true || assets?.video != null
+    val onOtherDisplay = otherDisplay != null && hasPanelAssets
+    val showBox = !onOtherDisplay && shouldShowSideBox(assets, contentWidth)
     val boxWidth = sideBoxWidth(contentWidth)
-    val hasVideo = showBox && assets?.video != null
+    val hasVideo = (showBox || onOtherDisplay) && assets?.video != null
     val videoPlaying = videoOn && hasVideo
     // Mientras suena el video, la música de fondo se pausa (y vuelve al apagarlo o al cerrar el modal).
     DisposableEffect(videoPlaying) {
@@ -303,6 +313,22 @@ private fun GameCard(
     // Menú "Más" (Scrappear, Cambiar icono, Eliminar): se abre con el botón o con Y.
     var menuOpen by remember(game) { mutableStateOf(false) }
     var spinTrigger by remember(game) { mutableIntStateOf(0) }
+
+    // La caja y el video van a la pantalla secundaria (los dibuja SecondaryDisplayActivity con lo que se publica aquí).
+    val stopVideo = remember { { videoOn = false } }
+    val publishedAssets = assets
+    SideEffect {
+        SecondaryScreen.detail = if (onOtherDisplay && publishedAssets != null) {
+            SecondaryGameDetail(publishedAssets, videoPlaying, videoVolume, spinTrigger, stopVideo)
+        } else null
+    }
+    LaunchedEffect(darkness) { snapshotFlow { darkness.value }.collect { SecondaryScreen.darkness = it } }
+    DisposableEffect(Unit) {
+        onDispose {
+            SecondaryScreen.detail = null
+            SecondaryScreen.darkness = 0f
+        }
+    }
     /** Ya se pidió lanzar el emulador (la pantalla está en negro esperando a que la app pase a segundo plano). */
     var launchRequested by remember(game) { mutableStateOf(false) }
     /** La app llegó a ponerse en pausa después de pedir el lanzamiento (el emulador tomó la pantalla). */

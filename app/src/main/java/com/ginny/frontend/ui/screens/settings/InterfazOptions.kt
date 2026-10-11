@@ -23,6 +23,7 @@ import com.ginny.frontend.data.model.ButtonLayout
 import com.ginny.frontend.data.model.MusicSelection
 import com.ginny.frontend.ui.components.settings.GinnyDropdown
 import com.ginny.frontend.ui.components.settings.GinnySlider
+import com.ginny.frontend.ui.components.settings.GinnySwitch
 import com.ginny.frontend.ui.components.settings.SegmentedPicker
 import com.ginny.frontend.ui.components.settings.SettingsDivider
 import com.ginny.frontend.ui.components.settings.SettingsGroup
@@ -44,6 +45,7 @@ fun InterfazOptions(viewModel: SettingsViewModel) {
     val settings = viewModel.settings
     val gridRows by settings.gridRows.collectAsState(initial = 2)
     val buttonLayout by settings.buttonLayout.collectAsState(initial = ButtonLayout.YX_BA)
+    val swapDisplays by settings.swapDisplays.collectAsState(initial = false)
     val themeMode by settings.themeMode.collectAsState(initial = ThemeMode.MENTA)
     val musicVolume by settings.musicVolume.collectAsState(initial = 0.5f)
     val uiVolume by settings.uiSoundVolume.collectAsState(initial = 0.7f)
@@ -92,6 +94,15 @@ fun InterfazOptions(viewModel: SettingsViewModel) {
                     onSelect = { viewModel.setButtonLayout(it) },
                     width = ControlWidth + 52.dp, // mismo ancho que el desplegable de pista
                 )
+            }
+        }
+
+        SettingsGroup("Pantallas") {
+            SettingsRow(
+                title = "Intercambiar pantalla principal",
+                subtitle = "Con dos pantallas, la interfaz pasa a la otra y la caja y el video del juego van en esta.",
+            ) {
+                GinnySwitch(checked = swapDisplays, onCheckedChange = { viewModel.setSwapDisplays(it) })
             }
         }
 

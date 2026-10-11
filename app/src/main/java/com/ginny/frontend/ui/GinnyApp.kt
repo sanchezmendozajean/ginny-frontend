@@ -20,6 +20,8 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.components.GeometricBackground
 import com.ginny.frontend.ui.components.game.GridEntry
+import com.ginny.frontend.ui.display.SecondaryContent
+import com.ginny.frontend.ui.display.SecondaryScreen
 import com.ginny.frontend.ui.layout.GinnyFooter
 import com.ginny.frontend.ui.layout.GinnyHeader
 import com.ginny.frontend.ui.modifiers.LocalHazeState
@@ -175,7 +177,12 @@ fun GinnyApp(
                             modifier = contentModifier,
                             active = gridActive,                        // con un modal abierto, la grilla no responde
                             activateTick = activateTick,
-                            onSelectionChanged = onSelectionChanged,
+                            onSelectionChanged = { entry ->
+                                onSelectionChanged(entry)
+                                // La pantalla secundaria muestra el logo (o el ícono, en Favoritos) del sistema enfocado.
+                                SecondaryScreen.focus = entry?.let { SecondaryContent.Image(it.image, it.icon) }
+                                    ?: SecondaryContent.None
+                            },
                             onPagingChanged = onPagingChanged,
                         )
                         is Screen.Games -> // key: cada sistema es una pantalla nueva (su grilla, su foco)
@@ -189,6 +196,9 @@ fun GinnyApp(
                                     onSelectionChanged = onSelectionChanged,
                                     onPagingChanged = onPagingChanged,
                                     onCountChanged = { gameCount = it },
+                                    onFocusedArtworkChanged = { uri ->
+                                        SecondaryScreen.focus = if (uri != null) SecondaryContent.Image(uri) else SecondaryContent.None
+                                    },
                                 )
                             }
                     }
