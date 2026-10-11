@@ -38,8 +38,8 @@ android {
         applicationId = "com.ginny.frontend"
         minSdk = 29
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
 
         buildConfigField("String", "SCREENSCRAPER_DEV_ID", scrapperProperties.getProperty("screenscraper.devId", "").asBuildConfigString())
         buildConfigField("String", "SCREENSCRAPER_DEV_PASSWORD", scrapperProperties.getProperty("screenscraper.devPassword", "").asBuildConfigString())
