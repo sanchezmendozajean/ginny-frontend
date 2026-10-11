@@ -165,7 +165,7 @@ class GamesViewModel(
     suspend fun loadGameAssets(game: GameEntry): com.ginny.frontend.data.scrap.GameAssets =
         container.scrapStorage.readGameAssets(game.systemId, game.romFileName)
 
-    suspend fun deleteGame(context: Context, game: GameEntry) {
+    suspend fun deleteGame(context: Context, game: GameEntry): Boolean {
         val romUri = settingsRepository.romFolderUri.first()?.let(Uri::parse)
         val overrideUri = settingsRepository.romFolderOverrideFor(game.systemId).first()?.let(Uri::parse)
         if (romUri == null && overrideUri == null) {
@@ -174,7 +174,7 @@ class GamesViewModel(
                 "Elige primero la carpeta de ROMs.",
                 android.widget.Toast.LENGTH_LONG,
             ).show()
-            return
+            return false
         }
         val deleted = container.romRepository.deleteGame(romUri, game, overrideUri)
         if (deleted) {
@@ -198,5 +198,6 @@ class GamesViewModel(
                 android.widget.Toast.LENGTH_LONG,
             ).show()
         }
+        return deleted
     }
 }

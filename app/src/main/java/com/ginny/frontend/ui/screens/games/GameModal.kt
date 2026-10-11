@@ -123,7 +123,7 @@ internal val DeleteRed = Color(0xFFC0392B)
  * Modal de un juego, al abrirlo desde la grilla de Juegos (diseño de referencia del usuario,
  * 2026-10-05): portada, nombre y sistema; información scrapeada (sinopsis, estudio, año...) con la
  * caja en 3D a la derecha; archivo (nombre y carpeta); emulador y core del
- * sistema; Favorito (solo táctil); Regresar (B) y Jugar (A). El menú de tres puntos de la esquina
+ * sistema; Regresar (B) y Jugar (A). El menú de tres puntos de la esquina
  * inferior izquierda tiene Scrappear y Eliminar.
  *
  * B lo maneja GinnyApp (BackHandler, vía MainActivity), igual que en el resto de la app. A se
@@ -173,6 +173,9 @@ fun GameModal(
             // Ícono nuevo elegido en "Cambiar icono" (la ficha lo muestra sin esperar a que el juego se vuelva a leer).
             var iconOverride by remember(shown) { mutableStateOf<android.net.Uri?>(null) }
 
+            val deleteContext = LocalContext.current
+            val deleteScope = rememberCoroutineScope()
+
             // Diálogo abierto desde el menú de tres puntos (null = ninguno). Cada juego empieza sin diálogo.
             var dialog by remember(shown) { mutableStateOf<GameDialog?>(null) }
             // Con un diálogo encima, la tarjeta se desenfoca (si no, se transparenta por la cortina).
@@ -207,21 +210,15 @@ fun GameModal(
                         onStartScrap(shown, overwrite)
                     },
                 )
-                GameDialog.ConfirmDelete -> {
-                    val context = LocalContext.current
-                    val scope = rememberCoroutineScope()
-                    ConfirmDeleteDialog(
-                        gameName = shown.displayName,
-                        onCancel = { dialog = null },
-                        onConfirm = {
-                            dialog = null
-                            scope.launch {
-                                vm.deleteGame(context, shown)
-                                onClose()
-                            }
-                        },
-                    )
-                }
+                GameDialog.ConfirmDelete -> ConfirmDeleteDialog(
+                    gameName = shown.displayName,
+                    onCancel = { dialog = null },
+                    onConfirm = {
+                        dialog = null
+                        // El scope es del modal, no del diálogo: este sale de la composición al cerrarse y cancelaría el borrado.
+                        deleteScope.launch { if (vm.deleteGame(deleteContext, shown)) onClose() }
+                    },
+                )
                 null -> Unit
             }
 
@@ -541,18 +538,23 @@ private fun GameCard(
                 expanded = menuOpen,
                 onExpandedChange = { menuOpen = it },
                 buttonMapping = buttonMapping,
+                isFavorite = isFavorite,
+                onToggleFavorite = { scope.launch { viewModel.toggleFavorite(game) } },
                 onScrap = { onOpenDialog(GameDialog.ScrapOptions) },
                 onChangeIcon = { onOpenDialog(GameDialog.ChangeIcon) },
                 onDelete = { onOpenDialog(GameDialog.ConfirmDelete) },
                 onClosed = { runCatching { focusRequester.requestFocus() } },
             )
-            // Favorito: solo táctil (sin botón del mando).
-            PillButton(
-                background = if (isFavorite) palette.accent.copy(alpha = 0.18f) else palette.background,
-                onClick = { scope.launch { viewModel.toggleFavorite(game) } },
-            ) {
-                Text(if (isFavorite) "★" else "☆", fontSize = 16.sp, color = accentText(palette.accent))
-                Text(if (isFavorite) "En favoritos" else "Favorito", style = buttonText(accentText(palette.accent)))
+            // Solo un aviso (no es un botón): se cambia desde el menú "Más".
+            if (isFavorite) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(start = 4.dp),
+                ) {
+                    Text("★", fontSize = 16.sp, color = accentText(palette.accent))
+                    Text("En favoritos", style = buttonText(accentText(palette.accent)))
+                }
             }
             Spacer(Modifier.weight(1f))
 
@@ -662,8 +664,8 @@ enum class GameDialog { ScrapOptions, ConfirmDelete, ChangeIcon }
 private class MenuEntry(val label: String, val color: Color, val action: () -> Unit)
 
 /**
- * Botón "Más" (con el ícono de Y) en la esquina del modal. Abre un menú con "Scrappear", "Cambiar icono"
- * y "Eliminar" (en rojo). [expanded] lo controla el modal: Y también lo abre.
+ * Botón "Más" (con el ícono de Y) en la esquina del modal. Abre un menú con "Scrappear", "Cambiar icono",
+ * "Agregar a favoritos" / "Quitar de favoritos" y "Eliminar" (en rojo). [expanded] lo controla el modal: Y también lo abre.
  *
  * Con el mando, ya abierto: arriba / abajo mueven la opción resaltada, A la elige y B (o Y, o izquierda) lo cierra.
  */
@@ -672,6 +674,8 @@ private fun GameMenuButton(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     buttonMapping: ButtonMapping,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
     onScrap: () -> Unit,
     onChangeIcon: () -> Unit,
     onDelete: () -> Unit,
@@ -684,6 +688,7 @@ private fun GameMenuButton(
     val entries = listOf(
         MenuEntry("Scrappear", palette.ink, onScrap),
         MenuEntry("Cambiar icono", palette.ink, onChangeIcon),
+        MenuEntry(if (isFavorite) "Quitar de favoritos" else "Agregar a favoritos", palette.ink, onToggleFavorite),
         MenuEntry("Eliminar", DeleteRed, onDelete),
     )
     var highlight by remember { mutableIntStateOf(0) }
