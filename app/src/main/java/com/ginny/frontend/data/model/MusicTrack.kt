@@ -2,14 +2,13 @@ package com.ginny.frontend.data.model
 
 import android.net.Uri
 
-/** The two bundled background-music tracks (see app/src/main/res/raw) offered in Settings
+/** The bundled background-music track (see app/src/main/res/raw) offered in Settings
  * alongside anything the user drops into Interface/Background Music — see [MusicSelection]. */
 enum class BundledMusicTrack(val id: String, val displayName: String) {
-    MONDAY_MARIMBA("monday_marimba", "Monday Marimba"),
-    CALM_BAY("calm_bay", "Calm Bay"),
+    BOSSA_NOVA("bossa_nova", "Bossa Nova"),
 }
 
-/** What SoundManager should currently be looping: one of the two bundled tracks, or a user file
+/** What SoundManager should currently be looping: the bundled track, or a user file
  * from Interface/Background Music inside the "Carpeta de Usuario" (see MusicRepository). */
 sealed interface MusicSelection {
     data class Bundled(val track: BundledMusicTrack) : MusicSelection

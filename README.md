@@ -366,11 +366,11 @@ tal como pide el spec.
 
 ## Sonidos
 
-`app/src/main/res/raw/` contiene los efectos (`sfx_focus`, `sfx_enter_system`, `sfx_open_modal`, `sfx_launch` y `sfx_activate`) y las dos pistas (`music_track_1`, `music_track_2`). Son los efectos de
-foco/selección y las dos pistas de música de fondo embebidas. Para reemplazarlos por audio propio,
+`app/src/main/res/raw/` contiene los efectos (`sfx_focus`, `sfx_enter_system`, `sfx_open_modal`, `sfx_launch` y `sfx_activate`) y la pista de música de fondo (`music_track_1`).
+Para reemplazarlos por audio propio,
 mantené los mismos nombres de archivo y recompilá.
 
-La pista de fondo es elegible en Configuración → Interfaz → Audio, entre las dos embebidas y
+La pista de fondo es elegible en Configuración → Interfaz → Audio, entre la embebida y
 cualquier archivo de audio que dejes en `Interface/Background Music/` dentro de la Carpeta de
 Usuario (ver sección "Estructura de carpetas esperada").
 
@@ -383,8 +383,7 @@ Open Font License — ver [licenses/MPLUSRounded1c-OFL.txt](licenses/MPLUSRounde
 
 También se muestran dentro de la app, en Configuración → Créditos.
 
-- **Música** (Pixabay, [Pixabay Content License](https://pixabay.com/service/license-summary/)):
-  "Monday Marimba" de faespencer y "Calm Bay" de danielhren.
+- **Música**: "Bossa Nova" de Joth ([OpenGameArt](https://opengameart.org), CC0).
 - **Efectos de sonido**: "Interface Sounds" de [Kenney](https://kenney.nl) (CC0, ver [licenses/Kenney-InterfaceSounds-CC0.txt](licenses/Kenney-InterfaceSounds-CC0.txt)) y, de Pixabay, "System Notification 02" de Universfield.
 - **Metadatos, wheel, cajas y video**: [ScreenScraper](https://www.screenscraper.fr).
 - **Íconos**: [SteamGridDB](https://www.steamgriddb.com).

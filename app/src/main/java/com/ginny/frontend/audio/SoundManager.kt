@@ -15,14 +15,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 private fun BundledMusicTrack.resId(): Int = when (this) {
-    BundledMusicTrack.MONDAY_MARIMBA -> R.raw.music_track_1
-    BundledMusicTrack.CALM_BAY -> R.raw.music_track_2
+    BundledMusicTrack.BOSSA_NOVA -> R.raw.music_track_1
 }
 
 /**
  * Background music loop + short focus/selection SFX (see the MP3s under app/src/main/res/raw).
- * The music loop follows the user's chosen [MusicSelection] from Settings — one of the two
- * bundled tracks, or a custom file from Interface/Background Music in the "Carpeta de Usuario" —
+ * The music loop follows the user's chosen [MusicSelection] from Settings — the
+ * bundled track, or a custom file from Interface/Background Music in the "Carpeta de Usuario" —
  * and swaps the underlying MediaPlayer whenever that choice (or the user folder's contents)
  * changes. Music and UI-sound volumes track Settings live.
  */

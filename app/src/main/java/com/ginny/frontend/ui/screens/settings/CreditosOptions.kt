@@ -17,8 +17,7 @@ import com.ginny.frontend.ui.theme.GinnyThemes
 private data class Credit(val title: String, val source: String, val author: String)
 
 private val Music = listOf(
-    Credit("Monday Marimba", "Pixabay", "faespencer"),
-    Credit("Calm Bay", "Pixabay", "danielhren"),
+    Credit("Bossa Nova", "opengameart.org · CC0", "Joth"),
 )
 
 private val SoundEffects = listOf(
