@@ -16,6 +16,7 @@ import com.ginny.frontend.data.StorageBootstrapper
 import com.ginny.frontend.data.scrap.ScrapNetwork
 import com.ginny.frontend.data.scrap.ScrapRepository
 import com.ginny.frontend.data.scrap.ScrapRunner
+import com.ginny.frontend.data.scrap.IconChooser
 import com.ginny.frontend.data.scrap.ScrapStorage
 import com.ginny.frontend.data.scrap.ScrapperSettingsRepository
 import com.ginny.frontend.data.scrap.screenscraper.ScreenScraperClient
@@ -45,6 +46,9 @@ class AppContainer(context: Context) {
     val scrapStorage = ScrapStorage(context, settingsRepository)
     val screenScraperClient = ScreenScraperClient(scrapperSettingsRepository)
     val steamGridDbClient = SteamGridDbClient(scrapperSettingsRepository)
+
+    /** Elegir el ícono de un juego entre varios (icons-alt/) y buscar más en SteamGridDB. */
+    val iconChooser = IconChooser(applicationContext, scrapStorage, steamGridDbClient, gameIndexRepository)
     private val scrapNetwork = ScrapNetwork(context)
     private val scrapRepository = ScrapRepository(
         context, scrapperSettingsRepository, gameIndexRepository, scrapStorage,

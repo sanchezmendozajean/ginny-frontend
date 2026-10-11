@@ -13,6 +13,9 @@ import kotlinx.coroutines.withContext
 import java.io.OutputStream
 
 private const val ASSETS_DIR_NAME = "Assets"
+
+/** Carpeta de los íconos alternativos de cada juego: `icons-alt/<romFileName>/1.png, 2.png...`. */
+private const val ICON_ALT_DIR_NAME = "icons-alt"
 private const val PART_SUFFIX = ".part"
 // "application/octet-stream" y no la del contenido: los proveedores SAF añaden la extensión canónica
 // de la mime al nombre (ver GinnyConfigRepository), y este nombre ya lleva la suya.
@@ -191,6 +194,58 @@ class SystemAssets internal constructor(
         }
     }
 
+    // ── Íconos alternativos: icons-alt/<romFileName>/<n>.png ──────────────────────────────────────
+    // El ícono que se muestra sigue siendo icons/<romFileName>.png (el de siempre); aquí van las opciones
+    // entre las que el usuario puede elegir. Ver IconChooser.
+
+    private fun alternativesDir(romFileName: String, create: Boolean): DocumentFile? {
+        val root = if (create) {
+            SafUtils.getOrCreateDirectory(systemDir, ICON_ALT_DIR_NAME)
+        } else {
+            SafUtils.findChild(systemDir, ICON_ALT_DIR_NAME)?.takeIf { it.isDirectory }
+        } ?: return null
+        return if (create) {
+            SafUtils.getOrCreateDirectory(root, romFileName)
+        } else {
+            SafUtils.findChild(root, romFileName)?.takeIf { it.isDirectory }
+        }
+    }
+
+    /** Los íconos alternativos guardados de [romFileName], por número. */
+    suspend fun listIconAlternatives(romFileName: String): List<IconAlternativeFile> = withContext(Dispatchers.IO) {
+        val dir = alternativesDir(romFileName, create = false) ?: return@withContext emptyList()
+        dir.listFiles().mapNotNull { file ->
+            val name = file.name ?: return@mapNotNull null
+            if (!file.isFile || !name.endsWith(".png", ignoreCase = true)) return@mapNotNull null
+            val index = name.dropLast(4).toIntOrNull() ?: return@mapNotNull null
+            IconAlternativeFile(index, file.uri, file.lastModified())
+        }.sortedBy { it.index }
+    }
+
+    /** Guarda [png] como `icons-alt/<romFileName>/<index>.png`, reemplazando el que hubiera con ese número. */
+    suspend fun writeIconAlternative(romFileName: String, index: Int, png: ByteArray): ScrapResult<Uri> = guarded {
+        withContext(Dispatchers.IO) {
+            val dir = alternativesDir(romFileName, create = true)
+                ?: return@withContext ScrapResult.StorageFailed("no se pudo crear la carpeta $ICON_ALT_DIR_NAME")
+            val name = "$index.png"
+            val part = dir.createFile(PART_MIME_TYPE, name + PART_SUFFIX)
+                ?: return@withContext ScrapResult.StorageFailed("no se pudo crear $name")
+            var finished = false
+            try {
+                val out = context.contentResolver.openOutputStream(part.uri, "w")
+                    ?: return@withContext ScrapResult.StorageFailed("no se pudo abrir $name para escribir")
+                out.use { it.write(png) }
+                // Con lo nuevo ya completo, se retira el anterior de ese número.
+                SafUtils.findChild(dir, name)?.let { runCatching { it.delete() } }
+                if (!part.renameTo(name)) return@withContext ScrapResult.StorageFailed("no se pudo renombrar $name")
+                finished = true
+                ScrapResult.Ok(part.uri)
+            } finally {
+                if (!finished) runCatching { part.delete() }
+            }
+        }
+    }
+
     /** Borra todo lo guardado de [romFileName] en todas las carpetas. Devuelve cuántos archivos borró. */
     suspend fun deleteGame(romFileName: String): Int = withContext(Dispatchers.IO) {
         var deleted = 0
@@ -205,6 +260,8 @@ class SystemAssets internal constructor(
                 }
             }
         }
+        // Y sus íconos alternativos (la carpeta entera).
+        alternativesDir(romFileName, create = false)?.let { if (runCatching { it.delete() }.getOrDefault(false)) deleted++ }
         deleted
     }
 

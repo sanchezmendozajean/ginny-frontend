@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -25,32 +25,45 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ginny.frontend.ui.components.settings.GinnyButton
 import com.ginny.frontend.ui.components.settings.GinnyDropdown
+import com.ginny.frontend.ui.components.settings.settingsFocus
 import com.ginny.frontend.ui.screens.scrap.ScrapModalScrim
+import com.ginny.frontend.ui.screens.scrap.rememberModalNav
 import com.ginny.frontend.ui.screens.settings.SettingsModalCornerRadius
 import com.ginny.frontend.ui.theme.GinnyFont
 import com.ginny.frontend.ui.theme.GinnyThemes
 
-/** Ancho de la tarjeta de estos diálogos: se ajusta al contenido, entre estos dos límites. */
-private val DialogMinWidth = 340.dp
-private val DialogMaxWidth = 440.dp
+/** Margen interior de la tarjeta de estos diálogos. */
+private val DialogPadding = 24.dp
 
-/** Tarjeta blanca de un diálogo sobre el modal del juego. Tocar fuera ([onDismiss]) lo cierra. */
+/**
+ * Tarjeta blanca de un diálogo sobre el modal del juego. Tocar fuera ([onDismiss]) lo cierra.
+ *
+ * El contenido mide [contentWidth] y la tarjeta ese ancho más el margen: así no sobra espacio a la derecha
+ * de los controles de ancho fijo (el desplegable). Con el mando, el cursor empieza en el último control
+ * (el botón de la derecha) o, con [focusLast] = false, en el primero; A actúa sobre el que tiene el cursor y B cierra.
+ */
 @Composable
-private fun DialogCard(onDismiss: () -> Unit, content: @Composable () -> Unit) {
-    ScrapModalScrim(onDismiss = onDismiss) {
+private fun DialogCard(
+    onDismiss: () -> Unit,
+    contentWidth: Dp,
+    focusLast: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    ScrapModalScrim(onDismiss = onDismiss, nav = rememberModalNav(), focusLast = focusLast) {
         val shape = RoundedCornerShape(SettingsModalCornerRadius)
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
-                .widthIn(min = DialogMinWidth, max = DialogMaxWidth)
+                .width(contentWidth + DialogPadding * 2)
                 .shadow(24.dp, shape)
                 .background(Color.White, shape)
                 .pointerInput(Unit) { detectTapGestures { } } // tocar la tarjeta no la cierra
-                .padding(24.dp),
+                .padding(DialogPadding),
         ) { content() }
     }
 }
@@ -60,6 +73,9 @@ private fun DialogTitle(text: String) {
     Text(text, fontFamily = GinnyFont, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = GinnyThemes.current.ink)
 }
 
+/** Ancho del contenido de "Opciones de Scrappeo": el del desplegable. */
+private val ScrapDialogContentWidth = 292.dp
+
 /**
  * "Opciones de Scrappeo" de un juego: qué se descarga. "Sólo lo que falte" completa lo que no tiene
  * (e ignora los "no encontrado" anteriores); "Todo" vuelve a pedir todo y reemplaza lo ya guardado.
@@ -67,13 +83,13 @@ private fun DialogTitle(text: String) {
 @Composable
 fun ScrapGameDialog(onCancel: () -> Unit, onStart: (overwrite: Boolean) -> Unit) {
     var overwrite by remember { mutableStateOf(false) }
-    DialogCard(onDismiss = onCancel) {
+    DialogCard(onDismiss = onCancel, contentWidth = ScrapDialogContentWidth) {
         DialogTitle("Opciones de Scrappeo")
         GinnyDropdown(
             selected = overwrite,
             options = listOf("Sólo lo que falte" to false, "Todo" to true),
             onSelect = { overwrite = it },
-            width = 292.dp,
+            width = ScrapDialogContentWidth,
         )
         if (overwrite) {
             Text(
@@ -95,7 +111,7 @@ fun ScrapGameDialog(onCancel: () -> Unit, onStart: (overwrite: Boolean) -> Unit)
 @Composable
 fun ConfirmDeleteDialog(gameName: String, onCancel: () -> Unit, onConfirm: () -> Unit) {
     val palette = GinnyThemes.current
-    DialogCard(onDismiss = onCancel) {
+    DialogCard(onDismiss = onCancel, contentWidth = 392.dp, focusLast = false) {
         DialogTitle("Eliminar juego")
         Text(
             text = "¿Seguro que quieres continuar? Se eliminará \"$gameName\" y todo lo que se descargó de él. " +
@@ -120,6 +136,7 @@ private fun DangerButton(text: String, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .height(40.dp)
+            .settingsFocus(onActivate = onClick)
             .background(DeleteRed, CircleShape)
             .pointerInput(Unit) { detectTapGestures { currentOnClick() } }
             .padding(horizontal = 20.dp),

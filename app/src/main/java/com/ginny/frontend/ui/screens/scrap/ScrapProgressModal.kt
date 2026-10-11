@@ -312,6 +312,8 @@ fun rememberModalNav(): SettingsNav {
 fun ScrapModalScrim(
     onDismiss: () -> Unit,
     nav: SettingsNav? = null,
+    /** El cursor empieza en el último control (el botón principal de abajo a la derecha) o, si es false, en el primero. */
+    focusLast: Boolean = true,
     /** Cada botón del mando que se pulsa (para los modales con atajos propios, como Y = Detener). */
     onButton: ((LogicalButton?) -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -330,7 +332,7 @@ fun ScrapModalScrim(
         // Con los controles ya colocados, el cursor empieza en el botón principal.
         LaunchedEffect(nav) {
             delay(150)
-            nav.enter(last = true)
+            nav.enter(last = focusLast)
         }
     }
 

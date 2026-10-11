@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
@@ -24,6 +25,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -99,6 +101,9 @@ class SettingsFocusItem {
     /** Botón A sobre este control. */
     internal var onActivate: () -> Unit = {}
 
+    /** Se llama cuando el cursor llega a este control. */
+    internal var onFocused: (() -> Unit)? = null
+
     /** El control está dentro de un panel con desplazamiento (ver [LocalInScrollPanel]). */
     internal var scrolls: Boolean = false
 
@@ -106,6 +111,22 @@ class SettingsFocusItem {
     internal var activatable: Boolean = true
 
     internal fun bounds(): Rect? = coords?.takeIf { it.isAttached }?.rectInRoot()
+
+    private var lastRoot: Offset? = null
+
+    /**
+     * Anota dónde quedó el control tras colocarse. Si es la primera vez o cambió de sitio sin que el panel se
+     * desplazara (otro elemento apareció o desapareció encima), sube [placedTick]: el cursor lo lee y se recoloca.
+     */
+    internal fun notePlaced(placed: LayoutCoordinates) {
+        coords = placed
+        if (size != placed.size) size = placed.size
+        val root = placed.positionInRoot()
+        if (lastRoot != root) {
+            lastRoot = root
+            placedTick++
+        }
+    }
 }
 
 /**
@@ -242,7 +263,7 @@ class SettingsNav(
         if (active && focused == null && lost != null && lost.overlaps(bounds)) {
             lostBounds = null
             cursorFrom = null
-            focused = item
+            moveFocusTo(item)
         }
     }
 
@@ -250,6 +271,21 @@ class SettingsNav(
     private fun placed(): List<Pair<SettingsFocusItem, Rect>> =
         items.mapNotNull { item -> item.bounds()?.let { item to it } }
             .sortedWith(compareBy({ it.second.center.y.roundToInt() / 8 }, { it.second.center.x }))
+
+    /**
+     * Tocar un control: el cursor aparece sobre él (aunque se hubiera apagado al tocar la pantalla) y pasa a
+     * ser el enfocado. Así tocar y usar la cruceta dan la misma selección.
+     */
+    internal fun focusByTouch(item: SettingsFocusItem) {
+        if (item !in items) return
+        val wasVisible = cursorVisible
+        cursorVisible = true
+        active = true
+        if (focused !== item) {
+            cursorFrom = if (wasVisible) lastCursorRoot else null
+            moveFocusTo(item)
+        }
+    }
 
     /**
      * El foco pasa a las opciones, empezando por el primer control ([last] = false) o por el último (el
@@ -262,7 +298,7 @@ class SettingsNav(
         val list = placed()
         // El último: el de abajo a la derecha entre los controles fijos (los botones de un modal); si no hay, el último.
         val fixed = list.filter { !it.first.scrolls }.ifEmpty { list }
-        focused = if (last) fixed.lastOrNull()?.first else list.firstOrNull()?.first
+        moveFocusTo(if (last) fixed.lastOrNull()?.first else list.firstOrNull()?.first)
         // El panel pudo quedar desplazado de una visita anterior: se empieza desde arriba.
         if (!last) scroll?.let { s -> scope.launch { s.animateScrollTo(0) } }
     }
@@ -290,9 +326,15 @@ class SettingsNav(
         return true
     }
 
+    /** Cambia el control enfocado y le avisa. */
+    private fun moveFocusTo(item: SettingsFocusItem?) {
+        focused = item
+        item?.onFocused?.invoke()
+    }
+
     private fun focus(item: SettingsFocusItem) {
         cursorFrom = if (cursorVisible) lastCursorRoot else null
-        focused = item
+        moveFocusTo(item)
         ensureVisible(item)
     }
 
@@ -415,6 +457,10 @@ fun Modifier.settingsFocus(
     onLeft: (() -> Boolean)? = null,
     onRight: (() -> Boolean)? = null,
     activatable: Boolean = true,
+    /** Se llama cuando el cursor llega al control. */
+    onFocused: (() -> Unit)? = null,
+    /** true = tocar el control también le lleva el cursor (para listas de elementos que se eligen, como íconos). */
+    focusOnTap: Boolean = false,
     onActivate: () -> Unit,
 ): Modifier {
     val nav = LocalSettingsNav.current ?: return this
@@ -424,24 +470,23 @@ fun Modifier.settingsFocus(
     item.onRight = onRight
     item.onActivate = onActivate
     item.activatable = activatable
+    item.onFocused = onFocused
     DisposableEffect(nav, item, enabled) {
         if (enabled) nav.register(item)
         onDispose { nav.unregister(item) }
     }
-    return this.onGloballyPositioned {
-        if (item.coords == null) item.placedTick++
-        item.coords = it
-        if (item.size != it.size) item.size = it.size
-        nav.itemPlaced(item)
-    }
+    return this
+        .onGloballyPositioned {
+            item.notePlaced(it)
+            nav.itemPlaced(item)
+        }
+        .then(
+            if (focusOnTap) Modifier.pointerInput(item) { detectTapGestures { nav.focusByTouch(item) } } else Modifier,
+        )
 }
 
 /** Marca un elemento (una sección de la barra lateral) como sitio donde puede ir el cursor, sin registrarlo como control. */
-fun Modifier.cursorTarget(item: SettingsFocusItem): Modifier = this.onGloballyPositioned {
-    if (item.coords == null) item.placedTick++
-    item.coords = it
-    if (item.size != it.size) item.size = it.size
-}
+fun Modifier.cursorTarget(item: SettingsFocusItem): Modifier = this.onGloballyPositioned { item.notePlaced(it) }
 
 /** Duración del fundido del cursor al apagarse / encenderse. */
 private const val CursorFadeMs = 220

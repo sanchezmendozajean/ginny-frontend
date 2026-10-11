@@ -479,6 +479,8 @@ fun GinnyButton(
     primary: Boolean = false,
     enabled: Boolean = true,
     leadingIcon: (@Composable (tint: Color) -> Unit)? = null,
+    /** false = el cursor del mando no pasa por este botón (ya tiene su propio botón del mando). */
+    focusable: Boolean = true,
 ) {
     val palette = GinnyThemes.current
     val currentOnClick by rememberUpdatedState(onClick)
@@ -493,7 +495,7 @@ fun GinnyButton(
         modifier = modifier
             .height(40.dp)
             // Apagado, sigue enfocable (para llegar al botón de al lado) pero A no hace nada.
-            .settingsFocus(activatable = enabled, onActivate = onClick)
+            .settingsFocus(enabled = focusable, activatable = enabled, onActivate = onClick)
             .then(if (primary && enabled) Modifier.shadow(4.dp, CircleShape, spotColor = palette.accent) else Modifier)
             .background(background, CircleShape)
             .then(if (!primary) Modifier.border(1.dp, lineColor(), CircleShape) else Modifier)

@@ -52,6 +52,7 @@ object SteamGridDbParser {
                 language = item.optString("language", "").takeIf { it.isNotEmpty() },
                 score = item.optInt("score", 0),
                 isGrid = isGrid,
+                thumb = item.optString("thumb", "").trim().takeIf { it.isNotEmpty() },
             )
         }
     }.getOrNull()

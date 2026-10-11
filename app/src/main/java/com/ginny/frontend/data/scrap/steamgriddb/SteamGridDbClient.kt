@@ -58,6 +58,37 @@ class SteamGridDbClient(
         return ScrapResult.NotFound
     }
 
+    /**
+     * Las imágenes cuadradas disponibles de [name] (hasta [limit], la mejor primero), para que el usuario
+     * elija una a mano. Mismo criterio de coincidencia que [findIcon]; usa el primer juego parecido que
+     * tenga imágenes (los grids, y si faltan, los íconos). [ScrapResult.NotFound] si no hay ninguna.
+     */
+    suspend fun findIconCandidates(name: String, expectedYear: Int? = null, limit: Int = MAX_CHOICES): ScrapResult<List<SteamGridDbImage>> {
+        val key = apiKey() ?: return ScrapResult.AuthFailed(provider)
+        val term = NameNormalizer.stripTags(name)
+        if (term.isEmpty()) return ScrapResult.NotFound
+
+        val games = when (val search = limiter.withBackoff { fetch(searchUrl(term), key) { SteamGridDbParser.parseSearch(it) } }) {
+            is ScrapResult.Ok -> search.value
+            is ScrapResult.Failure -> return search
+        }
+
+        for (game in SteamGridDbSelector.rankGames(games, term, expectedYear).take(MAX_CANDIDATES)) {
+            val images = ArrayList<SteamGridDbImage>()
+            for (isGrid in listOf(true, false)) {
+                val url = if (isGrid) gridsUrl(game.id) else iconsUrl(game.id)
+                val result = limiter.withBackoff { fetch(url, key) { SteamGridDbParser.parseImages(it, isGrid) } }
+                // Los íconos son el complemento de los grids: si fallan pero ya hay grids, se ofrecen esos.
+                val tolerable = !isGrid && images.isNotEmpty()
+                if (result is ScrapResult.Failure && result !is ScrapResult.NotFound && !tolerable) return result
+                images += result.getOrNull().orEmpty()
+            }
+            val ranked = SteamGridDbSelector.rankImages(images).distinctBy { it.id }.take(limit)
+            if (ranked.isNotEmpty()) return ScrapResult.Ok(ranked)
+        }
+        return ScrapResult.NotFound
+    }
+
     /** Comprueba que la clave de API sirve (una búsqueda cualquiera). */
     suspend fun verifyKey(): ScrapResult<Unit> {
         val key = apiKey() ?: return ScrapResult.AuthFailed(provider)
@@ -131,17 +162,23 @@ class SteamGridDbClient(
             .addQueryParameter("mimes", MIMES)
             .build()
 
-    /** Los iconos no se filtran por tamaño: algunos son `.ico` con 0×0 y se descartan al elegir. */
+    /**
+     * Los iconos no se filtran por tamaño (algunos son `.ico` con 0×0 y se descartan al elegir) **ni por
+     * formato**: este endpoint responde 400 "Invalid mime type" si se le pasa `image/jpeg` o `image/webp`
+     * (verificado con la API real); el formato se filtra después, en [SteamGridDbSelector].
+     */
     private fun iconsUrl(gameId: Long): HttpUrl =
         API_BASE.newBuilder().addPathSegments("icons/game").addPathSegment(gameId.toString())
             .addQueryParameter("nsfw", "false")
             .addQueryParameter("humor", "false")
-            .addQueryParameter("mimes", MIMES)
             .build()
 
     companion object {
         /** Cuántos juegos parecidos se prueban, como máximo, hasta hallar uno con arte cuadrado. */
         const val MAX_CANDIDATES = 2
+
+        /** Cuántas imágenes se ofrecen, como máximo, al elegir un ícono a mano. */
+        const val MAX_CHOICES = 12
 
         /** Tope de una imagen descargada (un grid de 1024×1024 pesa bastante menos). */
         const val MAX_IMAGE_BYTES = 10L * 1024 * 1024

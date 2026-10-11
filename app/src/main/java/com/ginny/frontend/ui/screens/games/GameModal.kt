@@ -170,6 +170,9 @@ fun GameModal(
             // Oscurecimiento de la pantalla al lanzar el juego (0 = nada, 1 = negro).
             val darkness = remember(shown) { Animatable(0f) }
 
+            // Ícono nuevo elegido en "Cambiar icono" (la ficha lo muestra sin esperar a que el juego se vuelva a leer).
+            var iconOverride by remember(shown) { mutableStateOf<android.net.Uri?>(null) }
+
             // Diálogo abierto desde el menú de tres puntos (null = ninguno). Cada juego empieza sin diálogo.
             var dialog by remember(shown) { mutableStateOf<GameDialog?>(null) }
             // Con un diálogo encima, la tarjeta se desenfoca (si no, se transparenta por la cortina).
@@ -179,6 +182,7 @@ fun GameModal(
 
             GameCard(
                 game = shown,
+                iconUri = iconOverride ?: shown.iconUri,
                 viewModel = vm,
                 buttonMapping = buttonMapping,
                 onClose = onClose,
@@ -191,6 +195,11 @@ fun GameModal(
             )
 
             when (dialog) {
+                GameDialog.ChangeIcon -> IconPickerModal(
+                    game = shown,
+                    onClose = { dialog = null },
+                    onChanged = { iconOverride = it },
+                )
                 GameDialog.ScrapOptions -> ScrapGameDialog(
                     onCancel = { dialog = null },
                     onStart = { overwrite ->
@@ -232,6 +241,8 @@ fun GameModal(
 @Composable
 private fun GameCard(
     game: GameEntry,
+    /** Ícono que se muestra en la cabecera (puede ser uno recién elegido). */
+    iconUri: android.net.Uri?,
     viewModel: GamesViewModel,
     buttonMapping: ButtonMapping,
     /** Ancho de la tarjeta (sin los márgenes de pantalla): reparte el espacio entre la información y la caja. */
@@ -391,7 +402,7 @@ private fun GameCard(
         Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 // ── Encabezado: portada · nombre y sistema · cerrar ─────────────────────────────────
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Element(size = 72.dp, title = game.displayName, image = game.iconUri)
+                    Element(size = 72.dp, title = game.displayName, image = iconUri)
                     Spacer(Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
@@ -531,7 +542,7 @@ private fun GameCard(
                 onExpandedChange = { menuOpen = it },
                 buttonMapping = buttonMapping,
                 onScrap = { onOpenDialog(GameDialog.ScrapOptions) },
-                onChangeIcon = { Toast.makeText(context, "Cambiar icono: todavía sin función.", Toast.LENGTH_SHORT).show() },
+                onChangeIcon = { onOpenDialog(GameDialog.ChangeIcon) },
                 onDelete = { onOpenDialog(GameDialog.ConfirmDelete) },
                 onClosed = { runCatching { focusRequester.requestFocus() } },
             )
@@ -645,7 +656,7 @@ private fun buttonText(color: Color) = androidx.compose.ui.text.TextStyle(
 )
 
 /** Diálogos que abre el menú "Más" del modal del juego. */
-enum class GameDialog { ScrapOptions, ConfirmDelete }
+enum class GameDialog { ScrapOptions, ConfirmDelete, ChangeIcon }
 
 /** Una opción del menú "Más". */
 private class MenuEntry(val label: String, val color: Color, val action: () -> Unit)

@@ -68,6 +68,22 @@ class SteamGridDbSelectorTest {
     // ── Qué imagen ────────────────────────────────────────────────────────────────────────────
 
     @Test
+    fun `rankImages ofrece todas las utilizables, de la mejor a la peor`() {
+        val ranked = SteamGridDbSelector.rankImages(
+            listOf(
+                image(1, 1024),
+                image(2, 512),
+                image(3, 512, mime = "image/x-icon"), // formato que Android no abre
+                image(4, 512, height = 256),          // no cuadrada
+                image(5, 256),
+            ),
+        )
+        assertEquals(listOf(2L, 1L, 5L), ranked.map { it.id })
+        // La primera es la que elige pickImage.
+        assertEquals(ranked.first().id, SteamGridDbSelector.pickImage(ranked)!!.id)
+    }
+
+    @Test
     fun `prefiere 512 aunque haya mas de 1024`() {
         val picked = SteamGridDbSelector.pickImage(listOf(image(1, 1024), image(2, 512), image(3, 1024)))!!
         assertEquals(2L, picked.id)

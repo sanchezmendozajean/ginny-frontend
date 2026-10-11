@@ -24,6 +24,8 @@ data class SteamGridDbImage(
     val score: Int,
     /** true si salió de `grids`; false si de `icons` (el respaldo). */
     val isGrid: Boolean,
+    /** Miniatura (mucho más liviana que [url]) para previsualizar; null si la respuesta no la trae. */
+    val thumb: String? = null,
 ) {
     val isSquare: Boolean get() = width > 0 && width == height
 

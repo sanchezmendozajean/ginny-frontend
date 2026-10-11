@@ -59,7 +59,13 @@ object SteamGridDbSelector {
      * 3. **Estilo:** `alternate` antes que `white_logo`, etc.
      * 4. **Puntuación**, y por último el id, para que el resultado sea estable.
      */
-    fun pickImage(images: List<SteamGridDbImage>): SteamGridDbImage? =
+    fun pickImage(images: List<SteamGridDbImage>): SteamGridDbImage? = rankImages(images).firstOrNull()
+
+    /**
+     * Todas las imágenes utilizables de [images] (cuadradas, en un formato que Android abre), de la mejor
+     * a la peor según el mismo orden que [pickImage]. Es lo que se ofrece al elegir un ícono a mano.
+     */
+    fun rankImages(images: List<SteamGridDbImage>): List<SteamGridDbImage> =
         images
             .filter { it.isSquare && it.mime in ACCEPTED_MIMES }
             .sortedWith(
@@ -70,7 +76,6 @@ object SteamGridDbSelector {
                     .thenByDescending { it.score }
                     .thenBy { it.id },
             )
-            .firstOrNull()
 
     /** 0 = justo el tamaño final, 1 = más grande (se reduce), 2 = más chico (se deja como está). */
     private fun sizeGroup(side: Int): Int = when {
