@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ginny Frontend</title>
+  <meta name="description" content="Ginny Frontend es un lanzador de emuladores para Android: biblioteca por sistemas, navegación completa con mando, ficha de cada juego y scrapper integrado.">
+  <meta property="og:title" content="Ginny Frontend">
+  <meta property="og:description" content="El lanzador para tus emuladores en Android, pensado para el mando.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230db98e'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="./"><span class="brand-dot" aria-hidden="true"></span>Ginny Frontend</a>
+      <a class="link hide-sm" href="#caracteristicas">Características</a>
+      <a class="link hide-sm" href="#empezar">Empezar</a>
+      <a class="link" href="docs.html">Documentación</a>
+      <a class="link hide-sm" href="https://github.com/sanchezmendozajean/ginny-frontend">GitHub</a>
+      <div class="themes" role="group" aria-label="Tema de color"></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <span class="eyebrow">Para Android · Código abierto</span>
+      <h1>Todos tus emuladores, en <em>un solo lugar</em></h1>
+      <p class="lead">Ginny Frontend es un lanzador para tus emuladores en Android, con una interfaz suave, de scroll vertical y pensada de principio a fin para el mando.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/sanchezmendozajean/ginny-frontend/releases/latest">Descargar el APK</a>
+        <a class="btn ghost" href="docs.html">Leer la documentación</a>
+      </div>
+      <p class="meta">Versión 0.2.0 · Android 10 o superior · Gratis</p>
+
+      <figure class="shot">
+        <div class="shot-frame">
+          <div class="ph"><span>Captura pendiente</span><small>02-sistemas.png</small></div>
+          <img src="assets/img/02-sistemas.png" alt="Pantalla de sistemas de Ginny Frontend" onerror="this.remove()">
+        </div>
+        <figcaption>La pantalla de sistemas: una grilla con tus consolas.</figcaption>
+      </figure>
+    </section>
+
+    <section class="block wrap" id="caracteristicas">
+      <div class="section-head">
+        <h2>Lo que hace Ginny</h2>
+        <p>No emula nada por sí misma: organiza tus juegos, los presenta bien y lanza el emulador correcto con un solo botón.</p>
+      </div>
+      <div class="grid">
+        <article class="card"><h3><span class="ico" aria-hidden="true">🎮</span>Hecha para el mando</h3><p>Cada pantalla, menú y ajuste se maneja con la cruceta y los botones. El táctil también funciona. Puedes elegir la distribución de botones tipo Nintendo o tipo Xbox.</p></article>
+        <article class="card"><h3><span class="ico" aria-hidden="true">🗂️</span>Biblioteca por sistemas</h3><p>Una carpeta por sistema y listo. Solo aparecen los sistemas que tienen juegos, con su conteo, y tienes una lista de favoritos.</p></article>
+        <article class="card"><h3><span class="ico" aria-hidden="true">🖼️</span>Scrapper integrado</h3><p>Descarga metadatos, logo, caja, video e íconos desde ScreenScraper y SteamGridDB, con tu propia cuenta y solo con Wi-Fi si quieres.</p></article>
+        <article class="card"><h3><span class="ico" aria-hidden="true">📦</span>Ficha de cada juego</h3><p>Sinopsis, estudio y año, caja en 3D que gira, video de demostración y varios íconos para elegir.</p></article>
+        <article class="card"><h3><span class="ico" aria-hidden="true">🖥️</span>Doble pantalla</h3><p>Con una segunda pantalla, la interfaz queda en una y la otra muestra el logo del sistema, el wheel, la caja y el video del juego.</p></article>
+        <article class="card"><h3><span class="ico" aria-hidden="true">🎨</span>Temas y sonido</h3><p>Ocho paletas de color (y un modo que las recorre), música de fondo y efectos. Puedes añadir tu propia música desde tu carpeta.</p></article>
+      </div>
+    </section>
+
+    <section class="block wrap">
+      <div class="two">
+        <div>
+          <h2>Tus datos son tuyos</h2>
+          <p>Ginny guarda todo en una carpeta que tú eliges: íconos, cajas, videos, metadatos y un archivo <code>ginny.cfg</code> con tu configuración.</p>
+          <ul class="ticks">
+            <li>Cambias de dispositivo y apuntas a la misma carpeta: todo sigue ahí.</li>
+            <li>Puedes editar o reemplazar cualquier imagen a mano.</li>
+            <li>Sin cuenta de Ginny, sin servidores propios, sin publicidad.</li>
+          </ul>
+          <a class="btn ghost" href="docs.html#carpeta-usuario">Ver la estructura de carpetas</a>
+        </div>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>04-modal-juego.png</small></div>
+            <img src="assets/img/04-modal-juego.png" alt="Ficha de un juego con su caja en 3D" onerror="this.remove()">
+          </div>
+          <figcaption>La ficha de un juego, con caja en 3D, información y video.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="block wrap" id="empezar">
+      <div class="section-head">
+        <h2>Empieza en cuatro pasos</h2>
+        <p>La primera vez la app se ve vacía: es normal, todavía no sabe dónde están tus juegos.</p>
+      </div>
+      <ol class="steps">
+        <li><h3>Instala</h3><p>Descarga el APK, ábrelo en tu dispositivo y permite instalar apps desconocidas si te lo pide.</p></li>
+        <li><h3>Carpeta de Usuario</h3><p>En Configuración → Carpetas, elige dónde guardar los íconos, el arte y tu configuración.</p></li>
+        <li><h3>Carpeta de ROMs y escaneo</h3><p>Elige la carpeta con tus juegos y pulsa «Escanear». Aparecerán tus sistemas.</p></li>
+        <li><h3>Scrapper (opcional)</h3><p>Pon tu cuenta de ScreenScraper o tu clave de SteamGridDB y descarga el arte de tus juegos.</p></li>
+      </ol>
+      <p style="text-align:center;margin-top:24px"><a class="btn ghost" href="docs.html#primeros-pasos">Guía completa de primeros pasos</a></p>
+    </section>
+
+    <section class="block wrap">
+      <div class="section-head">
+        <h2>Compatible con tus emuladores</h2>
+        <p>Ginny lanza el emulador que elijas para cada sistema, juego a juego.</p>
+      </div>
+      <ul class="chips">
+        <li>RetroArch</li><li>Dolphin</li><li>AetherSX2 / NetherSX2</li><li>PPSSPP</li><li>Redream</li>
+        <li>Eden</li><li>melonDS</li><li>Azahar</li>
+      </ul>
+      <p style="text-align:center;margin-top:18px"><a href="docs.html#emuladores">Ver sistemas, extensiones y packages</a></p>
+    </section>
+
+    <section class="block wrap">
+      <div class="notice">
+        <strong>Importante</strong>
+        <p>Ginny Frontend no incluye ni distribuye juegos (ROMs), BIOS ni emuladores, y no emula nada por sí misma. Usa solo copias de juegos que poseas legalmente. Todas las marcas y nombres de consolas pertenecen a sus respectivos dueños; Ginny no tiene relación con ellos.</p>
+      </div>
+    </section>
+
+    <section class="block wrap download" id="descargar">
+      <div class="card">
+        <h2>Descarga Ginny Frontend</h2>
+        <p style="margin:12px 0 22px;color:var(--muted)">Versión 0.2.0 · APK firmado · Requiere Android 10 o superior y al menos un emulador instalado.</p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/sanchezmendozajean/ginny-frontend/releases/latest">Ir a la descarga</a>
+          <a class="btn ghost" href="https://github.com/sanchezmendozajean/ginny-frontend">Ver el código</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site wrap">
+    <p>Los datos y el arte de los juegos provienen de <a href="https://www.screenscraper.fr">ScreenScraper</a> y <a href="https://www.steamgriddb.com">SteamGridDB</a>. Efectos de sonido de <a href="https://kenney.nl">Kenney</a> (CC0) y música «Bossa Nova» de Joth (CC0). Tipografía M PLUS Rounded 1c (SIL OFL).</p>
+    <p>Ginny Frontend es software libre bajo licencia MIT.</p>
+  </footer>
+
+  <script src="assets/site.js"></script>
+</body>
+</html>

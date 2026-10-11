@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentación · Ginny Frontend</title>
+  <meta name="description" content="Documentación de Ginny Frontend: primeros pasos, controles, configuración, estructura de la carpeta de usuario, ubicación de las artes, scrapper y emuladores.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230db98e'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="./"><span class="brand-dot" aria-hidden="true"></span>Ginny Frontend</a>
+      <a class="link hide-sm" href="./">Inicio</a>
+      <a class="link" href="docs.html" aria-current="page">Documentación</a>
+      <a class="link hide-sm" href="https://github.com/sanchezmendozajean/ginny-frontend/releases/latest">Descargar</a>
+      <div class="themes" role="group" aria-label="Tema de color"></div>
+    </div>
+  </header>
+
+  <div class="wrap docs">
+    <nav class="toc" aria-label="Índice">
+      <strong>En esta página</strong>
+      <ol>
+        <li><a href="#primeros-pasos">Primeros pasos</a></li>
+        <li><a href="#controles">Controles</a></li>
+        <li><a href="#biblioteca">Sistemas y juegos</a>
+          <ol>
+            <li><a href="#ficha-juego">La ficha de un juego</a></li>
+          </ol>
+        </li>
+        <li><a href="#configuracion">Configuración</a>
+          <ol>
+            <li><a href="#cfg-interfaz">Interfaz</a></li>
+            <li><a href="#cfg-carpetas">Carpetas</a></li>
+            <li><a href="#cfg-sistemas">Sistemas</a></li>
+            <li><a href="#cfg-scrapper">Scrapper</a></li>
+          </ol>
+        </li>
+        <li><a href="#carpeta-roms">Carpeta de ROMs</a></li>
+        <li><a href="#carpeta-usuario">Carpeta de Usuario</a></li>
+        <li><a href="#artes">Ubicación de las artes</a></li>
+        <li><a href="#scrapper">El scrapper</a></li>
+        <li><a href="#emuladores">Emuladores</a></li>
+        <li><a href="#ginny-cfg">ginny.cfg</a></li>
+        <li><a href="#faq">Preguntas frecuentes</a></li>
+        <li><a href="#compilar">Compilar desde el código</a></li>
+      </ol>
+    </nav>
+
+    <article class="doc">
+      <h1>Documentación</h1>
+      <p class="intro">Todo lo que Ginny Frontend puede hacer y dónde guarda cada cosa.</p>
+
+      <!-- ───────────────────────── Primeros pasos ───────────────────────── -->
+      <section id="primeros-pasos">
+        <h2>Primeros pasos</h2>
+        <p>La primera vez que abres la app verás la interfaz sin contenido. Es lo esperado: Ginny todavía no sabe dónde guardar sus datos ni dónde están tus juegos. Abre <strong>Opciones</strong> (botón <kbd>Y</kbd> o el botón «Opciones» de la barra inferior) y entra en <strong>Carpetas</strong>. Sigue este orden; cada botón se habilita cuando el anterior ya está hecho.</p>
+        <ol>
+          <li><strong>Carpeta de Usuario.</strong> Elige una carpeta donde Ginny guardará los íconos, el arte de los juegos, tu música y <code>ginny.cfg</code>. Al elegirla, Ginny crea dentro la estructura de <a href="#carpeta-usuario">Assets e Interface</a>.</li>
+          <li><strong>Carpeta de ROMs.</strong> Elige la carpeta que contiene una subcarpeta por sistema (<code>nes/</code>, <code>snes/</code>, <code>gba/</code>…). Ver <a href="#carpeta-roms">Carpeta de ROMs</a>.</li>
+          <li><strong>Escanear biblioteca.</strong> Ginny no escanea sola: pulsa «Escanear» para indexar tus sistemas y juegos. Con muchos archivos puede tardar unos segundos; verás el progreso sistema por sistema.</li>
+          <li><strong>Emulador por sistema.</strong> En <a href="#cfg-sistemas">Sistemas</a> elige el emulador (y el core, si usa RetroArch) de cada consola.</li>
+          <li><strong>Scrapper (opcional).</strong> En <a href="#cfg-scrapper">Scrapper</a> añade tu cuenta o clave y descarga el arte.</li>
+        </ol>
+        <div class="callout">
+          <strong>Para volver a escanear</strong>
+          <p>Cuando añadas, quites o renombres ROMs, vuelve a pulsar «Escanear». La navegación lee del último escaneo, no del disco, por eso es instantánea.</p>
+        </div>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>01-primer-arranque.png</small></div>
+            <img src="assets/img/01-primer-arranque.png" alt="Primer arranque: la interfaz sin contenido" onerror="this.remove()">
+          </div>
+          <figcaption>Primer arranque: sin contenido y con «Regresar» y «Opciones» en la barra inferior.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ───────────────────────── Controles ───────────────────────── -->
+      <section id="controles">
+        <h2>Controles</h2>
+        <p>Todo se maneja con la cruceta y los cuatro botones; el táctil funciona igual. La barra inferior siempre muestra qué hace cada botón en la pantalla actual, y también puedes tocar esas etiquetas.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Botón</th><th>En la grilla</th><th>En la ficha de un juego</th></tr></thead>
+            <tbody>
+              <tr><td><kbd>Cruceta</kbd></td><td>Mueve el cursor; cambia de página al llegar al borde</td><td>Navega por los menús</td></tr>
+              <tr><td><kbd>A</kbd></td><td>Abrir el sistema o el juego (la etiqueta se oculta si no hay nada que abrir)</td><td>Jugar</td></tr>
+              <tr><td><kbd>B</kbd></td><td>Regresar (de Juegos a Sistemas)</td><td>Cerrar la ficha</td></tr>
+              <tr><td><kbd>X</kbd></td><td>—</td><td>Alternar el video</td></tr>
+              <tr><td><kbd>Y</kbd></td><td>Opciones (Configuración)</td><td>Menú «Más»</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Distribución de botones</h3>
+        <p>En Configuración → Interfaz → Botones puedes elegir entre <strong>YX/BA</strong> (tipo Nintendo: X arriba, Y a la izquierda, A a la derecha, B abajo) y <strong>XY/AB</strong> (tipo Xbox: Y arriba, X a la izquierda, B a la derecha, A abajo). Solo cambia qué botón señalan los íconos de la leyenda, para que coincidan con tu mando.</p>
+      </section>
+
+      <!-- ───────────────────────── Biblioteca ───────────────────────── -->
+      <section id="biblioteca">
+        <h2>Sistemas y juegos</h2>
+        <p>La pantalla principal muestra una grilla con tus <strong>sistemas</strong>. Solo aparecen los que tienen al menos un juego, con su cantidad; también hay una entrada de <strong>Favoritos</strong>. Al abrir un sistema ves la grilla de sus <strong>juegos</strong>, y la barra superior indica cuántos hay.</p>
+        <ul>
+          <li>La barra inferior muestra el nombre del elemento enfocado y, en los juegos, el estudio y el año («Estudio (Año)») si ya descargaste metadatos.</li>
+          <li>Los puntos sobre la leyenda indican la página en la que estás; las flechas de los lados cambian de página.</li>
+          <li>Cuántas filas se ven a la vez (1 a 4) se elige en Configuración → Interfaz.</li>
+        </ul>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>03-juegos.png</small></div>
+            <img src="assets/img/03-juegos.png" alt="Grilla de juegos de un sistema" onerror="this.remove()">
+          </div>
+          <figcaption>La grilla de juegos de un sistema.</figcaption>
+        </figure>
+
+        <h3 id="ficha-juego">La ficha de un juego</h3>
+        <p>Al abrir un juego aparece su ficha. Contiene:</p>
+        <ul>
+          <li>La portada (ícono), el nombre y el sistema.</li>
+          <li>La información descargada: sinopsis, estudio, año…</li>
+          <li>La <strong>caja en 3D</strong> y, con <kbd>X</kbd>, el <strong>video</strong> de demostración.</li>
+          <li>El nombre y la carpeta del archivo, y el emulador y el core que se usarán.</li>
+          <li><strong>Jugar</strong> (<kbd>A</kbd>) y <strong>Regresar</strong> (<kbd>B</kbd>).</li>
+        </ul>
+        <h3>El menú «Más»</h3>
+        <p>Se abre con <kbd>Y</kbd> o con el botón de la esquina de la ficha:</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Opción</th><th>Qué hace</th></tr></thead>
+            <tbody>
+              <tr><td>Scrappear</td><td>Descarga la información y el arte de ese juego. Puedes reemplazar lo ya guardado.</td></tr>
+              <tr><td>Cambiar icono</td><td>Muestra los íconos que ya tiene el juego (hasta 5) y permite buscar otros en SteamGridDB. «Usar» deja el elegido como ícono.</td></tr>
+              <tr><td>Agregar / Quitar de favoritos</td><td>Lo añade o quita de la lista de Favoritos.</td></tr>
+              <tr><td>Eliminar</td><td>Pide confirmación y borra el archivo del juego y todo lo descargado de él. <strong>No se puede deshacer.</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout warn">
+          <strong>«Eliminar» necesita permiso de escritura</strong>
+          <p>Borra la ROM de tu dispositivo. Si lo ves fallar, vuelve a elegir la carpeta de ROMs en Configuración → Carpetas para otorgar el permiso de lectura y escritura.</p>
+        </div>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>05-menu-mas.png</small></div>
+            <img src="assets/img/05-menu-mas.png" alt="Menú Más de la ficha de un juego" onerror="this.remove()">
+          </div>
+          <figcaption>El menú «Más» de la ficha.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ───────────────────────── Configuración ───────────────────────── -->
+      <section id="configuracion">
+        <h2>Configuración</h2>
+        <p>Se abre con <kbd>Y</kbd> desde la pantalla principal. A la izquierda están las secciones (Interfaz, Carpetas, Sistemas, Scrapper y Créditos) y a la derecha sus opciones. Se navega por completo con la cruceta: <kbd>A</kbd> entra o activa y <kbd>B</kbd> sale.</p>
+
+        <h3 id="cfg-interfaz">Interfaz</h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Grupo</th><th>Opción</th><th>Descripción</th></tr></thead>
+            <tbody>
+              <tr><td>Grilla</td><td>Filas visibles</td><td>De 1 a 4 filas (por defecto, 2).</td></tr>
+              <tr><td>Tema</td><td>Paleta de color</td><td>Menta, Cielo, Lila, Fucsia, Rosa, Lava, Durazno, Smog o «Cambio cíclico», que las recorre.</td></tr>
+              <tr><td>Botones</td><td>Distribución</td><td>YX/BA (tipo Nintendo) o XY/AB (tipo Xbox). Ver <a href="#controles">Controles</a>.</td></tr>
+              <tr><td>Pantallas</td><td>Intercambiar pantalla principal</td><td>Con dos pantallas, la interfaz se mueve a la otra y la caja y el video del juego van en esta.</td></tr>
+              <tr><td>Audio</td><td>Música de fondo, Sonidos de interfaz, Videos de los juegos</td><td>Un deslizador de volumen para cada uno.</td></tr>
+              <tr><td>Audio</td><td>Pista de fondo</td><td>La pista incluida («Bossa Nova») o cualquier archivo que dejes en <code>Interface/Background Music/</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Doble pantalla</h3>
+        <p>Si tu dispositivo tiene una segunda pantalla, Ginny la usa sola: la interfaz permanece en una y la otra muestra el logo del sistema enfocado, el wheel del juego y, con la ficha abierta, la caja en 3D y el video. Al conectar o desconectar una pantalla, Ginny se acomoda sola. «Intercambiar pantalla principal» decide cuál es cuál.</p>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>06-config-interfaz.png</small></div>
+            <img src="assets/img/06-config-interfaz.png" alt="Configuración, sección Interfaz" onerror="this.remove()">
+          </div>
+          <figcaption>Configuración → Interfaz.</figcaption>
+        </figure>
+
+        <h3 id="cfg-carpetas">Carpetas</h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Grupo</th><th>Opción</th><th>Descripción</th></tr></thead>
+            <tbody>
+              <tr><td>Carpeta de Usuario</td><td>Assets y configuración</td><td>La carpeta donde Ginny guarda íconos, arte, música y <code>ginny.cfg</code>. <strong>Se elige primero.</strong></td></tr>
+              <tr><td>Biblioteca</td><td>Carpeta de ROMs</td><td>La carpeta con una subcarpeta por sistema. Se habilita al elegir la Carpeta de Usuario.</td></tr>
+              <tr><td>Biblioteca</td><td>Escanear biblioteca</td><td>Indexa sistemas y juegos. Se habilita cuando hay Carpeta de Usuario y de ROMs. Mientras escanea puedes detenerlo.</td></tr>
+              <tr><td>RetroArch</td><td>Estados guardados (opcional)</td><td>Dónde guarda RetroArch sus estados, para ver miniaturas. Activa <code>savestate_thumbnail_enable</code> en RetroArch.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Todas las carpetas se eligen con el selector de carpetas de Android y Ginny guarda el permiso, así que no tendrás que volver a darlo.</p>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>07-config-carpetas.png</small></div>
+            <img src="assets/img/07-config-carpetas.png" alt="Configuración, sección Carpetas" onerror="this.remove()">
+          </div>
+          <figcaption>Configuración → Carpetas, con los botones habilitándose en cadena.</figcaption>
+        </figure>
+
+        <h3 id="cfg-sistemas">Sistemas</h3>
+        <p>Un grupo por sistema, con:</p>
+        <ul>
+          <li><strong>Carpeta de ROMs</strong> propia, si ese sistema vive en otro sitio. «Cambiar» elige otra; «Restablecer» vuelve a la carpeta general.</li>
+          <li><strong>Emulador</strong> que lo lanza.</li>
+          <li><strong>Core</strong>, para los sistemas que usan RetroArch.</li>
+          <li><strong>Package alternativo</strong>, para usar otra app o fork del emulador.</li>
+        </ul>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>08-config-sistemas.png</small></div>
+            <img src="assets/img/08-config-sistemas.png" alt="Configuración, sección Sistemas" onerror="this.remove()">
+          </div>
+          <figcaption>Configuración → Sistemas.</figcaption>
+        </figure>
+
+        <h3 id="cfg-scrapper">Scrapper</h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Grupo</th><th>Opción</th><th>Descripción</th></tr></thead>
+            <tbody>
+              <tr><td>ScreenScraper</td><td>Usuario y Contraseña</td><td>Tu cuenta en screenscraper.fr. «Verificar» comprueba usuario, contraseña y el cupo diario.</td></tr>
+              <tr><td>SteamGridDB</td><td>Clave de API</td><td>Se genera en steamgriddb.com → Preferencias → API. «Verificar» comprueba que sirve.</td></tr>
+              <tr><td>Qué descargar</td><td>Metadatos, Ícono, Wheel, Caja (frente, trasera, lomo), Video</td><td>Activa solo lo que quieras. El video viene desactivado porque pesa varios MB por juego.</td></tr>
+              <tr><td>General</td><td>Solo con Wi-Fi</td><td>No descarga con datos móviles.</td></tr>
+              <tr><td>General</td><td>Mostrar claves</td><td>Muestra las contraseñas y la clave mientras las escribes.</td></tr>
+              <tr><td>Biblioteca</td><td>Scrappear</td><td>Elige los sistemas y descarga metadatos y arte de sus juegos. Reanuda donde quedó.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Más detalles en <a href="#scrapper">El scrapper</a>.</p>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>09-config-scrapper.png</small></div>
+            <img src="assets/img/09-config-scrapper.png" alt="Configuración, sección Scrapper" onerror="this.remove()">
+          </div>
+          <figcaption>Configuración → Scrapper.</figcaption>
+        </figure>
+        <p>La sección <strong>Créditos</strong> lista a quién se deben la música, los efectos, los datos, el arte, la tipografía y las bibliotecas.</p>
+      </section>
+
+      <!-- ───────────────────────── Carpeta de ROMs ───────────────────────── -->
+      <section id="carpeta-roms">
+        <h2>Carpeta de ROMs</h2>
+        <p>Una subcarpeta por sistema, con los archivos de juego <strong>directamente dentro</strong> (sin subniveles) y filtrados por extensión. No hace falta que existan todas: un sistema sin juegos simplemente no aparece.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Sistema</th><th>Carpeta</th><th>Extensiones</th></tr></thead>
+            <tbody>
+              <tr><td>NES</td><td><code>nes/</code></td><td>.nes</td></tr>
+              <tr><td>SNES</td><td><code>snes/</code></td><td>.sfc, .smc</td></tr>
+              <tr><td>Game Boy</td><td><code>gb/</code></td><td>.gb</td></tr>
+              <tr><td>Game Boy Color</td><td><code>gbc/</code></td><td>.gbc</td></tr>
+              <tr><td>Game Boy Advance</td><td><code>gba/</code></td><td>.gba</td></tr>
+              <tr><td>PlayStation</td><td><code>ps/</code></td><td>.iso, .bin, .cue, .chd, .pbp</td></tr>
+              <tr><td>Genesis / Mega Drive</td><td><code>genesis/</code></td><td>.md, .gen, .bin</td></tr>
+              <tr><td>Master System</td><td><code>mastersystem/</code></td><td>.sms</td></tr>
+              <tr><td>Neo Geo</td><td><code>neogeo/</code></td><td>.zip</td></tr>
+              <tr><td>FinalBurn Neo</td><td><code>fbneo/</code></td><td>.zip</td></tr>
+              <tr><td>MAME</td><td><code>mame/</code></td><td>.zip</td></tr>
+              <tr><td>GameCube</td><td><code>gc/</code></td><td>.iso, .gcm, .rvz, .gcz</td></tr>
+              <tr><td>PlayStation 2</td><td><code>ps2/</code></td><td>.iso, .chd, .bin</td></tr>
+              <tr><td>PSP</td><td><code>psp/</code></td><td>.iso, .cso, .pbp</td></tr>
+              <tr><td>Dreamcast</td><td><code>dreamcast/</code></td><td>.chd, .gdi, .cdi</td></tr>
+              <tr><td>Nintendo Switch</td><td><code>switch/</code></td><td>.nsp, .xci, .nsz, .xcz (ver más abajo)</td></tr>
+              <tr><td>PICO-8</td><td><code>pico8/</code></td><td>.p8, .p8.png</td></tr>
+              <tr><td>Nintendo DS</td><td><code>nds/</code></td><td>.nds</td></tr>
+              <tr><td>Nintendo 3DS</td><td><code>n3ds/</code></td><td>.3ds, .cci, .cxi</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Nintendo Switch: una carpeta por juego</h3>
+        <p>Switch es la excepción a «un archivo, un juego». Cada juego es una <strong>subcarpeta</strong> con el juego base y sus actualizaciones y DLC juntos:</p>
+<pre>switch/
+└── The Legend of Zelda TOTK/
+    ├── TOTK [BASE].nsp
+    ├── TOTK [UPD] [v65536].nsp
+    └── TOTK [DLC].nsp</pre>
+        <p>Ginny trata cada subcarpeta como un solo juego (el nombre de la carpeta es el que se muestra) y elige sola el archivo base para lanzar: descarta los que llevan «update», «upd», «dlc» o «patch» en el nombre y, si aún hay duda, se queda con el más grande.</p>
+        <h3>PICO-8</h3>
+        <p>Los cartuchos <code>.p8.png</code> son imágenes reales con el código dentro de los píxeles, así que Ginny usa esa misma imagen como ícono si no pones otro. Los <code>.p8</code> de texto no tienen imagen: usan el marcador de siempre hasta que pongas un ícono propio.</p>
+      </section>
+
+      <!-- ───────────────────────── Carpeta de Usuario ───────────────────────── -->
+      <section id="carpeta-usuario">
+        <h2>Carpeta de Usuario</h2>
+        <p>Es la carpeta donde Ginny guarda todo lo suyo. Se crea sola al elegirla (y al volver a elegirla, si en una versión nueva se añade algo a la estructura; no pisa lo que ya tengas).</p>
+<pre>[Carpeta de Usuario]/
+├── <span class="a">ginny.cfg</span>                         <span class="c"># tu configuración (ver más abajo)</span>
+├── Assets/
+│   └── &lt;sistema&gt;/                   <span class="c"># una por sistema: nes, snes, gba, switch…</span>
+│       ├── system.png               <span class="c"># logo del sistema en la pantalla de Sistemas</span>
+│       ├── icons/                   <span class="c"># ícono cuadrado de cada juego (PNG)</span>
+│       ├── icons-alt/&lt;juego&gt;/        <span class="c"># íconos alternativos: 1.png, 2.png… (hasta 5)</span>
+│       ├── wheel/                   <span class="c"># logo del juego</span>
+│       ├── box-front/               <span class="c"># caja: frente</span>
+│       ├── box-back/                <span class="c"># caja: trasera</span>
+│       ├── box-spine/               <span class="c"># caja: lomo</span>
+│       ├── video/                   <span class="c"># video de demostración (MP4)</span>
+│       └── metadata/                <span class="c"># un JSON por juego (sinopsis, estudio, año…)</span>
+└── Interface/
+    └── Background Music/            <span class="c"># tu música de fondo</span></pre>
+        <div class="callout">
+          <strong>Los logos de sistema</strong>
+          <p>Ginny no incluye logos de consolas. Al crear la estructura genera para cada sistema un mosaico de color con su sigla como <code>system.png</code>. Si quieres otro logo, reemplaza ese archivo por tu propio PNG con el mismo nombre.</p>
+        </div>
+        <h3>Música propia</h3>
+        <p>Deja archivos <code>.mp3</code>, <code>.wav</code>, <code>.ogg</code>, <code>.m4a</code> o <code>.flac</code> en <code>Interface/Background Music/</code> y aparecerán como opción en Configuración → Interfaz → Pista de fondo, junto a la pista incluida.</p>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>10-carpeta-usuario.png</small></div>
+            <img src="assets/img/10-carpeta-usuario.png" alt="La Carpeta de Usuario vista en un explorador de archivos" onerror="this.remove()">
+          </div>
+          <figcaption>La Carpeta de Usuario en un explorador de archivos.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ───────────────────────── Artes ───────────────────────── -->
+      <section id="artes">
+        <h2>Ubicación de las artes</h2>
+        <p>Cada imagen o video de un juego vive en <code>Assets/&lt;sistema&gt;/&lt;carpeta&gt;/</code> y se llama igual que el archivo del juego, <strong>con su extensión</strong>, más la extensión del arte.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Arte</th><th>Carpeta</th><th>Formato</th><th>Lo descarga</th></tr></thead>
+            <tbody>
+              <tr><td>Ícono</td><td><code>icons/</code></td><td>PNG</td><td>SteamGridDB</td></tr>
+              <tr><td>Íconos alternativos</td><td><code>icons-alt/&lt;juego&gt;/</code></td><td>PNG (<code>1.png</code>, <code>2.png</code>…)</td><td>SteamGridDB, desde «Cambiar icono»</td></tr>
+              <tr><td>Wheel (logo del juego)</td><td><code>wheel/</code></td><td>PNG, JPG o WebP</td><td>ScreenScraper</td></tr>
+              <tr><td>Caja: frente</td><td><code>box-front/</code></td><td>PNG, JPG o WebP</td><td>ScreenScraper</td></tr>
+              <tr><td>Caja: trasera</td><td><code>box-back/</code></td><td>PNG, JPG o WebP</td><td>ScreenScraper</td></tr>
+              <tr><td>Caja: lomo</td><td><code>box-spine/</code></td><td>PNG, JPG o WebP</td><td>ScreenScraper</td></tr>
+              <tr><td>Video</td><td><code>video/</code></td><td>MP4</td><td>ScreenScraper</td></tr>
+              <tr><td>Metadatos</td><td><code>metadata/</code></td><td>JSON</td><td>ScreenScraper</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Cómo se nombran los archivos</h3>
+        <p>Para el juego <code>BomberMan.nes</code> en <code>nes/</code>:</p>
+<pre>Assets/nes/icons/<span class="a">BomberMan.nes</span>.png
+Assets/nes/wheel/<span class="a">BomberMan.nes</span>.png
+Assets/nes/box-front/<span class="a">BomberMan.nes</span>.jpg
+Assets/nes/video/<span class="a">BomberMan.nes</span>.mp4
+Assets/nes/metadata/<span class="a">BomberMan.nes</span>.json</pre>
+        <p>En <strong>Nintendo Switch</strong>, como cada juego es una carpeta, el nombre es el de la <em>carpeta</em> del juego, sin extensión: <code>Assets/switch/icons/The Legend of Zelda TOTK.png</code>.</p>
+        <div class="callout">
+          <strong>Puedes poner tus propias imágenes</strong>
+          <p>Si colocas a mano un archivo con el nombre correcto en su carpeta, Ginny lo usa. Para los íconos, usa PNG cuadrado; si el tuyo no es cuadrado, se ajusta dentro de la tarjeta sin recortarse. Si un juego no tiene ícono, se muestra un marcador.</p>
+        </div>
+        <div class="callout warn">
+          <strong>Sobre el contenido</strong>
+          <p>Las carátulas, logos y videos descargados pertenecen a sus respectivos dueños. Úsalos solo en tu dispositivo, para tu propia biblioteca.</p>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── Scrapper ───────────────────────── -->
+      <section id="scrapper">
+        <h2>El scrapper</h2>
+        <p>Ginny usa dos servicios gratuitos. Cada uno requiere tu propia cuenta o clave, que escribes en Configuración → Scrapper:</p>
+        <ul>
+          <li><a href="https://www.screenscraper.fr">ScreenScraper</a>: metadatos, wheel, cajas y video. Necesitas una cuenta gratuita. Tiene un cupo diario de descargas que «Verificar» te muestra.</li>
+          <li><a href="https://www.steamgriddb.com">SteamGridDB</a>: íconos. Necesitas una clave de API (Preferencias → API).</li>
+        </ul>
+        <h3>Dos formas de usarlo</h3>
+        <ul>
+          <li><strong>Un juego:</strong> en la ficha, menú «Más» → Scrappear.</li>
+          <li><strong>Biblioteca:</strong> Configuración → Scrapper → Scrappear. Eliges los sistemas y Ginny descarga lo de todos sus juegos. Si lo interrumpes, <strong>reanuda donde quedó</strong>. Puedes ver el avance en cualquier momento desde el ícono de la barra superior.</li>
+        </ul>
+        <figure class="shot">
+          <div class="shot-frame">
+            <div class="ph"><span>Captura pendiente</span><small>11-scrapeo-progreso.png</small></div>
+            <img src="assets/img/11-scrapeo-progreso.png" alt="Avance del scrapeo de la biblioteca" onerror="this.remove()">
+          </div>
+          <figcaption>El avance de un scrapeo en curso.</figcaption>
+        </figure>
+        <div class="callout">
+          <strong>Coincidencias dudosas</strong>
+          <p>Ginny prefiere no descargar nada antes que descargar el juego equivocado: si ScreenScraper devuelve una coincidencia poco fiable, la descarta. En ese caso puedes poner el arte a mano (ver <a href="#artes">Ubicación de las artes</a>).</p>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── Emuladores ───────────────────────── -->
+      <section id="emuladores">
+        <h2>Emuladores</h2>
+        <p>Ginny no emula: lanza el emulador que tú tengas instalado. Instálalo primero y luego elígelo en Configuración → Sistemas.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Sistema</th><th>Emulador</th><th>Package</th></tr></thead>
+            <tbody>
+              <tr><td>NES, SNES, GB, GBC, GBA, PlayStation, Genesis, Master System, Neo Geo, FBNeo, MAME, PICO-8</td><td>RetroArch (3 variantes)</td><td><code>com.retroarch</code>, <code>com.retroarch.aarch64</code>, <code>com.retroarch.ra32</code></td></tr>
+              <tr><td>GameCube</td><td>Dolphin</td><td><code>org.dolphinemu.dolphinemu</code></td></tr>
+              <tr><td>PlayStation 2</td><td>AetherSX2 / NetherSX2</td><td><code>xyz.aethersx2.android</code></td></tr>
+              <tr><td>PSP</td><td>PPSSPP</td><td><code>org.ppsspp.ppsspp</code></td></tr>
+              <tr><td>Dreamcast</td><td>Redream (por defecto) o RetroArch</td><td><code>io.recompiled.redream</code></td></tr>
+              <tr><td>Nintendo Switch</td><td>Eden</td><td><code>dev.eden.eden_emulator</code></td></tr>
+              <tr><td>Nintendo DS</td><td>melonDS</td><td><code>me.magnum.melonds</code></td></tr>
+              <tr><td>Nintendo 3DS</td><td>Azahar</td><td><code>io.github.lime3ds.android</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>RetroArch tiene tres variantes</h3>
+        <p>RetroArch para Android se distribuye en tres compilaciones que se instalan por separado: universal, 64 bits y 32 bits. Elige en Sistemas la que realmente tienes instalada; si un juego dice «RetroArch no está instalado», casi siempre es que la variante elegida no coincide con la instalada.</p>
+        <h3>Notas</h3>
+        <ul>
+          <li><strong>AetherSX2 y NetherSX2</strong> comparten package: solo puedes tener uno instalado a la vez.</li>
+          <li><strong>Android 11 o superior:</strong> Ginny solo ve los emuladores cuyos packages están declarados en la app. Si usas un fork con otro package, «Package alternativo» puede no bastar para detectarlo.</li>
+          <li><strong>MAME:</strong> el core por defecto es sensible a la versión del romset (funciona con romsets de MAME ~0.139).</li>
+          <li><strong>NES:</strong> además de FCEUmm (por defecto), están QuickNES, Nestopia UE y Mesen.</li>
+          <li><strong>PICO-8:</strong> usa el core fake-08, una reimplementación compatible de código abierto.</li>
+        </ul>
+      </section>
+
+      <!-- ───────────────────────── ginny.cfg ───────────────────────── -->
+      <section id="ginny-cfg">
+        <h2>ginny.cfg</h2>
+        <p>En la raíz de la Carpeta de Usuario, Ginny mantiene un archivo de texto <code>ginny.cfg</code> (JSON) con tu configuración: filas de la grilla, distribución de botones, volúmenes, pista de fondo, carpetas de ROMs, y el emulador, core y package de cada sistema.</p>
+        <ul>
+          <li>Se actualiza solo cuando cambias algo.</li>
+          <li>Si eliges una Carpeta de Usuario que ya tiene un <code>ginny.cfg</code>, Ginny lo aplica: es la forma de llevar tu configuración a otro dispositivo o a una instalación nueva.</li>
+          <li>No guarda la ubicación de la Carpeta de Usuario (es lo que sirve para encontrarlo) ni tus contraseñas.</li>
+        </ul>
+      </section>
+
+      <!-- ───────────────────────── FAQ ───────────────────────── -->
+      <section id="faq">
+        <h2>Preguntas frecuentes</h2>
+        <details class="faq"><summary>La app está vacía, no aparece ningún sistema</summary><p>Elige la Carpeta de Usuario, luego la de ROMs y pulsa «Escanear» (Configuración → Carpetas). Comprueba que cada sistema tenga su subcarpeta con el nombre exacto de <a href="#carpeta-roms">esta tabla</a> y archivos con las extensiones correctas.</p></details>
+        <details class="faq"><summary>Añadí juegos nuevos y no aparecen</summary><p>Vuelve a pulsar «Escanear». Ginny lee del último escaneo, no del disco.</p></details>
+        <details class="faq"><summary>El botón «Elegir» de la carpeta de ROMs está deshabilitado</summary><p>Primero hay que elegir la Carpeta de Usuario. «Escanear» se habilita al tener también la carpeta de ROMs.</p></details>
+        <details class="faq"><summary>Dice que el emulador no está instalado</summary><p>Instala el emulador y elige en Configuración → Sistemas el que corresponde. Con RetroArch, comprueba que la variante elegida (universal, 64 o 32 bits) sea la instalada.</p></details>
+        <details class="faq"><summary>Al tocar un juego no pasa nada</summary><p>El emulador puede haber cambiado la forma de abrir juegos. Comprueba que esté actualizado y que sea el que elegiste para ese sistema.</p></details>
+        <details class="faq"><summary>«Eliminar» falla</summary><p>Vuelve a elegir la carpeta de ROMs en Configuración → Carpetas para dar permiso de escritura.</p></details>
+        <details class="faq"><summary>Los sistemas muestran un mosaico de color en vez de un logo</summary><p>Es lo esperado: Ginny no incluye logos de consolas. Sustituye <code>Assets/&lt;sistema&gt;/system.png</code> por tu propio PNG.</p></details>
+        <details class="faq"><summary>El scrapper no descarga nada</summary><p>Usa «Verificar» en Configuración → Scrapper para comprobar tu usuario, contraseña y cupo diario. Si activaste «Solo con Wi-Fi», conéctate a una red Wi-Fi.</p></details>
+        <details class="faq"><summary>¿Cómo actualizo la app?</summary><p>Instala el APK nuevo encima del anterior: tus datos y tu Carpeta de Usuario se conservan.</p></details>
+      </section>
+
+      <!-- ───────────────────────── Compilar ───────────────────────── -->
+      <section id="compilar">
+        <h2>Compilar desde el código</h2>
+        <p>Necesitas Android Studio (o JDK 17) y el SDK de Android (minSdk 29, compileSdk 34).</p>
+<pre><span class="c"># APK de debug (firmado automáticamente)</span>
+./gradlew assembleDebug
+
+<span class="c"># APK de release (requiere keystore.properties)</span>
+./gradlew assembleRelease</pre>
+        <p>La guía completa —firmar con tu propia clave, subir de versión y las credenciales opcionales de desarrollador de ScreenScraper— está en el <a href="https://github.com/sanchezmendozajean/ginny-frontend#readme">README del repositorio</a>.</p>
+      </section>
+    </article>
+  </div>
+
+  <footer class="site wrap">
+    <p>¿Algo no está claro o encontraste un error? Abre una <a href="https://github.com/sanchezmendozajean/ginny-frontend/issues">incidencia en GitHub</a>.</p>
+  </footer>
+
+  <script src="assets/site.js"></script>
+</body>
+</html>
