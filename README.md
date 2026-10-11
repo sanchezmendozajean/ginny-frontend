@@ -366,7 +366,7 @@ tal como pide el spec.
 
 ## Sonidos
 
-`app/src/main/res/raw/` contiene los efectos (`sfx_focus`, `sfx_enter_system`, `sfx_open_modal`, `sfx_launch` y `sfx_activate`) y la pista de música de fondo (`music_track_1`).
+`app/src/main/res/raw/` contiene los efectos (`sfx_focus`, `sfx_enter_system` y `sfx_open_modal`, `sfx_launch`) y la pista de música de fondo (`music_track_1`).
 Para reemplazarlos por audio propio,
 mantené los mismos nombres de archivo y recompilá.
 
@@ -384,13 +384,10 @@ Open Font License — ver [licenses/MPLUSRounded1c-OFL.txt](licenses/MPLUSRounde
 También se muestran dentro de la app, en Configuración → Créditos.
 
 - **Música**: "Bossa Nova" de Joth ([OpenGameArt](https://opengameart.org), CC0).
-- **Efectos de sonido**: "Interface Sounds" de [Kenney](https://kenney.nl) (CC0, ver [licenses/Kenney-InterfaceSounds-CC0.txt](licenses/Kenney-InterfaceSounds-CC0.txt)) y, de Pixabay, "System Notification 02" de Universfield.
+- **Efectos de sonido**: "Interface Sounds" de [Kenney](https://kenney.nl) (CC0, ver [licenses/Kenney-InterfaceSounds-CC0.txt](licenses/Kenney-InterfaceSounds-CC0.txt)).
 - **Metadatos, wheel, cajas y video**: [ScreenScraper](https://www.screenscraper.fr).
 - **Íconos**: [SteamGridDB](https://www.steamgriddb.com).
 - **Bibliotecas** (Apache 2.0): Jetpack Compose / AndroidX, Coil, OkHttp y Haze.
-
-El efecto "System Notification 02" (Pixabay) puede usarse dentro de una aplicación, pero la licencia de Pixabay no permite redistribuirlo
-suelto: si reutilizas el código, no copies `sfx_activate.mp3` de `app/src/main/res/raw/` como archivo aparte.
 
 ## Licencia
 

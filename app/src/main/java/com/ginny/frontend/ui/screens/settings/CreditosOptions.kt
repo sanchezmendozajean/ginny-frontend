@@ -21,7 +21,6 @@ private val Music = listOf(
 )
 
 private val SoundEffects = listOf(
-    Credit("System Notification 02", "Pixabay", "Universfield"),
     Credit("Interface Sounds", "kenney.nl · CC0", "Kenney"),
 )
 
