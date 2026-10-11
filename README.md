@@ -389,8 +389,8 @@ También se muestran dentro de la app, en Configuración → Créditos.
 - **Íconos**: [SteamGridDB](https://www.steamgriddb.com).
 - **Bibliotecas** (Apache 2.0): Jetpack Compose / AndroidX, Coil, OkHttp y Haze.
 
-La licencia de Pixabay permite usar estos audios dentro de una aplicación, pero no redistribuirlos
-sueltos: si reutilizas el código, no copies los `.mp3` de `app/src/main/res/raw/` como archivos aparte.
+El efecto "System Notification 02" (Pixabay) puede usarse dentro de una aplicación, pero la licencia de Pixabay no permite redistribuirlo
+suelto: si reutilizas el código, no copies `sfx_activate.mp3` de `app/src/main/res/raw/` como archivo aparte.
 
 ## Licencia
 
