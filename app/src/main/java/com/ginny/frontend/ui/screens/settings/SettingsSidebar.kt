@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ginny.frontend.ui.components.ButtonLegend
 import com.ginny.frontend.ui.components.FaceButton
+import com.ginny.frontend.ui.components.settings.LocalSettingsNav
+import com.ginny.frontend.ui.components.settings.SettingsFocusItem
+import com.ginny.frontend.ui.components.settings.cursorTarget
 import com.ginny.frontend.ui.theme.GinnyFont
 import com.ginny.frontend.ui.theme.GinnyThemes
 import com.ginny.frontend.ui.theme.lighten
@@ -47,8 +50,9 @@ val SettingsSidebarWidth = 160.dp
  * Barra lateral del modal: título "Configuración", la lista de secciones (la elegida como píldora
  * con el degradado del acento) y, abajo, la indicación de que B cierra el modal.
  *
- * Tocar una sección la elige ([onSelect]); tocar "Cerrar" cierra el modal ([onClose]).
- * La navegación con la cruceta la maneja el modal.
+ * Tocar una sección la elige ([onSelect]); tocar "Cerrar" cierra el modal ([onClose]). Con el foco en las
+ * opciones ([focusInOptions]) la indicación de B pasa a "Volver" y tocarla devuelve el foco a esta lista
+ * ([onBackToSections]). La navegación con la cruceta la maneja el modal.
  */
 @Composable
 fun SettingsSidebar(
@@ -56,6 +60,8 @@ fun SettingsSidebar(
     onSelect: (SettingsSection) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    focusInOptions: Boolean = false,
+    onBackToSections: () -> Unit = {},
 ) {
     val palette = GinnyThemes.current
 
@@ -78,11 +84,13 @@ fun SettingsSidebar(
         Spacer(Modifier.height(18.dp))
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            val nav = LocalSettingsNav.current
             SettingsSection.entries.forEach { section ->
                 SectionItem(
                     label = section.label,
                     selected = section == selected,
                     onClick = { onSelect(section) },
+                    cursorTarget = nav?.sidebarItem(section.ordinal),
                 )
             }
         }
@@ -92,17 +100,17 @@ fun SettingsSidebar(
 
         ButtonLegend(
             FaceButton.B,
-            "Cerrar",
+            if (focusInOptions) "Volver" else "Cerrar",
             modifier = Modifier
                 .padding(start = 8.dp)
-                .pointerInput(Unit) { detectTapGestures { onClose() } },
+                .pointerInput(focusInOptions) { detectTapGestures { if (focusInOptions) onBackToSections() else onClose() } },
         )
     }
 }
 
 /** Una sección de la lista: punto + nombre. Elegida = píldora con el degradado del acento. */
 @Composable
-private fun SectionItem(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun SectionItem(label: String, selected: Boolean, onClick: () -> Unit, cursorTarget: SettingsFocusItem?) {
     val palette = GinnyThemes.current
     val pill = CircleShape // en un rectángulo, CircleShape da una píldora
 
@@ -111,6 +119,7 @@ private fun SectionItem(label: String, selected: Boolean, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(42.dp)
+            .then(if (cursorTarget != null) Modifier.cursorTarget(cursorTarget) else Modifier)
             .then(
                 if (selected) {
                     Modifier

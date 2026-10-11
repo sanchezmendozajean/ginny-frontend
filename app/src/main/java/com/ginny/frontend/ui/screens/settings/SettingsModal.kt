@@ -1,6 +1,13 @@
 package com.ginny.frontend.ui.screens.settings
 
 import androidx.compose.animation.AnimatedVisibility
+import com.ginny.frontend.ui.components.settings.SettingsCursorOverlay
+import com.ginny.frontend.ui.components.settings.SettingsNav
+import com.ginny.frontend.ui.components.settings.LocalSettingsNav
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -29,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -81,40 +89,88 @@ fun SettingsModal(
 
         // Sección elegida. Se reinicia en Interfaz cada vez que se abre el modal.
         var section by remember { mutableStateOf(SettingsSection.Interfaz) }
+
+        // Foco por cruceta: en la lista de secciones (nav.active = false) o en las opciones de la sección.
+        val density = LocalDensity.current
+        val scope = rememberCoroutineScope()
+        val nav = remember {
+            SettingsNav(
+                scope = scope,
+                rowTolerancePx = with(density) { 10.dp.toPx() },
+                edgeMarginPx = with(density) { (SettingsFadeHeight + 8.dp).toPx() },
+            )
+        }
+        nav.buttonMapping = buttonMapping
+        nav.sound = sound
+
         fun select(target: SettingsSection) {
             if (target == section) return
+            nav.leave()
             section = target
+            nav.selectSection(target.ordinal)
             sound?.playFocusSound()
         }
+
+        // B con el foco en las opciones: de vuelta a la lista de secciones (antes de cerrar la Configuración).
+        // Con un modal de scrapeo encima, B es de ese modal.
+        BackHandler(enabled = nav.active && !nestedModalOpen) { nav.back() }
 
         // Mientras está abierto, el modal se queda con el foco: así la cruceta no mueve el cursor
         // de la grilla que está detrás.
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(nestedModalOpen) { if (!nestedModalOpen) focusRequester.requestFocus() }
+        // Los controles que abren otra ventana (menú desplegable) o toman el foco (campo de texto) lo devuelven aquí.
+        nav.reclaimFocus = { runCatching { focusRequester.requestFocus() } }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(SettingsScrimColor)
+                // Cualquier toque apaga el cursor (sin consumirlo): la pantalla pasa a manejarse con el dedo.
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            if (event.changes.any { it.pressed }) nav.hideCursor()
+                        }
+                    }
+                }
                 // Los toques sobre la cortina no llegan a lo que está detrás.
                 .pointerInput(Unit) { detectTapGestures { } }
                 .focusRequester(focusRequester)
                 .focusable()
-                // Cruceta arriba/abajo: cambia de sección. Todas las teclas se consumen, para que
-                // el foco no se escape hacia la grilla. (B y Menú los maneja MainActivity antes.)
+                // Foco en la lista de secciones: arriba/abajo cambian de sección; A o derecha pasan el foco a
+                // las opciones. Foco en las opciones: ver SettingsNav (B vuelve a la lista, más arriba).
+                // Todas las teclas se consumen, para que el foco no se escape hacia la grilla.
+                // (B y Menú los maneja MainActivity antes.)
                 .onKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
-                        val sections = SettingsSection.entries
-                        when (buttonMapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)) {
-                            LogicalButton.DPAD_UP -> select(sections[(section.ordinal - 1).coerceAtLeast(0)])
-                            LogicalButton.DPAD_DOWN -> select(sections[(section.ordinal + 1).coerceAtMost(sections.lastIndex)])
-                            else -> Unit
+                        val button = buttonMapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)
+                        // Con el cursor apagado (se tocó la pantalla), la primera tecla lo vuelve a mostrar; la
+                        // cruceta además se mueve, pero A no actúa sobre algo que el usuario no veía.
+                        val wasHidden = !nav.cursorVisible
+                        if (wasHidden) nav.showCursor()
+                        if (wasHidden && button == LogicalButton.A) return@onKeyEvent true
+                        if (nav.active) {
+                            nav.handleKey(button)
+                        } else {
+                            val sections = SettingsSection.entries
+                            when (button) {
+                                LogicalButton.DPAD_UP -> select(sections[(section.ordinal - 1).coerceAtLeast(0)])
+                                LogicalButton.DPAD_DOWN -> select(sections[(section.ordinal + 1).coerceAtMost(sections.lastIndex)])
+                                LogicalButton.A, LogicalButton.DPAD_RIGHT -> {
+                                    sound?.playActivateSound()
+                                    nav.enter()
+                                }
+                                else -> Unit
+                            }
                         }
                     }
                     true
                 },
         ) {
             val shape = RoundedCornerShape(SettingsModalCornerRadius)
+            CompositionLocalProvider(LocalSettingsNav provides nav) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -122,7 +178,13 @@ fun SettingsModal(
                     .clip(shape) // recorta la barra lateral a las esquinas redondeadas
                     .background(Color.White.copy(alpha = 0.75f), shape),
             ) {
-                SettingsSidebar(selected = section, onSelect = ::select, onClose = onClose)
+                SettingsSidebar(
+                    selected = section,
+                    onSelect = ::select,
+                    onClose = onClose,
+                    focusInOptions = nav.active,
+                    onBackToSections = { nav.back() },
+                )
 
                 // Línea divisoria entre la barra lateral y el contenido.
                 Box(
@@ -145,6 +207,16 @@ fun SettingsModal(
                         }
                     }
                 }
+            }
+
+            // El cursor (en la lista de secciones o en las opciones), encima de todo y recortado a la tarjeta.
+            SettingsCursorOverlay(
+                nav = nav,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(SettingsModalMargin)
+                    .clip(shape),
+            )
             }
         }
     }

@@ -43,8 +43,35 @@ fun Cursor(
     strokeWidth: Dp = CursorStrokeWidth,
     borderWidth: Dp = CursorBorderWidth,
     cornerRadius: Dp = ElementCornerRadius * 1.5f,
+) = Cursor(
+    width = size,
+    height = size,
+    modifier = modifier,
+    color = color,
+    borderColor = borderColor,
+    strokeWidth = strokeWidth,
+    borderWidth = borderWidth,
+    cornerRadius = cornerRadius,
+)
+
+/**
+ * El mismo cursor sobre un rectángulo de [width] × [height] (los controles de Configuración no son
+ * cuadrados). Los brazos de las esquinas miden [armLength]; si no se indica, un cuarto del ancho
+ * (como en el cursor cuadrado). El radio de la curva se limita a la mitad del lado menor.
+ */
+@Composable
+fun Cursor(
+    width: Dp,
+    height: Dp,
+    modifier: Modifier = Modifier,
+    color: Color = GinnyThemes.current.accent,
+    borderColor: Color = color.lighten(CursorBorderLighten),
+    strokeWidth: Dp = CursorStrokeWidth,
+    borderWidth: Dp = CursorBorderWidth,
+    cornerRadius: Dp = ElementCornerRadius * 1.5f,
+    armLength: Dp? = null,
 ) {
-    Canvas(modifier = modifier.size(size)) {
+    Canvas(modifier = modifier.size(width, height)) {
         val stroke = strokeWidth.toPx()
         val border = borderWidth.toPx()
         val outer = stroke + 2 * border            // ancho total: trazo + borde a cada lado
@@ -56,8 +83,8 @@ fun Cursor(
         val top = inset
         val right = this.size.width - inset
         val bottom = this.size.height - inset
-        val r = cornerRadius.toPx().coerceAtMost((right - left) / 2)
-        val arm = (right - left) * CursorArmFraction // largo de cada brazo, contando la curva
+        val r = cornerRadius.toPx().coerceAtMost(minOf(right - left, bottom - top) / 2)
+        val arm = armLength?.toPx() ?: ((right - left) * CursorArmFraction) // largo de cada brazo, contando la curva
 
         // Una "L" por esquina: brazo vertical → curva de 90° → brazo horizontal.
         // arcTo dibuja la curva dentro del cuadrado [rect], desde startAngle girando sweep grados

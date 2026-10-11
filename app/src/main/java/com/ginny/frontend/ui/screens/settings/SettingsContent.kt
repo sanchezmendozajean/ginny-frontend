@@ -1,6 +1,7 @@
 package com.ginny.frontend.ui.screens.settings
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -17,8 +19,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ginny.frontend.ui.components.settings.LocalSettingsNav
 
 /** Alto del desvanecimiento en los bordes superior e inferior del panel de opciones. */
 val SettingsFadeHeight = 28.dp
@@ -33,18 +37,28 @@ fun SettingsContent(
     options: @Composable ColumnScope.() -> Unit = {},
 ) {
     val scroll = rememberScrollState()
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            // Antes que verticalScroll: así el desvanecimiento queda fijo en los bordes del panel
-            // y el contenido pasa por debajo.
-            .fadingEdges(scroll, SettingsFadeHeight)
-            // verticalScroll antes que padding: el margen se desplaza junto con las opciones, así
-            // al llegar al final queda el mismo aire que arriba.
-            .verticalScroll(scroll)
-            .padding(20.dp),
-        content = options,
-    )
+    val nav = LocalSettingsNav.current
+
+    // El foco por cruceta necesita el panel y su desplazamiento para mantener a la vista el control enfocado.
+    DisposableEffect(nav, scroll) {
+        nav?.scroll = scroll
+        onDispose { if (nav?.scroll === scroll) nav.scroll = null }
+    }
+
+    Box(modifier = modifier.fillMaxSize().onGloballyPositioned { nav?.viewport = it }) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                // Antes que verticalScroll: así el desvanecimiento queda fijo en los bordes del panel
+                // y el contenido pasa por debajo.
+                .fadingEdges(scroll, SettingsFadeHeight)
+                // verticalScroll antes que padding: el margen se desplaza junto con las opciones, así
+                // al llegar al final queda el mismo aire que arriba.
+                .verticalScroll(scroll)
+                .padding(20.dp),
+            content = options,
+        )
+    }
 }
 
 /**
