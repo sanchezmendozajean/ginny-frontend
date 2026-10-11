@@ -292,6 +292,8 @@ private fun GameCard(
     // El modal **no se cierra** al lanzar: la capa negra vive en él y, si desapareciera, la interfaz volvería a
     // verse mientras Android anima el cambio de aplicación. Al regresar al frontend se aclara solo (ver abajo).
     var launching by remember(game) { mutableStateOf(false) }
+    // Menú "Más" (Scrappear, Cambiar icono, Eliminar): se abre con el botón o con Y.
+    var menuOpen by remember(game) { mutableStateOf(false) }
     var spinTrigger by remember(game) { mutableIntStateOf(0) }
     /** Ya se pidió lanzar el emulador (la pantalla está en negro esperando a que la app pase a segundo plano). */
     var launchRequested by remember(game) { mutableStateOf(false) }
@@ -367,13 +369,14 @@ private fun GameCard(
             .pointerInput(Unit) { detectTapGestures { } }
             .focusRequester(focusRequester)
             .focusable()
-            // A = Jugar; Y (el botón izquierdo) = Video; arriba/abajo de la cruceta desplazan el contenido. Las demás teclas se consumen
+            // A = Jugar; X = Video; Y = menú "Más"; arriba/abajo de la cruceta desplazan el contenido. Las demás teclas se consumen
             // (B lo maneja MainActivity antes).
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown) {
                     when (buttonMapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)) {
                         LogicalButton.A -> currentPlay()
-                        LogicalButton.Y -> currentToggleVideo()
+                        LogicalButton.X -> currentToggleVideo()
+                        LogicalButton.Y -> menuOpen = true
                         LogicalButton.DPAD_DOWN -> scope.launch { scroll.animateScrollBy(ScrollStepPx) }
                         LogicalButton.DPAD_UP -> scope.launch { scroll.animateScrollBy(-ScrollStepPx) }
                         else -> Unit
@@ -522,10 +525,15 @@ private fun GameCard(
 
         // ── Acciones ────────────────────────────────────────────────────────────────────────
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            // Esquina inferior izquierda: menú de tres puntos (Scrappear, Eliminar).
+            // Esquina inferior izquierda: menú "Más" (Y).
             GameMenuButton(
+                expanded = menuOpen,
+                onExpandedChange = { menuOpen = it },
+                buttonMapping = buttonMapping,
                 onScrap = { onOpenDialog(GameDialog.ScrapOptions) },
+                onChangeIcon = { Toast.makeText(context, "Cambiar icono: todavía sin función.", Toast.LENGTH_SHORT).show() },
                 onDelete = { onOpenDialog(GameDialog.ConfirmDelete) },
+                onClosed = { runCatching { focusRequester.requestFocus() } },
             )
             // Favorito: solo táctil (sin botón del mando).
             PillButton(
@@ -537,10 +545,10 @@ private fun GameCard(
             }
             Spacer(Modifier.weight(1f))
 
-            // Video (botón Y, el izquierdo en la distribución por defecto): solo si el juego tiene video. Con el video encendido, vuelve a la caja.
+            // Video (botón X): solo si el juego tiene video. Con el video encendido, vuelve a la caja.
             if (hasVideo) {
                 PillButton(background = palette.background, onClick = { videoOn = !videoOn }) {
-                    FaceButtonIcon(FaceButton.Y, size = 20.dp)
+                    FaceButtonIcon(FaceButton.X, size = 20.dp)
                     Text(if (!videoPlaying) "Video" else if (assets?.hasBox == true) "Caja" else "Detener", style = buttonText(palette.ink))
                 }
             }
@@ -636,54 +644,96 @@ private fun buttonText(color: Color) = androidx.compose.ui.text.TextStyle(
     color = color,
 )
 
-/** Diálogos que abre el menú de tres puntos del modal del juego. */
+/** Diálogos que abre el menú "Más" del modal del juego. */
 enum class GameDialog { ScrapOptions, ConfirmDelete }
 
+/** Una opción del menú "Más". */
+private class MenuEntry(val label: String, val color: Color, val action: () -> Unit)
+
 /**
- * Tres puntos en la esquina del modal. Al tocarlo se abre un menú con "Scrappear" y "Eliminar" (en
- * rojo). Los puntos se dibujan (no son un carácter) para que se vean iguales en cualquier fuente.
+ * Botón "Más" (con el ícono de Y) en la esquina del modal. Abre un menú con "Scrappear", "Cambiar icono"
+ * y "Eliminar" (en rojo). [expanded] lo controla el modal: Y también lo abre.
+ *
+ * Con el mando, ya abierto: arriba / abajo mueven la opción resaltada, A la elige y B (o Y, o izquierda) lo cierra.
  */
 @Composable
-private fun GameMenuButton(onScrap: () -> Unit, onDelete: () -> Unit, modifier: Modifier = Modifier) {
+private fun GameMenuButton(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    buttonMapping: ButtonMapping,
+    onScrap: () -> Unit,
+    onChangeIcon: () -> Unit,
+    onDelete: () -> Unit,
+    /** El menú se cerró (con o sin elegir): el modal recupera el foco de teclas. */
+    onClosed: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val palette = GinnyThemes.current
-    var expanded by remember { mutableStateOf(false) }
+    val sound = LocalSoundManager.current
+    val entries = listOf(
+        MenuEntry("Scrappear", palette.ink, onScrap),
+        MenuEntry("Cambiar icono", palette.ink, onChangeIcon),
+        MenuEntry("Eliminar", DeleteRed, onDelete),
+    )
+    var highlight by remember { mutableIntStateOf(0) }
+    val menuFocus = remember { FocusRequester() }
+
+    fun close() {
+        onExpandedChange(false)
+        onClosed()
+    }
+
+    fun choose(entry: MenuEntry) {
+        onExpandedChange(false)
+        onClosed()
+        entry.action()
+    }
 
     Box(modifier = modifier) {
-        androidx.compose.foundation.Canvas(
-            modifier = Modifier
-                .size(40.dp)
-                .pointerInput(Unit) { detectTapGestures { expanded = true } },
-        ) {
-            val radius = 2.5.dp.toPx()
-            val gap = 7.dp.toPx()
-            repeat(3) { i ->
-                drawCircle(
-                    color = palette.muted,
-                    radius = radius,
-                    center = androidx.compose.ui.geometry.Offset(size.width / 2, size.height / 2 + (i - 1) * gap),
-                )
-            }
+        PillButton(background = palette.background, onClick = { onExpandedChange(true) }) {
+            FaceButtonIcon(FaceButton.Y, size = 20.dp)
+            Text("Más", style = buttonText(palette.ink))
         }
 
         androidx.compose.material3.DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(Color.White), // sin esto, Material usa un fondo lila por defecto
+            onDismissRequest = ::close,
+            modifier = Modifier
+                .background(Color.White) // sin esto, Material usa un fondo lila por defecto
+                .focusRequester(menuFocus)
+                .focusable()
+                .onKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onKeyEvent true
+                    when (buttonMapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)) {
+                        LogicalButton.DPAD_UP -> if (highlight > 0) { highlight--; sound?.playFocusSound() }
+                        LogicalButton.DPAD_DOWN -> if (highlight < entries.lastIndex) { highlight++; sound?.playFocusSound() }
+                        LogicalButton.A -> { sound?.playActivateSound(); choose(entries[highlight]) }
+                        LogicalButton.B, LogicalButton.Y, LogicalButton.DPAD_LEFT -> close()
+                        else -> Unit
+                    }
+                    true // el menú se queda con todas las teclas mientras está abierto
+                },
         ) {
-            androidx.compose.material3.DropdownMenuItem(
-                text = { Text("Scrappear", fontFamily = GinnyFont, fontWeight = FontWeight.Bold, color = palette.ink) },
-                onClick = {
-                    expanded = false
-                    onScrap()
-                },
-            )
-            androidx.compose.material3.DropdownMenuItem(
-                text = { Text("Eliminar", fontFamily = GinnyFont, fontWeight = FontWeight.Bold, color = DeleteRed) },
-                onClick = {
-                    expanded = false
-                    onDelete()
-                },
-            )
+            // Ya en pantalla: empieza resaltando la primera opción y toma el foco de teclas.
+            LaunchedEffect(Unit) {
+                highlight = 0
+                runCatching { menuFocus.requestFocus() }
+            }
+            entries.forEachIndexed { index, entry ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(entry.label, fontFamily = GinnyFont, fontWeight = FontWeight.Bold, color = entry.color) },
+                    onClick = { choose(entry) },
+                    modifier = Modifier
+                        .padding(horizontal = 6.dp)
+                        .then(
+                            if (index == highlight) {
+                                Modifier.background(palette.accent.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                            } else {
+                                Modifier
+                            },
+                        ),
+                )
+            }
         }
     }
 }

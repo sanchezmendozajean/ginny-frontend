@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
     /** Si el modal de Configuración está abierto. Es estado de Compose: la UI se actualiza sola. */
     private val settingsOpen = mutableStateOf(false)
 
-    /** Si el modal de un juego está abierto: Y deja de abrir Configuración y lo atiende el modal (Video). */
+    /** Si hay un modal que usa Y (el de un juego: Video; el de avance del scrapeo: Detener): Y deja de abrir Configuración. */
     @Volatile private var gameModalOpen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {

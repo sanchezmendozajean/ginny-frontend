@@ -468,7 +468,8 @@ private val MenuItemHeight = 48.dp
 /**
  * Botón píldora. [primary]: degradado del acento con texto blanco (la acción principal, ej.
  * "Escanear"); si no, fondo tenue con texto del tema (ej. "Elegir"). Deshabilitado: apagado y
- * sin responder al toque.
+ * sin responder al toque. [leadingIcon] dibuja un ícono antes del texto (ej. el botón del mando que lo
+ * activa); recibe el color del texto para teñirse igual.
  */
 @Composable
 fun GinnyButton(
@@ -477,6 +478,7 @@ fun GinnyButton(
     modifier: Modifier = Modifier,
     primary: Boolean = false,
     enabled: Boolean = true,
+    leadingIcon: (@Composable (tint: Color) -> Unit)? = null,
 ) {
     val palette = GinnyThemes.current
     val currentOnClick by rememberUpdatedState(onClick)
@@ -498,18 +500,22 @@ fun GinnyButton(
             .pointerInput(enabled) { if (enabled) detectTapGestures { currentOnClick() } }
             .padding(horizontal = 20.dp),
     ) {
-        Text(
-            text = text,
-            fontFamily = GinnyFont,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 14.sp,
-            color = when {
-                !enabled -> palette.muted
-                primary -> Color.White
-                else -> accentText()
-            },
-            maxLines = 1,
-        )
+        val contentColor = when {
+            !enabled -> palette.muted
+            primary -> Color.White
+            else -> accentText()
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            leadingIcon?.invoke(contentColor)
+            Text(
+                text = text,
+                fontFamily = GinnyFont,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 14.sp,
+                color = contentColor,
+                maxLines = 1,
+            )
+        }
     }
 }
 

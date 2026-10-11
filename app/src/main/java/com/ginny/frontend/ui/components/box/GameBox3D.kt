@@ -148,7 +148,9 @@ fun GameBox3D(textures: BoxTextures, modifier: Modifier = Modifier, spinTrigger:
         val scale = min(size.height / (geometry.height * 1.35f), size.width / (geometry.maxHalfExtent * 2f * 1.25f))
 
         // Sombra difusa detrás de la caja: un círculo con degradado radial, tenue y fijo (no gira ni se
-        // anima con la caja).
+        // anima con la caja). DESACTIVADA a pedido (2026-10-12): para volver a ponerla, descomentar este
+        // bloque (y los imports Brush / Offset / Color si el compilador los pide).
+        /*
         val glowRadius = scale * 0.85f
         drawCircle(
             brush = Brush.radialGradient(
@@ -163,6 +165,7 @@ fun GameBox3D(textures: BoxTextures, modifier: Modifier = Modifier, spinTrigger:
             radius = glowRadius,
             center = Offset(centerX, centerY),
         )
+        */
 
         val faces = geometry.visibleFaces(
             yawRadians = (yaw * PI / 180).toFloat(),

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ginny.frontend.ui.components.settings.LocalInScrollPanel
 import com.ginny.frontend.ui.components.settings.LocalSettingsNav
 
 /** Alto del desvanecimiento en los bordes superior e inferior del panel de opciones. */
@@ -46,6 +48,7 @@ fun SettingsContent(
     }
 
     Box(modifier = modifier.fillMaxSize().onGloballyPositioned { nav?.viewport = it }) {
+        CompositionLocalProvider(LocalInScrollPanel provides true) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -58,6 +61,7 @@ fun SettingsContent(
                 .padding(20.dp),
             content = options,
         )
+        }
     }
 }
 

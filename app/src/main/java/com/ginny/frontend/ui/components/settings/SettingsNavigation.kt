@@ -36,6 +36,8 @@ import com.ginny.frontend.audio.SoundManager
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.ui.components.game.Cursor
+import com.ginny.frontend.ui.components.game.CursorBorderWidth
+import com.ginny.frontend.ui.components.game.CursorStrokeWidth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -96,6 +98,9 @@ class SettingsFocusItem {
 
     /** Botón A sobre este control. */
     internal var onActivate: () -> Unit = {}
+
+    /** El control está dentro de un panel con desplazamiento (ver [LocalInScrollPanel]). */
+    internal var scrolls: Boolean = false
 
     /** false = el control se puede enfocar pero está apagado: A no hace nada (ni suena). */
     internal var activatable: Boolean = true
@@ -177,6 +182,9 @@ class SettingsNav(
     var buttonMapping: ButtonMapping = ButtonMapping.DEFAULT
     var sound: SoundManager? = null
 
+    /** false = no hay otra lista a la que volver (los modales): izquierda sin más controles no hace nada. */
+    var canLeave: Boolean = true
+
     /** Panel con las opciones (lo registra SettingsContent). */
     internal var scroll: ScrollState? = null
     internal var viewport: LayoutCoordinates? = null
@@ -243,14 +251,20 @@ class SettingsNav(
         items.mapNotNull { item -> item.bounds()?.let { item to it } }
             .sortedWith(compareBy({ it.second.center.y.roundToInt() / 8 }, { it.second.center.x }))
 
-    /** El foco pasa a las opciones, empezando por el primer control. */
-    fun enter() {
+    /**
+     * El foco pasa a las opciones, empezando por el primer control ([last] = false) o por el último (el
+     * de abajo a la derecha: en un modal, el botón principal).
+     */
+    fun enter(last: Boolean = false) {
         active = true
         cursorFrom = if (cursorVisible) lastCursorRoot else null // desde la sección hasta el primer control
         lostBounds = null
-        focused = placed().firstOrNull()?.first
+        val list = placed()
+        // El último: el de abajo a la derecha entre los controles fijos (los botones de un modal); si no hay, el último.
+        val fixed = list.filter { !it.first.scrolls }.ifEmpty { list }
+        focused = if (last) fixed.lastOrNull()?.first else list.firstOrNull()?.first
         // El panel pudo quedar desplazado de una visita anterior: se empieza desde arriba.
-        scroll?.let { s -> scope.launch { s.animateScrollTo(0) } }
+        if (!last) scroll?.let { s -> scope.launch { s.animateScrollTo(0) } }
     }
 
     /** El foco vuelve a la lista de secciones. */
@@ -289,17 +303,40 @@ class SettingsNav(
             list.firstOrNull()?.let { focus(it.first) }
             return list.isNotEmpty()
         }
-        val target = FocusSearch.next(list.map { it.second }, current, direction, rowTolerancePx) ?: return false
-        focus(list[target].first)
+        val cur = list[current]
+
+        // 1) Dentro de su grupo: el panel con desplazamiento, o los controles fijos (ej. los botones de un modal).
+        val sameGroup = list.filter { it.first.scrolls == cur.first.scrolls }
+        FocusSearch.next(sameGroup.map { it.second }, sameGroup.indexOfFirst { it.first === cur.first }, direction, rowTolerancePx)
+            ?.let { focus(sameGroup[it].first); return true }
+
+        // 2) Arriba / abajo entre grupos. Las posiciones de la lista, que se desplaza, no sirven para comparar
+        // con las de los controles fijos (una fila oculta bajo el panel queda "a la altura" de los botones):
+        // se sale del panel por su borde y se entra por el borde contrario, solo a lo que está a la vista.
+        if (direction == FocusMove.Left || direction == FocusMove.Right) return false
+        val view = viewport?.takeIf { it.isAttached }?.rectInRoot() ?: return false
+        val otherGroup = list.filter { it.first.scrolls != cur.first.scrolls }
+        val candidates = if (cur.first.scrolls) otherGroup else otherGroup.filter { it.second.overlaps(view) }
+        if (candidates.isEmpty()) return false
+        val goingDown = direction == FocusMove.Down
+        val startY = when {
+            cur.first.scrolls -> if (goingDown) view.bottom - 1f else view.top + 1f // saliendo del panel
+            else -> if (goingDown) view.top - 1f else view.bottom + 1f // entrando al panel
+        }
+        val x = cur.second.center.x
+        val rects = candidates.map { it.second } + Rect(x - 1f, startY - 1f, x + 1f, startY + 1f)
+        val target = FocusSearch.next(rects, rects.lastIndex, direction, rowTolerancePx) ?: return false
+        focus(candidates[target].first)
         return true
     }
 
     /** Desplaza el panel lo justo para que [item] se vea; en la primera / última fila, hasta el borde. */
     private fun ensureVisible(item: SettingsFocusItem) {
+        if (!item.scrolls) return // fuera del panel con desplazamiento (ej. los botones de un modal)
         val scroll = scroll ?: return
         val viewport = viewport?.takeIf { it.isAttached } ?: return
         scope.launch {
-            val list = placed()
+            val list = placed().filter { it.first.scrolls } // la primera / última fila son las del panel
             val index = list.indexOfFirst { it.first === item }
             if (index < 0) return@launch
             val rects = list.map { it.second }
@@ -339,7 +376,8 @@ class SettingsNav(
                 when {
                     item?.onLeft?.invoke() == true -> Unit
                     move(FocusMove.Left) -> sound?.playFocusSound()
-                    else -> leave() // no hay más a la izquierda: de vuelta a la lista de secciones
+                    canLeave -> leave() // no hay más a la izquierda: de vuelta a la lista de secciones
+                    else -> Unit
                 }
             }
             LogicalButton.DPAD_RIGHT -> {
@@ -354,6 +392,9 @@ class SettingsNav(
         }
     }
 }
+
+/** true dentro de un panel con desplazamiento: sus controles se mantienen a la vista al enfocarlos. */
+val LocalInScrollPanel = staticCompositionLocalOf { false }
 
 /** El [SettingsNav] de la Configuración abierta; null fuera de ella (los controles funcionan solo con toque). */
 val LocalSettingsNav = staticCompositionLocalOf<SettingsNav?> { null }
@@ -378,6 +419,7 @@ fun Modifier.settingsFocus(
 ): Modifier {
     val nav = LocalSettingsNav.current ?: return this
     val item = remember { SettingsFocusItem() }
+    item.scrolls = LocalInScrollPanel.current
     item.onLeft = onLeft
     item.onRight = onRight
     item.onActivate = onActivate
@@ -406,10 +448,17 @@ private const val CursorFadeMs = 220
 
 /** Cuánto sobresale el cursor del control, por cada lado. */
 private val SettingsCursorOutset = 6.dp
+private val CompactCursorOutset = 3.dp
 
 /** Esquinas del cursor en Configuración: más cortas y más cerradas que las de la grilla de juegos. */
 private val SettingsCursorArm = 14.dp
 private val SettingsCursorRadius = 10.dp
+
+/** Versión compacta (modales): aún más corto y fino. */
+private val CompactCursorArm = 10.dp
+private val CompactCursorRadius = 8.dp
+private val CompactCursorStroke = 3.dp
+private val CompactCursorBorder = 1.5.dp
 
 /**
  * Dibuja el cursor sobre el control enfocado. Va en el mismo espacio que el panel de opciones (recorta a
@@ -417,7 +466,7 @@ private val SettingsCursorRadius = 10.dp
  * cursor de la grilla de juegos.
  */
 @Composable
-fun SettingsCursorOverlay(nav: SettingsNav, modifier: Modifier = Modifier) {
+fun SettingsCursorOverlay(nav: SettingsNav, modifier: Modifier = Modifier, compact: Boolean = false) {
     val density = LocalDensity.current
     val item = nav.cursorTarget
     var overlay by remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -429,9 +478,10 @@ fun SettingsCursorOverlay(nav: SettingsNav, modifier: Modifier = Modifier) {
             .onGloballyPositioned { overlay = it }
             .clipToBounds(),
     ) {
-        if (item == null) return@Box
+        // Sin control (o sin colocar todavía, como la lista de secciones que un modal no tiene): sin cursor.
+        if (item == null || item.placedTick == 0) return@Box
 
-        val outsetPx = with(density) { SettingsCursorOutset.toPx() }
+        val outsetPx = with(density) { (if (compact) CompactCursorOutset else SettingsCursorOutset).toPx() }
         // Tamaño animado: el cursor crece o se encoge hacia el control nuevo.
         val spec = spring<Float>(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow)
         val width by animateFloatAsState(item.size.width.toFloat(), spec, label = "cursorWidth")
@@ -445,8 +495,10 @@ fun SettingsCursorOverlay(nav: SettingsNav, modifier: Modifier = Modifier) {
         Cursor(
             width = with(density) { (width + 2 * outsetPx).toDp() },
             height = with(density) { (height + 2 * outsetPx).toDp() },
-            cornerRadius = SettingsCursorRadius,
-            armLength = SettingsCursorArm,
+            cornerRadius = if (compact) CompactCursorRadius else SettingsCursorRadius,
+            armLength = if (compact) CompactCursorArm else SettingsCursorArm,
+            strokeWidth = if (compact) CompactCursorStroke else CursorStrokeWidth,
+            borderWidth = if (compact) CompactCursorBorder else CursorBorderWidth,
             modifier = Modifier.graphicsLayer { this.alpha = alpha }.offset {
                 // Se lee al ubicar el cursor: seguir al control al desplazar no recompone nada. El
                 // desplazamiento se lee aquí para que este bloque se repita cuando el panel se mueve.

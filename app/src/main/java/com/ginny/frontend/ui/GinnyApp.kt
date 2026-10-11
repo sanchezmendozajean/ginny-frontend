@@ -64,7 +64,7 @@ fun GinnyApp(
     settingsOpen: Boolean = false,
     onCloseSettings: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
-    /** Avisa a MainActivity de si el modal de un juego está abierto (para que Y lo atienda el modal). */
+    /** Avisa a MainActivity de si hay un modal que usa Y (el de un juego, el de avance del scrapeo): Y deja de abrir Configuración. */
     onGameModalOpenChanged: (Boolean) -> Unit = {},
 ) {
     // El tema lo provee GinnyTheme (en MainActivity), leído de Configuración.
@@ -87,7 +87,6 @@ fun GinnyApp(
     // habilitados, B cierra primero el modal.
     var openGame by remember { mutableStateOf<GameEntry?>(null) }
     BackHandler(enabled = openGame != null && !settingsOpen) { openGame = null }
-    LaunchedEffect(openGame != null) { onGameModalOpenChanged(openGame != null) }
 
     // Scrapper: el modal que lo lanza (lista de sistemas) y el que muestra su avance. Se declaran aquí,
     // después de los otros BackHandler, para que B cierre primero lo que está más arriba.
@@ -104,6 +103,8 @@ fun GinnyApp(
     }
     BackHandler(enabled = scrapLaunchOpen, onBack = closeScrapLaunch)
     BackHandler(enabled = scrapProgressOpen) { scrapProgressOpen = false }
+    val yTakenByModal = openGame != null || scrapProgressOpen
+    LaunchedEffect(yTakenByModal) { onGameModalOpenChanged(yTakenByModal) }
 
     // Al terminar un lote con el modal de avance cerrado, un aviso breve (el ícono animado desaparece).
     val context = LocalContext.current

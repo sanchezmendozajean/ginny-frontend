@@ -17,13 +17,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,6 +45,8 @@ import com.ginny.frontend.data.scrap.SystemScrapStats
 import com.ginny.frontend.ui.components.settings.GinnyButton
 import com.ginny.frontend.ui.components.settings.GinnyDropdown
 import com.ginny.frontend.ui.components.settings.GinnyProgressBar
+import com.ginny.frontend.ui.components.settings.LocalInScrollPanel
+import com.ginny.frontend.ui.components.settings.settingsFocus
 import androidx.compose.foundation.layout.widthIn
 import com.ginny.frontend.ui.screens.settings.SettingsModalCornerRadius
 import com.ginny.frontend.ui.theme.GinnyFont
@@ -74,7 +78,8 @@ fun ScrapLaunchModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () ->
         val toProcess = viewModel.selectedGameCount(stats, selected, scope)
         val canStart = !running && !inspecting && toProcess > 0
 
-        ScrapModalScrim(onDismiss = onClose) {
+        val nav = rememberModalNav()
+        ScrapModalScrim(onDismiss = onClose, nav = nav) {
             val shape = RoundedCornerShape(SettingsModalCornerRadius)
             // Mismo tamaño que el modal de Configuración: toda la pantalla menos el margen (lo pone el scrim).
             BoxWithConstraints(
@@ -126,20 +131,38 @@ fun ScrapLaunchModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () ->
                             )
                         }
                     } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(if (wide) 2 else 1),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
-                        ) {
-                            items(systems, key = { it.name }) { id ->
-                                SystemChoiceRow(
-                                    id = id,
-                                    stats = stats[id],
-                                    logo = logos[id],
-                                    checked = id in selected,
-                                    onToggle = { viewModel.toggleSystem(id) },
-                                )
+                        // La lista se desplaza; el cursor la mantiene a la vista (ver SettingsNav). Se arma con filas
+                        // de 1 o 2 sistemas, sin carga perezosa, para que todos los sistemas existan como destino.
+                        val listScroll = rememberScrollState()
+                        DisposableEffect(nav, listScroll) {
+                            nav.scroll = listScroll
+                            onDispose { if (nav.scroll === listScroll) nav.scroll = null }
+                        }
+                        CompositionLocalProvider(LocalInScrollPanel provides true) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .onGloballyPositioned { nav.viewport = it }
+                                    .verticalScroll(listScroll),
+                            ) {
+                                systems.chunked(if (wide) 2 else 1).forEach { rowSystems ->
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                        rowSystems.forEach { id ->
+                                            Box(Modifier.weight(1f)) {
+                                                SystemChoiceRow(
+                                                    id = id,
+                                                    stats = stats[id],
+                                                    logo = logos[id],
+                                                    checked = id in selected,
+                                                    onToggle = { viewModel.toggleSystem(id) },
+                                                )
+                                            }
+                                        }
+                                        if (wide && rowSystems.size == 1) Spacer(Modifier.weight(1f))
+                                    }
+                                }
                             }
                         }
                     }
@@ -151,6 +174,7 @@ fun ScrapLaunchModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () ->
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
                                     .size(32.dp) // zona de toque más grande que la casilla
+                                    .settingsFocus(onActivate = { viewModel.toggleAll() })
                                     .pointerInput(Unit) { detectTapGestures { viewModel.toggleAll() } },
                             ) {
                                 Checkbox(checked = selected.size == systems.size, size = 18.dp)
@@ -203,6 +227,7 @@ private fun SystemChoiceRow(id: SystemId, stats: SystemScrapStats?, logo: androi
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .settingsFocus(onActivate = onToggle)
             .background(Color.White.copy(alpha = 0.7f), shape)
             .border(1.dp, palette.ink.copy(alpha = 0.08f), shape)
             .pointerInput(Unit) { detectTapGestures { onToggle() } }

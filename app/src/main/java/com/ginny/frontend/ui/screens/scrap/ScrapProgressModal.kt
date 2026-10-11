@@ -6,7 +6,22 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.platform.LocalDensity
+import com.ginny.frontend.data.ButtonMapping
+import com.ginny.frontend.data.LogicalButton
+import com.ginny.frontend.ui.components.settings.LocalSettingsNav
+import com.ginny.frontend.ui.components.settings.SettingsCursorOverlay
+import com.ginny.frontend.ui.components.settings.SettingsNav
+import com.ginny.frontend.ui.util.LocalSoundManager
+import com.ginny.frontend.ui.util.appContainer
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -40,6 +55,8 @@ import com.ginny.frontend.data.scrap.ScrapCurrent
 import com.ginny.frontend.data.scrap.ScrapMedia
 import com.ginny.frontend.data.scrap.ScrapOutcome
 import com.ginny.frontend.data.scrap.ScrapProgress
+import com.ginny.frontend.ui.components.FaceButton
+import com.ginny.frontend.ui.components.FaceButtonIcon
 import com.ginny.frontend.ui.components.settings.GinnyButton
 import com.ginny.frontend.ui.components.settings.GinnyProgressBar
 import com.ginny.frontend.ui.screens.settings.SettingsModalCornerRadius
@@ -62,7 +79,11 @@ fun ScrapProgressModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () 
         val progress by viewModel.progress.collectAsState()
         val running by viewModel.isRunning.collectAsState()
 
-        ScrapModalScrim(onDismiss = onClose) {
+        // Sin cursor: los botones llevan el ícono del botón del mando que los activa (B = Cerrar, Y = Detener).
+        ScrapModalScrim(
+            onDismiss = onClose,
+            onButton = { if (it == LogicalButton.Y && running) viewModel.stop() },
+        ) {
             val shape = RoundedCornerShape(SettingsModalCornerRadius)
             Column(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -102,8 +123,15 @@ fun ScrapProgressModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () 
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    if (running) GinnyButton("Detener", onClick = viewModel::stop)
-                    GinnyButton("Cerrar", primary = !running, onClick = onClose)
+                    if (running) {
+                        GinnyButton("Detener", onClick = viewModel::stop, leadingIcon = { FaceButtonIcon(FaceButton.Y, tint = it, size = 20.dp) })
+                    }
+                    GinnyButton(
+                        "Cerrar",
+                        primary = !running,
+                        onClick = onClose,
+                        leadingIcon = { FaceButtonIcon(FaceButton.B, tint = it, size = 20.dp) },
+                    )
                 }
             }
         }
@@ -256,26 +284,106 @@ private fun Note(text: String) {
 }
 
 /**
- * Cortina oscura a pantalla completa con el contenido centrado. Tocar fuera de la tarjeta ([onDismiss])
- * cierra el modal; los toques no llegan a lo que hay detrás.
+ * El foco por cruceta de un modal del scrapper: lo mismo que en Configuración (cursor sobre cada botón,
+ * casilla o desplegable), pero sin lista de secciones a la que volver. Se usa con [ScrapModalScrim].
  */
 @Composable
-fun ScrapModalScrim(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+fun rememberModalNav(): SettingsNav {
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    return remember {
+        SettingsNav(
+            scope = scope,
+            rowTolerancePx = with(density) { 10.dp.toPx() },
+            edgeMarginPx = with(density) { 16.dp.toPx() },
+        ).also { it.canLeave = false }
+    }
+}
+
+/**
+ * Cortina oscura a pantalla completa con el contenido centrado. Tocar fuera de la tarjeta ([onDismiss])
+ * cierra el modal; los toques no llegan a lo que hay detrás.
+ *
+ * Con [nav] el modal se maneja con el mando: el cursor empieza en el último control (el botón principal,
+ * abajo a la derecha), la cruceta lo mueve y A actúa sobre el que tiene el cursor. B (cerrar) lo maneja
+ * MainActivity antes de llegar aquí. Tocar la pantalla apaga el cursor; la cruceta lo vuelve a mostrar.
+ */
+@Composable
+fun ScrapModalScrim(
+    onDismiss: () -> Unit,
+    nav: SettingsNav? = null,
+    /** Cada botón del mando que se pulsa (para los modales con atajos propios, como Y = Detener). */
+    onButton: ((LogicalButton?) -> Unit)? = null,
+    content: @Composable () -> Unit,
+) {
+    val buttonMapping by appContainer().settingsRepository.buttonMapping.collectAsState(initial = ButtonMapping.DEFAULT)
+    val sound = LocalSoundManager.current
+
     // Se queda con el foco y consume las teclas: la cruceta no debe mover lo que hay detrás (Configuración
-    // o la grilla). B lo maneja MainActivity antes de llegar aquí.
+    // o la grilla).
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    if (nav != null) {
+        nav.buttonMapping = buttonMapping
+        nav.sound = sound
+        nav.reclaimFocus = { runCatching { focusRequester.requestFocus() } }
+        // Con los controles ya colocados, el cursor empieza en el botón principal.
+        LaunchedEffect(nav) {
+            delay(150)
+            nav.enter(last = true)
+        }
+    }
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .fillMaxSize()
             .background(SettingsScrimColor)
+            .then(
+                if (nav != null) {
+                    // Cualquier toque apaga el cursor (sin consumirlo).
+                    Modifier.pointerInput(nav) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                if (event.changes.any { it.pressed }) nav.hideCursor()
+                            }
+                        }
+                    }
+                } else {
+                    Modifier
+                },
+            )
             .pointerInput(Unit) { detectTapGestures { onDismiss() } }
             .focusRequester(focusRequester)
             .focusable()
-            .onKeyEvent { true }
+            .onKeyEvent { event ->
+                if (onButton != null && event.type == KeyEventType.KeyDown) {
+                    onButton(buttonMapping.buttonForKeyCode(event.nativeKeyEvent.keyCode))
+                }
+                if (nav != null && event.type == KeyEventType.KeyDown) {
+                    val button = buttonMapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)
+                    // Con el cursor apagado, la primera tecla solo lo vuelve a mostrar (A no actúa a ciegas).
+                    val wasHidden = !nav.cursorVisible
+                    if (wasHidden) nav.showCursor()
+                    if (nav.active && !(wasHidden && button == LogicalButton.A)) nav.handleKey(button)
+                }
+                true
+            }
             .padding(SettingsModalMargin),
     ) {
-        content()
+        if (nav == null) {
+            content()
+        } else {
+            CompositionLocalProvider(LocalSettingsNav provides nav) {
+                content()
+                // El cursor, encima de la tarjeta y recortado a sus esquinas.
+                SettingsCursorOverlay(
+                    nav = nav,
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(SettingsModalCornerRadius)),
+                    compact = true, // más corto y fino que en Configuración
+                )
+            }
+        }
     }
 }
