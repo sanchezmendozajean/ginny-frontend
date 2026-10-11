@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/mock.css">
 </head>
 <body>
   <header class="nav">
@@ -38,12 +39,20 @@
       <p class="meta">Versión 0.2.0 · Android 10 o superior · Gratis</p>
 
       <figure class="shot">
-        <div class="shot-frame">
-          <div class="ph"><span>Captura pendiente</span><small>02-sistemas.png</small></div>
-          <img src="assets/img/02-sistemas.png" alt="Pantalla de sistemas de Ginny Frontend" onerror="this.remove()">
-        </div>
-        <figcaption>La pantalla de sistemas: una grilla con tus consolas.</figcaption>
-      </figure>
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta de la pantalla de sistemas"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile"><span class="m-star">★</span></div></div><div class="m-cell"><div class="m-tile" style="background:#eb8181"><b style="color:#8c3f3f">NES</b></div></div><div class="m-cell"><div class="m-tile" style="background:#ebd481"><b style="color:#8c7c3f">SNES</b></div><div class="m-cursor"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div><div class="m-cell"><div class="m-tile" style="background:#afeb81"><b style="color:#618c3f">GBA</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81eba6"><b style="color:#3f8c5a">PS</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81ddeb"><b style="color:#3f828c">GENE</b></div></div><div class="m-cell"><div class="m-tile" style="background:#818aeb"><b style="color:#3f468c">PSP</b></div></div><div class="m-cell"><div class="m-tile" style="background:#cb81eb"><b style="color:#753f8c">DREA</b></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>SNES</strong><small>24 juegos</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i><i></i><i></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div></div></div>
+          <figcaption>La pantalla de sistemas: una grilla con tus consolas (maqueta ilustrativa).</figcaption>
+        </figure>
     </section>
 
     <section class="block wrap" id="caracteristicas">
@@ -74,11 +83,43 @@
           <a class="btn ghost" href="docs.html#carpeta-usuario">Ver la estructura de carpetas</a>
         </div>
         <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>04-modal-juego.png</small></div>
-            <img src="assets/img/04-modal-juego.png" alt="Ficha de un juego con su caja en 3D" onerror="this.remove()">
-          </div>
-          <figcaption>La ficha de un juego, con caja en 3D, información y video.</figcaption>
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta de la ficha de un juego"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui blurred">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span><span class="m-sep">/</span><span class="m-hsys">GBA</span><span class="m-sep">/</span><span class="m-hsys">8 juegos</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile g t" style="--gh:10"></div><div class="m-cursor"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:200"></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:120"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:290"></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:40"></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:330"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:170"></div></div><div class="m-cell"><div class="m-tile g t" style="--gh:250"></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>Cosmic Runner</strong><small>Estudio Ejemplo (2021)</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="B"></i>Regresar</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div>
+<div class="m-scrim"></div>
+<div class="m-card"><div class="m-game">
+  <div class="m-body">
+    <div class="m-left">
+      <div class="m-head"><div class="m-cell"><div class="m-tile g t" style="--gh:10"></div></div><div><h3>Cosmic Runner</h3><div class="m-chip"><i></i>Game Boy Advance</div></div></div>
+      <div class="m-sec"><label>Información</label><div class="m-box"><p>Corre por un mundo de pistas flotantes, esquiva obstáculos y recoge estrellas para desbloquear nuevos circuitos. Un juego de ejemplo para esta maqueta.</p>
+        <div class="m-fact"><b>Estudio</b><span>Estudio Ejemplo</span></div>
+        <div class="m-fact"><b>Año</b><span>2021</span></div></div></div>
+      <div class="m-sec"><label>Archivo</label><div class="m-box"><b style="font-size:13px">Cosmic Runner.gba</b> <span style="font-size:12px;color:var(--muted);font-weight:500">· gba/</span></div></div>
+      <div class="m-sec"><label>Emulador</label><div class="m-box"><div class="m-two"><div><small>Aplicación</small><div class="m-drop">RetroArch</div></div><div><small>Core</small><div class="m-drop">mGBA</div></div></div></div></div>
+    </div>
+    <div class="m-side3d"><div class="m-box3d" style="--gh:10"><div class="s"></div><div class="f"></div></div></div>
+  </div>
+  
+<div class="m-actions">
+  <span class="m-act"><i class="fb big" data-b="Y"></i>Más</span>
+  
+  <span class="m-spacer"></span>
+  <span class="m-act"><i class="fb big" data-b="X"></i>Video</span>
+  <span class="m-act"><i class="fb big" data-b="B"></i>Regresar</span>
+  <span class="m-act play"><i class="fb big" data-b="A"></i>Jugar</span>
+</div>
+  
+</div></div></div></div>
+          <figcaption>La ficha de un juego: información, archivo, emulador y caja en 3D (maqueta ilustrativa).</figcaption>
         </figure>
       </div>
     </section>

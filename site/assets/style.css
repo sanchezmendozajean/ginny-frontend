@@ -116,12 +116,9 @@ kbd {
   background: var(--glass-strong); border: 1px solid rgb(255 255 255 / 0.9); box-shadow: var(--shadow);
 }
 .shot-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.shot .ph {
   position: absolute; inset: 0; display: grid; place-content: center; gap: 4px; text-align: center; color: var(--muted);
   background: repeating-linear-gradient(45deg, transparent 0 14px, oklch(0.3 0.06 var(--h) / 0.04) 14px 28px);
 }
-.shot .ph span { font-weight: 800; }
-.shot .ph small { font-family: var(--mono); font-size: 0.78rem; }
 .shot figcaption { margin-top: 10px; font-size: 0.92rem; color: var(--muted); text-align: center; }
 .hero .shot { max-width: 880px; margin: 48px auto 0; }
 

@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/mock.css">
 </head>
 <body>
   <header class="nav">
@@ -54,7 +55,7 @@
 
     <article class="doc">
       <h1>Documentación</h1>
-      <p class="intro">Todo lo que Ginny Frontend puede hacer y dónde guarda cada cosa.</p>
+      <p class="intro">Todo lo que Ginny Frontend puede hacer y dónde guarda cada cosa. Las imágenes son maquetas ilustrativas de la interfaz (con juegos de ejemplo): cambian de color con el tema que elijas arriba.</p>
 
       <!-- ───────────────────────── Primeros pasos ───────────────────────── -->
       <section id="primeros-pasos">
@@ -72,11 +73,19 @@
           <p>Cuando añadas, quites o renombres ROMs, vuelve a pulsar «Escanear». La navegación lee del último escaneo, no del disco, por eso es instantánea.</p>
         </div>
         <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>01-primer-arranque.png</small></div>
-            <img src="assets/img/01-primer-arranque.png" alt="Primer arranque: la interfaz sin contenido" onerror="this.remove()">
-          </div>
-          <figcaption>Primer arranque: sin contenido y con «Regresar» y «Opciones» en la barra inferior.</figcaption>
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta del primer arranque: la interfaz sin contenido"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow dim">‹</div><div class="m-grid"></div><div class="m-arrow dim">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong></strong><small></small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div></div></div>
+          <figcaption>Primer arranque: sin contenido y con «Opciones» como única acción en la barra inferior.</figcaption>
         </figure>
       </section>
 
@@ -110,11 +119,19 @@
           <li>Cuántas filas se ven a la vez (1 a 4) se elige en Configuración → Interfaz.</li>
         </ul>
         <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>03-juegos.png</small></div>
-            <img src="assets/img/03-juegos.png" alt="Grilla de juegos de un sistema" onerror="this.remove()">
-          </div>
-          <figcaption>La grilla de juegos de un sistema.</figcaption>
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta de la grilla de juegos de un sistema"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span><span class="m-sep">/</span><span class="m-hsys">GBA</span><span class="m-sep">/</span><span class="m-hsys">8 juegos</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile g t" style="--gh:10"></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:200"></div><div class="m-cursor"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:120"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:290"></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:40"></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:330"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:170"></div></div><div class="m-cell"><div class="m-tile g t" style="--gh:250"></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>Pixel Quest</strong><small>Estudio Ejemplo (2021)</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="B"></i>Regresar</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div></div></div>
+          <figcaption>La grilla de juegos de un sistema, con el cursor sobre uno de ellos (juegos de ejemplo).</figcaption>
         </figure>
 
         <h3 id="ficha-juego">La ficha de un juego</h3>
@@ -144,10 +161,42 @@
           <p>Borra la ROM de tu dispositivo. Si lo ves fallar, vuelve a elegir la carpeta de ROMs en Configuración → Carpetas para otorgar el permiso de lectura y escritura.</p>
         </div>
         <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>05-menu-mas.png</small></div>
-            <img src="assets/img/05-menu-mas.png" alt="Menú Más de la ficha de un juego" onerror="this.remove()">
-          </div>
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta de la ficha de un juego con el menú Más abierto"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui blurred">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span><span class="m-sep">/</span><span class="m-hsys">GBA</span><span class="m-sep">/</span><span class="m-hsys">8 juegos</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile g t" style="--gh:10"></div><div class="m-cursor"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:200"></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:120"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:290"></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:40"></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:330"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:170"></div></div><div class="m-cell"><div class="m-tile g t" style="--gh:250"></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>Cosmic Runner</strong><small>Estudio Ejemplo (2021)</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="B"></i>Regresar</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div>
+<div class="m-scrim"></div>
+<div class="m-card"><div class="m-game">
+  <div class="m-body">
+    <div class="m-left">
+      <div class="m-head"><div class="m-cell"><div class="m-tile g t" style="--gh:10"></div></div><div><h3>Cosmic Runner</h3><div class="m-chip"><i></i>Game Boy Advance</div></div></div>
+      <div class="m-sec"><label>Información</label><div class="m-box"><p>Corre por un mundo de pistas flotantes, esquiva obstáculos y recoge estrellas para desbloquear nuevos circuitos. Un juego de ejemplo para esta maqueta.</p>
+        <div class="m-fact"><b>Estudio</b><span>Estudio Ejemplo</span></div>
+        <div class="m-fact"><b>Año</b><span>2021</span></div></div></div>
+      <div class="m-sec"><label>Archivo</label><div class="m-box"><b style="font-size:13px">Cosmic Runner.gba</b> <span style="font-size:12px;color:var(--muted);font-weight:500">· gba/</span></div></div>
+      <div class="m-sec"><label>Emulador</label><div class="m-box"><div class="m-two"><div><small>Aplicación</small><div class="m-drop">RetroArch</div></div><div><small>Core</small><div class="m-drop">mGBA</div></div></div></div></div>
+    </div>
+    <div class="m-side3d"><div class="m-box3d" style="--gh:10"><div class="s"></div><div class="f"></div></div></div>
+  </div>
+  
+<div class="m-actions">
+  <span class="m-act"><i class="fb big" data-b="Y"></i>Más</span>
+  <span class="m-act fav">★ En favoritos</span>
+  <span class="m-spacer"></span>
+  <span class="m-act"><i class="fb big" data-b="X"></i>Video</span>
+  <span class="m-act"><i class="fb big" data-b="B"></i>Regresar</span>
+  <span class="m-act play"><i class="fb big" data-b="A"></i>Jugar</span>
+</div>
+  <div class="m-menu"><div class="hl">Scrappear</div><div>Cambiar icono</div><div>Quitar de favoritos</div><div class="del">Eliminar</div></div>
+</div></div></div></div>
           <figcaption>El menú «Más» de la ficha.</figcaption>
         </figure>
       </section>
@@ -173,11 +222,41 @@
         </div>
         <h3>Doble pantalla</h3>
         <p>Si tu dispositivo tiene una segunda pantalla, Ginny la usa sola: la interfaz permanece en una y la otra muestra el logo del sistema enfocado, el wheel del juego y, con la ficha abierta, la caja en 3D y el video. Al conectar o desconectar una pantalla, Ginny se acomoda sola. «Intercambiar pantalla principal» decide cuál es cuál.</p>
-        <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>06-config-interfaz.png</small></div>
-            <img src="assets/img/06-config-interfaz.png" alt="Configuración, sección Interfaz" onerror="this.remove()">
+        <figure class="shot" style="max-width:none">
+          <div class="dual">
+            <div class="shot-frame mockframe" role="img" aria-label="Maqueta de la pantalla de la interfaz"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span><span class="m-sep">/</span><span class="m-hsys">GBA</span><span class="m-sep">/</span><span class="m-hsys">8 juegos</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile g t" style="--gh:10"></div><div class="m-cursor"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:200"></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:120"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:290"></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:40"></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:330"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:170"></div></div><div class="m-cell"><div class="m-tile g t" style="--gh:250"></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>Cosmic Runner</strong><small>Estudio Ejemplo (2021)</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="B"></i>Regresar</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div></div></div>
+            <div class="shot-frame mockframe" role="img" aria-label="Maqueta de la pantalla secundaria"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-secondary"><div class="wheel">COSMIC RUNNER</div><div class="m-box3d" style="--gh:10"><div class="s"></div><div class="f"></div></div></div></div></div>
           </div>
+          <figcaption>Con dos pantallas: la interfaz (izquierda) y la pantalla secundaria (derecha), que muestra el wheel y la caja del juego enfocado.</figcaption>
+        </figure>
+        <figure class="shot">
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta de Configuración, sección Interfaz"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui blurred">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile" style="background:#eb8181"><b style="color:#8c3f3f">NES</b></div></div><div class="m-cell"><div class="m-tile" style="background:#ebd481"><b style="color:#8c7c3f">SNES</b></div></div><div class="m-cell"><div class="m-tile" style="background:#afeb81"><b style="color:#618c3f">GBA</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81eba6"><b style="color:#3f8c5a">PS</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81ddeb"><b style="color:#3f828c">GENE</b></div></div><div class="m-cell"><div class="m-tile" style="background:#818aeb"><b style="color:#3f468c">PSP</b></div></div><div class="m-cell"><div class="m-tile" style="background:#cb81eb"><b style="color:#753f8c">DREA</b></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>NES</strong><small>12 juegos</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div><div class="m-scrim"></div><div class="m-card"><div class="m-settings">
+  <div class="m-side"><h4>Configuración</h4><div class="m-pill on">Interfaz</div><div class="m-pill">Carpetas</div><div class="m-pill">Sistemas</div><div class="m-pill">Scrapper</div><div class="m-pill">Créditos</div></div>
+  <div class="m-vline"></div>
+  <div class="m-opts" style="-webkit-mask-image:linear-gradient(#000 90%,transparent);mask-image:linear-gradient(#000 90%,transparent)"><div class="m-group"><label>Grilla</label><div class="m-box"><div class="m-row"><div class="t"><b>Filas visibles</b></div><div style="position:relative"><div class="m-seg"><i>1</i><i class="on">2</i><i>3</i><i>4</i></div><div class="m-cursor tight"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div></div></div></div><div class="m-group"><label>Tema</label><div class="m-box"><div class="m-row"><div class="t"><b>Paleta de color</b></div><div class="m-drop">Menta</div></div></div></div><div class="m-group"><label>Botones</label><div class="m-box"><div class="m-row"><div class="t"><b>Distribución</b></div><div class="m-drop">YX/BA</div></div></div></div><div class="m-group"><label>Pantallas</label><div class="m-box"><div class="m-row"><div class="t"><b>Intercambiar pantalla principal</b><small>Con dos pantallas, la interfaz pasa a la otra y la caja y el video del juego van en esta.</small></div><span class="m-sw"></span></div></div></div><div class="m-group"><label>Audio</label><div class="m-box"><div class="m-row"><div class="t"><b>Música de fondo</b></div><div class="m-slide"><div class="tr"><i style="width:50%"></i></div><span>50%</span></div></div><div class="m-row"><div class="t"><b>Sonidos de interfaz</b></div><div class="m-slide"><div class="tr"><i style="width:70%"></i></div><span>70%</span></div></div></div></div></div>
+</div></div></div></div>
           <figcaption>Configuración → Interfaz.</figcaption>
         </figure>
 
@@ -195,11 +274,23 @@
         </div>
         <p>Todas las carpetas se eligen con el selector de carpetas de Android y Ginny guarda el permiso, así que no tendrás que volver a darlo.</p>
         <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>07-config-carpetas.png</small></div>
-            <img src="assets/img/07-config-carpetas.png" alt="Configuración, sección Carpetas" onerror="this.remove()">
-          </div>
-          <figcaption>Configuración → Carpetas, con los botones habilitándose en cadena.</figcaption>
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta de Configuración, sección Carpetas"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui blurred">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile" style="background:#eb8181"><b style="color:#8c3f3f">NES</b></div></div><div class="m-cell"><div class="m-tile" style="background:#ebd481"><b style="color:#8c7c3f">SNES</b></div></div><div class="m-cell"><div class="m-tile" style="background:#afeb81"><b style="color:#618c3f">GBA</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81eba6"><b style="color:#3f8c5a">PS</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81ddeb"><b style="color:#3f828c">GENE</b></div></div><div class="m-cell"><div class="m-tile" style="background:#818aeb"><b style="color:#3f468c">PSP</b></div></div><div class="m-cell"><div class="m-tile" style="background:#cb81eb"><b style="color:#753f8c">DREA</b></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>NES</strong><small>12 juegos</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div><div class="m-scrim"></div><div class="m-card"><div class="m-settings">
+  <div class="m-side"><h4>Configuración</h4><div class="m-pill">Interfaz</div><div class="m-pill on">Carpetas</div><div class="m-pill">Sistemas</div><div class="m-pill">Scrapper</div><div class="m-pill">Créditos</div></div>
+  <div class="m-vline"></div>
+  <div class="m-opts" style="-webkit-mask-image:linear-gradient(#000 90%,transparent);mask-image:linear-gradient(#000 90%,transparent)"><div class="m-group"><label>Carpeta de Usuario</label><div class="m-box"><div class="m-row"><div class="t"><b>Assets y configuración</b><small>…/Ginny USER</small></div><span class="m-btn">Elegir</span></div></div></div><div class="m-group"><label>Biblioteca</label><div class="m-box"><div class="m-row"><div class="t"><b>Carpeta de ROMs</b><small>Sin elegir</small></div><div style="position:relative"><span class="m-btn">Elegir</span><div class="m-cursor tight"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div></div><div class="m-row"><div class="t"><b>Escanear biblioteca</b><small>Elige primero la carpeta de ROMs</small></div><span class="m-btn primary off">Escanear</span></div></div></div><div class="m-group"><label>RetroArch</label><div class="m-box"><div class="m-row"><div class="t"><b>Estados guardados (opcional)</b><small>Sin elegir<br>Activa "savestate_thumbnail_enable" en RetroArch para ver miniaturas</small></div><span class="m-btn">Elegir</span></div></div></div></div>
+</div></div></div></div>
+          <figcaption>Configuración → Carpetas: con la Carpeta de Usuario elegida, falta la de ROMs y «Escanear» sigue deshabilitado.</figcaption>
         </figure>
 
         <h3 id="cfg-sistemas">Sistemas</h3>
@@ -211,10 +302,22 @@
           <li><strong>Package alternativo</strong>, para usar otra app o fork del emulador.</li>
         </ul>
         <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>08-config-sistemas.png</small></div>
-            <img src="assets/img/08-config-sistemas.png" alt="Configuración, sección Sistemas" onerror="this.remove()">
-          </div>
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta de Configuración, sección Sistemas"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui blurred">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile" style="background:#eb8181"><b style="color:#8c3f3f">NES</b></div></div><div class="m-cell"><div class="m-tile" style="background:#ebd481"><b style="color:#8c7c3f">SNES</b></div></div><div class="m-cell"><div class="m-tile" style="background:#afeb81"><b style="color:#618c3f">GBA</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81eba6"><b style="color:#3f8c5a">PS</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81ddeb"><b style="color:#3f828c">GENE</b></div></div><div class="m-cell"><div class="m-tile" style="background:#818aeb"><b style="color:#3f468c">PSP</b></div></div><div class="m-cell"><div class="m-tile" style="background:#cb81eb"><b style="color:#753f8c">DREA</b></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>NES</strong><small>12 juegos</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div><div class="m-scrim"></div><div class="m-card"><div class="m-settings">
+  <div class="m-side"><h4>Configuración</h4><div class="m-pill">Interfaz</div><div class="m-pill">Carpetas</div><div class="m-pill on">Sistemas</div><div class="m-pill">Scrapper</div><div class="m-pill">Créditos</div></div>
+  <div class="m-vline"></div>
+  <div class="m-opts" style="-webkit-mask-image:linear-gradient(#000 90%,transparent);mask-image:linear-gradient(#000 90%,transparent)"><div class="m-group"><label>Game Boy Advance</label><div class="m-box"><div class="m-row"><div class="t"><b>Carpeta de ROMs</b><small>Carpeta general</small></div><div style="display:flex;gap:8px"><span class="m-btn off">Restablecer</span><span class="m-btn">Cambiar</span></div></div><div class="m-row"><div class="t"><b>Emulador</b></div><div style="position:relative"><div class="m-drop">RetroArch (64-bit)</div><div class="m-cursor tight"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div></div><div class="m-row"><div class="t"><b>Core</b></div><div class="m-drop">mGBA</div></div><div class="m-row"><div class="t"><b>Package alternativo</b><small>Para otra app o fork del emulador</small></div><div class="m-field">com.ejemplo.emulador</div></div></div></div><div class="m-group"><label>Nintendo DS</label><div class="m-box"><div class="m-row"><div class="t"><b>Carpeta de ROMs</b><small>Carpeta general</small></div><span class="m-btn">Cambiar</span></div></div></div></div>
+</div></div></div></div>
           <figcaption>Configuración → Sistemas.</figcaption>
         </figure>
 
@@ -234,10 +337,22 @@
         </div>
         <p>Más detalles en <a href="#scrapper">El scrapper</a>.</p>
         <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>09-config-scrapper.png</small></div>
-            <img src="assets/img/09-config-scrapper.png" alt="Configuración, sección Scrapper" onerror="this.remove()">
-          </div>
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta de Configuración, sección Scrapper"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui blurred">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile" style="background:#eb8181"><b style="color:#8c3f3f">NES</b></div></div><div class="m-cell"><div class="m-tile" style="background:#ebd481"><b style="color:#8c7c3f">SNES</b></div></div><div class="m-cell"><div class="m-tile" style="background:#afeb81"><b style="color:#618c3f">GBA</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81eba6"><b style="color:#3f8c5a">PS</b></div></div><div class="m-cell"><div class="m-tile" style="background:#81ddeb"><b style="color:#3f828c">GENE</b></div></div><div class="m-cell"><div class="m-tile" style="background:#818aeb"><b style="color:#3f468c">PSP</b></div></div><div class="m-cell"><div class="m-tile" style="background:#cb81eb"><b style="color:#753f8c">DREA</b></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>NES</strong><small>12 juegos</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div><div class="m-scrim"></div><div class="m-card"><div class="m-settings">
+  <div class="m-side"><h4>Configuración</h4><div class="m-pill">Interfaz</div><div class="m-pill">Carpetas</div><div class="m-pill">Sistemas</div><div class="m-pill on">Scrapper</div><div class="m-pill">Créditos</div></div>
+  <div class="m-vline"></div>
+  <div class="m-opts" style="-webkit-mask-image:linear-gradient(#000 90%,transparent);mask-image:linear-gradient(#000 90%,transparent)"><div class="m-group"><label>ScreenScraper</label><div class="m-box"><div class="m-row"><div class="t"><b>Usuario</b><small>Tu cuenta de screenscraper.fr</small></div><div class="m-field">mi_usuario</div></div><div class="m-row"><div class="t"><b>Contraseña</b></div><div class="m-field">••••••••</div></div><div class="m-row"><div class="t"><b>Verificar</b><small><span class="m-ok">Cuenta válida · 18.000 descargas restantes hoy</span></small></div><div style="position:relative"><span class="m-btn">Verificar</span><div class="m-cursor tight"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div></div></div></div><div class="m-group"><label>SteamGridDB</label><div class="m-box"><div class="m-row"><div class="t"><b>Clave de API</b><small>Se genera en steamgriddb.com &gt; Preferencias &gt; API</small></div><div class="m-field">••••••••••••</div></div></div></div><div class="m-group"><label>Qué descargar</label><div class="m-box"><div class="m-row"><div class="t"><b>Metadatos</b><small>Descripción, sistema, año y estudio</small></div><span class="m-sw on"></span></div><div class="m-row"><div class="t"><b>Ícono</b><small>Imagen cuadrada del juego</small></div><span class="m-sw on"></span></div><div class="m-row"><div class="t"><b>Video</b><small>Pesa varios MB por juego</small></div><span class="m-sw"></span></div></div></div></div>
+</div></div></div></div>
           <figcaption>Configuración → Scrapper.</figcaption>
         </figure>
         <p>La sección <strong>Créditos</strong> lista a quién se deben la música, los efectos, los datos, el arte, la tipografía y las bibliotecas.</p>
@@ -310,14 +425,8 @@
         </div>
         <h3>Música propia</h3>
         <p>Deja archivos <code>.mp3</code>, <code>.wav</code>, <code>.ogg</code>, <code>.m4a</code> o <code>.flac</code> en <code>Interface/Background Music/</code> y aparecerán como opción en Configuración → Interfaz → Pista de fondo, junto a la pista incluida.</p>
-        <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>10-carpeta-usuario.png</small></div>
-            <img src="assets/img/10-carpeta-usuario.png" alt="La Carpeta de Usuario vista en un explorador de archivos" onerror="this.remove()">
-          </div>
-          <figcaption>La Carpeta de Usuario en un explorador de archivos.</figcaption>
-        </figure>
-      </section>
+        
+        </section>
 
       <!-- ───────────────────────── Artes ───────────────────────── -->
       <section id="artes">
@@ -370,10 +479,25 @@ Assets/nes/metadata/<span class="a">BomberMan.nes</span>.json</pre>
           <li><strong>Biblioteca:</strong> Configuración → Scrapper → Scrappear. Eliges los sistemas y Ginny descarga lo de todos sus juegos. Si lo interrumpes, <strong>reanuda donde quedó</strong>. Puedes ver el avance en cualquier momento desde el ícono de la barra superior.</li>
         </ul>
         <figure class="shot">
-          <div class="shot-frame">
-            <div class="ph"><span>Captura pendiente</span><small>11-scrapeo-progreso.png</small></div>
-            <img src="assets/img/11-scrapeo-progreso.png" alt="Avance del scrapeo de la biblioteca" onerror="this.remove()">
-          </div>
+          <div class="shot-frame mockframe" role="img" aria-label="Maqueta del avance del scrapeo"><div class="mock"><svg class="m-bgshapes"></svg><div class="m-ui blurred">
+<div class="m-header">
+  <div class="m-glass"><span class="m-logo"></span><span class="m-hname">Ginny</span><span class="m-sep">/</span><span class="m-hsys">GBA</span><span class="m-sep">/</span><span class="m-hsys">8 juegos</span></div>
+  <div class="m-glass"><span class="m-clock">08:45 PM</span><span class="m-batt"><i></i>82%</span></div>
+</div><div class="m-content"><div class="m-arrow">‹</div><div class="m-grid" style="--cols:4"><div class="m-cell"><div class="m-tile g t" style="--gh:10"></div><div class="m-cursor"><span class="a"></span><span class="b"></span><span class="c"></span><span class="d"></span></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:200"></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:120"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:290"></div></div><div class="m-cell"><div class="m-tile g c" style="--gh:40"></div></div><div class="m-cell"><div class="m-tile g s" style="--gh:330"></div></div><div class="m-cell"><div class="m-tile g st" style="--gh:170"></div></div><div class="m-cell"><div class="m-tile g t" style="--gh:250"></div></div></div><div class="m-arrow">›</div></div>
+<div class="m-footer">
+  <div class="m-glass"><svg class="m-gp"></svg><div class="m-sel"><strong>Cosmic Runner</strong><small>Estudio Ejemplo (2021)</small></div></div>
+  <div class="m-right">
+    <div class="m-dots"><i class="on"></i></div>
+    <div class="m-glass m-legend"><span class="m-leg"><i class="fb" data-b="A"></i>Abrir</span><span class="m-leg"><i class="fb" data-b="B"></i>Regresar</span><span class="m-leg"><i class="fb" data-b="Y"></i>Opciones</span></div>
+  </div>
+</div></div><div class="m-scrim"></div><div class="m-prog">
+  <h4>Scrapeando</h4>
+  <div class="m-pl"><b>Elemento 38 de 100</b><span>38 %</span></div>
+  <div class="m-bar"><i></i></div>
+  <div class="m-info"><b>Archivo</b><span>Cosmic Runner.gba</span><b>Sistema</b><span>Game Boy Advance</span><b>Metadatos</b><span>Sí</span><b>Imágenes</b><span>Sí</span><b>Estado</b><span>Descargando la caja</span></div>
+  <div class="m-foot">Con datos nuevos: 31 · Sin coincidencia: 4 · Ya completos: 3 · Con error: 0</div>
+  <div class="m-end"><span class="m-btn"><i class="fb big" data-b="Y"></i>&nbsp;Detener</span><span class="m-btn primary">Cerrar</span></div>
+</div></div></div>
           <figcaption>El avance de un scrapeo en curso.</figcaption>
         </figure>
         <div class="callout">
