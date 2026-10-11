@@ -71,6 +71,8 @@ fun GinnyApp(
     val palette = GinnyThemes.current
     // Lo que el contenido informa y el footer muestra: elemento seleccionado y páginas.
     var selected by remember { mutableStateOf<GridEntry?>(null) }
+    // Cuántos juegos tiene la pantalla de Juegos abierta (null = leyendo / no aplica).
+    var gameCount by remember { mutableStateOf<Int?>(null) }
     var pageCount by remember { mutableIntStateOf(1) }
     var currentPage by remember { mutableIntStateOf(0) }
     // Sube cada vez que se toca "Abrir" en el pie; la grilla abre entonces el elemento seleccionado.
@@ -156,6 +158,7 @@ fun GinnyApp(
                 ) {
                     GinnyHeader(
                         title = (screen as? Screen.Games)?.title,
+                        gameCount = gameCount.takeIf { screen is Screen.Games },
                         scrapping = scrapping,
                         onScrapClick = { scrapProgressOpen = true },
                     )
@@ -185,6 +188,7 @@ fun GinnyApp(
                                     activateTick = activateTick,
                                     onSelectionChanged = onSelectionChanged,
                                     onPagingChanged = onPagingChanged,
+                                    onCountChanged = { gameCount = it },
                                 )
                             }
                     }

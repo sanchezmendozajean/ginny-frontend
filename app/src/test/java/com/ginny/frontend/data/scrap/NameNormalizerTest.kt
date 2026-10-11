@@ -37,6 +37,23 @@ class NameNormalizerTest {
     }
 
     @Test
+    fun `un the suelto en medio del nombre no distingue un juego de otro`() {
+        assertEquals(1.0, NameNormalizer.similarity("The Legend of Zelda - Wind Waker HD (US)", "Legend of Zelda - The Wind Waker HD, The"), 0.0)
+        // ...pero dos juegos distintos de la misma serie siguen siendo distintos.
+        assertTrue(NameNormalizer.similarity("The Legend of Zelda - Twilight Princess HD", "Legend of Zelda - The Wind Waker HD, The") < 0.65)
+    }
+
+    @Test
+    fun `terminos de busqueda sin articulo y con solo el subtitulo`() {
+        assertEquals(
+            listOf("Legend of Zelda - Twilight Princess HD", "Twilight Princess HD"),
+            NameNormalizer.searchTerms("The Legend of Zelda - Twilight Princess HD (EU)"),
+        )
+        assertEquals(listOf("Super Mario Bros. 3"), NameNormalizer.searchTerms("Super Mario Bros. 3 (USA)"))
+        assertEquals(listOf("Metroid Dread"), NameNormalizer.searchTerms("Metroid Dread"))
+    }
+
+    @Test
     fun `numeros distintos son juegos distintos aunque el texto casi no cambie`() {
         assertEquals(0.0, NameNormalizer.similarity("Super Mario Bros", "Super Mario Bros 3"), 0.0)
         assertEquals(0.0, NameNormalizer.similarity("Adventure Island", "Adventure Island 2"), 0.0)

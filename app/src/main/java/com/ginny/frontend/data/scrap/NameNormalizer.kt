@@ -38,6 +38,20 @@ object NameNormalizer {
     }
 
     /**
+     * Qué escribir en el buscador de ScreenScraper para hallar [displayName], de lo más a lo menos
+     * específico. Ese buscador exige que lo escrito sea **parte literal** del nombre del juego, que allí
+     * lleva el artículo al final ("Legend of Zelda - Twilight Princess HD, The"), así que:
+     * 1. el nombre sin etiquetas ni artículo inicial;
+     * 2. solo el subtítulo (lo que va tras " - " o ": "), por si el título de la serie está escrito distinto
+     *    ("Wind Waker HD" encuentra "Legend of Zelda - The Wind Waker HD, The").
+     */
+    fun searchTerms(displayName: String): List<String> {
+        val base = stripTags(displayName).replace(Regex("""^(the|a|an)\s+""", RegexOption.IGNORE_CASE), "").trim()
+        val subtitle = base.split(" - ", ": ").takeIf { it.size > 1 }?.last()?.trim()
+        return listOfNotNull(base.takeIf { it.isNotEmpty() }, subtitle?.takeIf { it.length >= 6 }).distinct()
+    }
+
+    /**
      * El nombre listo para escribirlo en un buscador: sin lo que va entre paréntesis o corchetes
      * (`(USA)`, `[!]`), que confunde la búsqueda, y con los espacios colapsados. Conserva mayúsculas,
      * acentos y puntuación (a diferencia de [normalize], que es para comparar).
@@ -57,8 +71,15 @@ object NameNormalizer {
         if (x.isEmpty() || y.isEmpty()) return 0.0
         if (x == y) return 1.0
         if (numbersOf(x) != numbersOf(y)) return 0.0
-        return dice(x.replace(" ", ""), y.replace(" ", ""))
+        // Un "the" suelto en medio del nombre ("Zelda - The Wind Waker") no distingue un juego de otro.
+        val a2 = withoutArticles(x)
+        val b2 = withoutArticles(y)
+        if (a2 == b2) return 1.0
+        return dice(a2.replace(" ", ""), b2.replace(" ", ""))
     }
+
+    private fun withoutArticles(normalized: String): String =
+        normalized.split(' ').filter { it != "the" }.joinToString(" ")
 
     private fun numbersOf(normalized: String): List<String> =
         normalized.split(' ').filter { token -> token.isNotEmpty() && token.all { it.isDigit() } }

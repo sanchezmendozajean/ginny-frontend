@@ -1,5 +1,6 @@
 package com.ginny.frontend.data.scrap.screenscraper
 
+import com.ginny.frontend.data.scrap.NameNormalizer
 import com.ginny.frontend.data.scrap.ScrapMedia
 
 /**
@@ -108,6 +109,26 @@ object ScreenScraperSelector {
      */
     fun canonicalName(game: ScreenScraperGame): String? =
         game.names["ss"] ?: pickByPriority(REGION_PRIORITY, game.names)
+
+    /** Parecido mínimo entre el nombre del archivo y el del juego para fiarse de una coincidencia solo por nombre de archivo. */
+    const val MIN_FILE_MATCH_SIMILARITY = 0.65
+
+    /**
+     * ¿Tiene sentido que ScreenScraper haya asociado el archivo [romName] (con su [displayName]) al juego
+     * [game]? Una coincidencia por **hash** es segura, pero por **nombre de archivo** puede estar mal en su
+     * base de datos (p. ej. "Twilight Princess HD.wua" asociado a "The Wind Waker HD"). Los nombres con
+     * espacios son títulos de verdad y deben parecerse a alguno de los del juego; los cortos (arcade:
+     * `sf2ce.zip`) no se parecen a nada y se aceptan.
+     */
+    fun fileMatchPlausible(game: ScreenScraperGame, romName: String, displayName: String): Boolean {
+        val stem = romName.substringBeforeLast('.', romName)
+        if (!stem.trim().contains(' ')) return true
+        val names = allNames(game)
+        if (names.isEmpty()) return true
+        return names.any { name ->
+            maxOf(NameNormalizer.similarity(name, stem), NameNormalizer.similarity(name, displayName)) >= MIN_FILE_MATCH_SIMILARITY
+        }
+    }
 
     /** Todos los nombres del juego (para comparar con lo que devuelve una búsqueda). */
     fun allNames(game: ScreenScraperGame): List<String> = game.names.values.distinct()

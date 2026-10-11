@@ -2,6 +2,7 @@ package com.ginny.frontend.data.scrap.screenscraper
 
 import com.ginny.frontend.data.scrap.ScrapMedia
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,6 +21,28 @@ class ScreenScraperSelectorTest {
         id = 1, systemId = 3, systemName = "NES", names = emptyMap(), synopsis = emptyMap(), releaseDates = emptyMap(),
         developer = null, publisher = null, players = null, rating = null, genres = emptyMap(), medias = medias.toList(),
     )
+
+    // ── Coincidencia por nombre de archivo ───────────────────────────────────────────────────
+
+    private fun named(vararg names: Pair<String, String>) = game().copy(names = names.toMap())
+
+    @Test
+    fun `una coincidencia por archivo que no se parece al juego se desconfia`() {
+        // Caso real: ScreenScraper asocia "Twilight Princess HD.wua" al juego Wind Waker HD.
+        val windWaker = named("ss" to "Legend of Zelda - The Wind Waker HD, The", "us" to "The Legend of Zelda : The Wind Waker HD")
+        val file = "The Legend of Zelda - Twilight Princess HD (EU).wua"
+        val display = "The Legend of Zelda - Twilight Princess HD (EU)"
+        assertFalse(ScreenScraperSelector.fileMatchPlausible(windWaker, file, display))
+
+        val twilight = named("ss" to "Legend of Zelda - Twilight Princess HD, The")
+        assertTrue(ScreenScraperSelector.fileMatchPlausible(twilight, file, display))
+    }
+
+    @Test
+    fun `los nombres cortos de arcade o sin nombres se aceptan`() {
+        assertTrue(ScreenScraperSelector.fileMatchPlausible(named("ss" to "Street Fighter II Champion Edition"), "sf2ce.zip", "sf2ce"))
+        assertTrue(ScreenScraperSelector.fileMatchPlausible(game(), "Cualquier Nombre Largo.nes", "Cualquier Nombre Largo"))
+    }
 
     // ── Textos ────────────────────────────────────────────────────────────────────────────────
 

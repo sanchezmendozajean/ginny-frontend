@@ -65,19 +65,24 @@ class ScreenScraperClient(
         when (byFile) {
             is ScrapResult.Ok -> {
                 val usedHash = lookup.crc32 != null || lookup.md5 != null || lookup.sha1 != null
-                return ScrapResult.Ok(ScreenScraperMatch(byFile.value, if (usedHash) MatchedBy.HASH else MatchedBy.FILE_NAME))
+                // Por hash es seguro; solo por nombre de archivo, no: se comprueba que se parezca (si no, se busca por nombre).
+                if (usedHash || ScreenScraperSelector.fileMatchPlausible(byFile.value, lookup.romName, lookup.displayName)) {
+                    return ScrapResult.Ok(ScreenScraperMatch(byFile.value, if (usedHash) MatchedBy.HASH else MatchedBy.FILE_NAME))
+                }
             }
             ScrapResult.NotFound -> Unit // se intenta por nombre
             is ScrapResult.Failure -> return byFile
         }
 
-        val searchUrl = jeuRechercheUrl(lookup, systemId) ?: return authFailed()
-        return when (val search = limiter.withBackoff { fetchSearch(searchUrl) }) {
-            is ScrapResult.Ok -> bestByName(search.value, lookup)
-                ?.let { ScrapResult.Ok(ScreenScraperMatch(it, MatchedBy.SEARCH)) }
-                ?: ScrapResult.NotFound
-            is ScrapResult.Failure -> search
+        // El buscador pide texto literal: se prueba con el nombre sin artículo y, si no, con solo el subtítulo.
+        for (term in NameNormalizer.searchTerms(lookup.displayName)) {
+            val searchUrl = jeuRechercheUrl(lookup, systemId, term) ?: return authFailed()
+            when (val search = limiter.withBackoff { fetchSearch(searchUrl) }) {
+                is ScrapResult.Ok -> bestByName(search.value, lookup)?.let { return ScrapResult.Ok(ScreenScraperMatch(it, MatchedBy.SEARCH)) }
+                is ScrapResult.Failure -> return search
+            }
         }
+        return ScrapResult.NotFound
     }
 
     /** Comprueba las credenciales y lee el cupo de la cuenta (`ssuserInfos.php`): cuesta una petición. */
@@ -178,10 +183,10 @@ class ScreenScraperClient(
         }?.build()
     }
 
-    private suspend fun jeuRechercheUrl(lookup: RomLookup, systemeId: Int): HttpUrl? =
+    private suspend fun jeuRechercheUrl(lookup: RomLookup, systemeId: Int, term: String): HttpUrl? =
         baseUrl("jeuRecherche.php")?.newBuilder()
             ?.addQueryParameter("systemeid", systemeId.toString())
-            ?.addQueryParameter("recherche", NameNormalizer.stripTags(lookup.displayName))
+            ?.addQueryParameter("recherche", term)
             ?.build()
 
     // ── Coincidencia por nombre ───────────────────────────────────────────────────────────────

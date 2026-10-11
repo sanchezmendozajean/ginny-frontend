@@ -23,8 +23,8 @@ val CursorBorderWidth = 2.dp
 /** Cuánto más claro es el borde que el trazo (luminosidad OKLCH, 0…1). */
 const val CursorBorderLighten = 0.2f
 
-/** Largo de cada brazo de la esquina, como fracción del lado (0.25 = un cuarto). */
-const val CursorArmFraction = 0.25f
+/** Largo de cada brazo de la esquina, como fracción del lado (0.21 ≈ un quinto; antes 0.25). */
+const val CursorArmFraction = 0.21f
 
 /**
  * Cursor de selección: cuatro esquinas en forma de "L" con la curva redondeada, que enmarcan el

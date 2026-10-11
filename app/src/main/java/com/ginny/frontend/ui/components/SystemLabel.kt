@@ -18,7 +18,9 @@ import com.ginny.frontend.ui.theme.GinnyThemes
 
 @Composable
 fun SystemLabel(
-    systemName: String? = null
+    systemName: String? = null,
+    /** Cuántos juegos tiene el sistema; se escribe tras su nombre ("8 juegos", "1 juego"). */
+    gameCount: Int? = null,
 ) {
     Container() {
         GinnyIcon()
@@ -48,6 +50,22 @@ fun SystemLabel(
                     fontSize = 14.sp,                    // el tamaño
                     color = Color.Black,
                 )
+                if (gameCount != null) {
+                    Text(
+                        text = "/",
+                        fontFamily = GinnyFont,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = GinnyThemes.current.ink,
+                    )
+                    Text(
+                        text = if (gameCount == 1) "1 juego" else "$gameCount juegos",
+                        fontFamily = GinnyFont,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                    )
+                }
             }
         }
     }
