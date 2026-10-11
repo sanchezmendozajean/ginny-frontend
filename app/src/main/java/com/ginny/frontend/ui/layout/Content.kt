@@ -21,6 +21,7 @@ import com.ginny.frontend.ui.components.game.GridEntry
 import com.ginny.frontend.ui.components.game.GridLayout
 import com.ginny.frontend.ui.components.game.GridNavigation
 import com.ginny.frontend.ui.components.game.PageArrow
+import com.ginny.frontend.audio.SoundManager
 import com.ginny.frontend.ui.util.LocalSoundManager
 
 /**
@@ -55,6 +56,8 @@ fun Content(
     onPagingChanged: (pageCount: Int, currentPage: Int) -> Unit = { _, _ -> },
     /** Sube cada vez que se toca "Abrir" en el pie: abre el elemento seleccionado, como A. */
     activateTick: Int = 0,
+    /** Efecto al activar un elemento (Sistemas: entrar; Juegos: abrir su modal). */
+    activateSound: (SoundManager) -> Unit = { it.playActivateSound() },
 ) {
     val sound = LocalSoundManager.current
 
@@ -85,7 +88,7 @@ fun Content(
     LaunchedEffect(activateTick) {
         if (activateTick != firstTick) {
             currentSelected?.let {
-                sound?.playActivateSound()
+                sound?.let(activateSound)
                 onActivate(it)
             }
         }
@@ -106,7 +109,7 @@ fun Content(
                 onSelectedIndexChange = ::select,
                 onActivate = { index ->
                     entries.getOrNull(index)?.let {
-                        sound?.playActivateSound()
+                        sound?.let(activateSound)
                         onActivate(it)
                     }
                 },

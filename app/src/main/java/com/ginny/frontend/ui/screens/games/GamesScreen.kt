@@ -102,6 +102,7 @@ fun GamesScreen(
         selectedIndex = viewModel.focusedIndex,
         onSelectedIndexChange = { viewModel.focusedIndex = it },
         buttonMapping = buttonMapping,
+        activateSound = { it.playOpenModalSound() },
         // Abrir un juego: muestra su modal (Jugar, emulador, favorito…).
         onActivate = { entry -> games.firstOrNull { it.romUri.toString() == entry.key }?.let(onOpenGame) },
         loading = loading,

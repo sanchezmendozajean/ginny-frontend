@@ -64,6 +64,7 @@ fun SystemsScreen(
         selectedIndex = viewModel.focusedIndex,
         onSelectedIndexChange = { viewModel.focusedIndex = it },
         buttonMapping = buttonMapping,
+        activateSound = { it.playEnterSystemSound() },
         onActivate = { entry ->
             val tile = tiles.firstOrNull { it.key() == entry.key } ?: return@Content
             when (tile) {
