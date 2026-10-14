@@ -75,6 +75,8 @@ fun SettingsModal(
     nestedModalOpen: Boolean = false,
     onOpenScrapLaunch: () -> Unit = {},
     onOpenScrapProgress: () -> Unit = {},
+    /** Pide confirmar (modal de GinnyApp) antes de activar "Guardar credenciales en la Carpeta de Usuario". */
+    onRequestSaveCredentials: () -> Unit = {},
 ) {
     AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
         val palette = GinnyThemes.current
@@ -202,7 +204,7 @@ fun SettingsModal(
                             SettingsSection.Interfaz -> InterfazOptions(viewModel)
                             SettingsSection.Carpetas -> CarpetasOptions(viewModel)
                             SettingsSection.Sistemas -> SistemasOptions(viewModel)
-                            SettingsSection.Scrapper -> ScrapperOptions(viewModel, onOpenScrapLaunch, onOpenScrapProgress)
+                            SettingsSection.Scrapper -> ScrapperOptions(viewModel, onOpenScrapLaunch, onOpenScrapProgress, onRequestSaveCredentials)
                             SettingsSection.Creditos -> CreditosOptions()
                         }
                     }

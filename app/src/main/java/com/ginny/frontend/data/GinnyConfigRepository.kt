@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.ginny.frontend.data.model.EmulatorTarget
 import com.ginny.frontend.data.model.SystemCatalog
+import com.ginny.frontend.data.scrap.ScrapperSettingsRepository
 import com.ginny.frontend.ui.theme.ThemeMode
 import com.ginny.frontend.util.SafUtils
 import kotlinx.coroutines.CoroutineScope
@@ -59,6 +60,7 @@ private val DEVICE_LOCAL_KEYS = listOf("romFolderUri", "lastScanAt", "retroArchS
 class GinnyConfigRepository(
     private val context: Context,
     private val settings: SettingsRepository,
+    private val scrapper: ScrapperSettingsRepository,
 ) {
     private val syncRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
@@ -172,6 +174,22 @@ class GinnyConfigRepository(
             put("swapDisplays", settings.swapDisplays.first())
             put("themeMode", settings.themeMode.first().name)
             put("favorites", favoritesJson)
+            // Credenciales del scrapper: solo si el usuario lo activó (texto plano; ver ScrapperSettingsRepository).
+            // La bandera siempre se escribe, para que otro dispositivo sepa si las credenciales viajan o no.
+            val saveCredentials = scrapper.saveCredentialsInConfig.first()
+            put("saveScrapperCredentials", saveCredentials)
+            if (saveCredentials) {
+                put(
+                    "scrapperCredentials",
+                    JSONObject().apply {
+                        put("screenScraperUser", scrapper.screenScraperUser.first())
+                        put("screenScraperPassword", scrapper.screenScraperPassword.first())
+                        put("steamGridDbApiKey", scrapper.steamGridDbApiKey.first())
+                    },
+                )
+            } else {
+                remove("scrapperCredentials")
+            }
             put("musicVolume", settings.musicVolume.first().toDouble())
             put("uiSoundVolume", settings.uiSoundVolume.first().toDouble())
             put("videoVolume", settings.videoVolume.first().toDouble())
@@ -194,6 +212,17 @@ class GinnyConfigRepository(
         json.optStringOrNull("themeMode")
             ?.let { name -> runCatching { ThemeMode.valueOf(name) }.getOrNull() }
             ?.let { settings.setThemeMode(it) }
+        if (json.has("saveScrapperCredentials")) {
+            val save = json.optBoolean("saveScrapperCredentials", false)
+            scrapper.setSaveCredentialsInConfig(save)
+            if (save) {
+                json.optJSONObject("scrapperCredentials")?.let { credentials ->
+                    credentials.optStringOrNull("screenScraperUser")?.let { scrapper.setScreenScraperUser(it) }
+                    credentials.optStringOrNull("screenScraperPassword")?.let { scrapper.setScreenScraperPassword(it) }
+                    credentials.optStringOrNull("steamGridDbApiKey")?.let { scrapper.setSteamGridDbApiKey(it) }
+                }
+            }
+        }
         json.optJSONArray("favorites")?.let { array ->
             val keys = (0 until array.length()).map { array.optString(it) }.filter { it.isNotBlank() }.toSet()
             settings.setFavoriteKeys(keys)

@@ -462,8 +462,12 @@ las APIs reales: [plan-scrapper.md](plan-scrapper.md). Todo vive en `data/scrap/
   permite 1 hilo; reintento con espera ante 429), `ScrapNetwork` ("Solo con Wi-Fi"), `ScrapRedactor`
   (quita credenciales de cualquier texto).
 - **Credenciales.** Las del usuario (cuenta de ScreenScraper, clave de SteamGridDB) están en un DataStore
-  propio (`ScrapperSettingsRepository`), **fuera de `ginny.cfg`** (texto plano en la Carpeta de Usuario,
-  que se sincroniza) y excluido de las copias de seguridad (`res/xml/backup_rules.xml`,
+  propio (`ScrapperSettingsRepository`), **fuera de `ginny.cfg` por defecto** (texto plano en la Carpeta de Usuario,
+  que se sincroniza). **Opt-in (2026-10-13)**: Configuración > Scrapper > "Guardar credenciales en la Carpeta de Usuario"
+  (desactivado por defecto; al activarlo, un modal avisa del texto plano y del riesgo de compartir la carpeta) las escribe
+  en `ginny.cfg` (`saveScrapperCredentials` + `scrapperCredentials{screenScraperUser, screenScraperPassword,
+  steamGridDbApiKey}`) para compartirlas con Ginny Frontend Desktop; apagarlo las borra del archivo. El DataStore sigue
+  excluido de las copias de seguridad (`res/xml/backup_rules.xml`,
   `data_extraction_rules.xml`). Las de **desarrollador** de ScreenScraper van incrustadas en el APK
   (`BuildConfig`, desde `scrapper.properties`, ignorado por git; ver `ScrapperDevCredentials` y el README).
 - **Almacenamiento** (`ScrapStorage` / `SystemAssets`, SAF). Escribe en `Assets/<sistema>/`; ver el

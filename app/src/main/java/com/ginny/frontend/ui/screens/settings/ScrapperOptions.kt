@@ -26,15 +26,23 @@ private val ScrapperFieldWidth = 272.dp
  * Opciones de la sección Scrapper: las credenciales de cada proveedor (un grupo por proveedor),
  * qué se descarga y cómo.
  *
- * Las credenciales **no** se sincronizan a ginny.cfg ni a las copias de seguridad (ver
+ * Las credenciales **no** van a las copias de seguridad y solo se guardan en ginny.cfg si el usuario lo activa
+ * ("Guardar credenciales en la Carpeta de Usuario", con aviso; ver
  * [com.ginny.frontend.data.scrap.ScrapperSettingsRepository]). Se muestran como puntos; "Mostrar
  * claves" las deja a la vista para poder revisarlas al escribirlas con el teclado del dispositivo.
  */
 @Composable
-fun ScrapperOptions(viewModel: SettingsViewModel, onOpenLaunch: () -> Unit, onOpenProgress: () -> Unit) {
+fun ScrapperOptions(
+    viewModel: SettingsViewModel,
+    onOpenLaunch: () -> Unit,
+    onOpenProgress: () -> Unit,
+    /** Activar guardar las credenciales en ginny.cfg: antes pide confirmación (modal con el aviso). */
+    onRequestSaveCredentials: () -> Unit,
+) {
     val scrapper = viewModel.scrapper
     val enabledMedia by scrapper.enabledMedia.collectAsState(initial = ScrapMedia.entries.filter { it.defaultEnabled }.toSet())
     val onlyOnWifi by scrapper.onlyOnWifi.collectAsState(initial = true)
+    val saveCredentials by scrapper.saveCredentialsInConfig.collectAsState(initial = false)
     // No se recuerda entre aperturas: las claves vuelven a ocultarse al salir de la sección.
     var reveal by remember { mutableStateOf(false) }
 
@@ -60,6 +68,20 @@ fun ScrapperOptions(viewModel: SettingsViewModel, onOpenLaunch: () -> Unit, onOp
             }
             SettingsDivider()
             VerifyRow(verify[ScrapProvider.STEAMGRIDDB], "Comprueba que la clave sirve", viewModel::verifySteamGridDb)
+        }
+
+        SettingsGroup("Compartir credenciales") {
+            SettingsRow(
+                title = "Guardar credenciales en la Carpeta de Usuario",
+                subtitle = "Las guarda en ginny.cfg, en texto plano, para usarlas también en Ginny Frontend Desktop.",
+                subtitleMaxLines = 3,
+            ) {
+                GinnySwitch(
+                    checked = saveCredentials,
+                    // Activarlo pide confirmación; apagarlo es inmediato (la próxima escritura las borra del archivo).
+                    onCheckedChange = { if (it) onRequestSaveCredentials() else viewModel.setSaveCredentialsInConfig(false) },
+                )
+            }
         }
 
         SettingsGroup("Qué descargar") {

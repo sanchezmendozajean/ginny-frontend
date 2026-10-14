@@ -24,8 +24,9 @@ private val Context.scrapperDataStore by preferencesDataStore(name = SCRAPPER_DA
  *
  * Vive en un DataStore **aparte** de [com.ginny.frontend.data.SettingsRepository] a propósito:
  * `GinnyConfigRepository` espeja la configuración a `ginny.cfg`, un texto plano en la Carpeta de
- * Usuario que se sincroniza entre dispositivos, y las credenciales no deben terminar ahí. Este
- * repositorio no se conecta a ese espejo, y el archivo está excluido de las copias de seguridad.
+ * Usuario que se sincroniza entre dispositivos, y las credenciales no deben terminar ahí **salvo que el usuario
+ * lo pida** ([saveCredentialsInConfig], desactivado por defecto, con aviso). El archivo de este DataStore está
+ * excluido de las copias de seguridad.
  *
  * Los valores se guardan tal como se escriben (sin recortar espacios) para que el campo de
  * Configuración muestre exactamente lo que escribió el usuario; quien los use contra una API debe
@@ -39,6 +40,7 @@ class ScrapperSettingsRepository(private val context: Context) {
         val STEAMGRIDDB_API_KEY = stringPreferencesKey("steamgriddb_api_key")
         val ENABLED_MEDIA = stringSetPreferencesKey("enabled_media")
         val ONLY_ON_WIFI = booleanPreferencesKey("only_on_wifi")
+        val SAVE_CREDENTIALS_IN_CONFIG = booleanPreferencesKey("save_credentials_in_config")
     }
 
     // ── ScreenScraper ─────────────────────────────────────────────────────────────────────
@@ -57,6 +59,17 @@ class ScrapperSettingsRepository(private val context: Context) {
     val steamGridDbApiKey: Flow<String> = context.scrapperDataStore.data.map { it[Keys.STEAMGRIDDB_API_KEY].orEmpty() }
 
     suspend fun setSteamGridDbApiKey(value: String) = set(Keys.STEAMGRIDDB_API_KEY, value)
+
+    /**
+     * Guardar las credenciales (ScreenScraper y SteamGridDB) también en `ginny.cfg`, en texto plano, para compartirlas con
+     * Ginny Frontend Desktop. **Desactivado por defecto**: la Carpeta de Usuario se sincroniza y a veces se comparte.
+     * La bandera misma sí viaja en `ginny.cfg`, para que otro dispositivo sepa que las credenciales están ahí.
+     */
+    val saveCredentialsInConfig: Flow<Boolean> = context.scrapperDataStore.data.map { it[Keys.SAVE_CREDENTIALS_IN_CONFIG] ?: false }
+
+    suspend fun setSaveCredentialsInConfig(value: Boolean) {
+        context.scrapperDataStore.edit { it[Keys.SAVE_CREDENTIALS_IN_CONFIG] = value }
+    }
 
     // ── Qué se descarga ───────────────────────────────────────────────────────────────────
 

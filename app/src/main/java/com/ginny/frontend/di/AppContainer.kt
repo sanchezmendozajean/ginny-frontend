@@ -37,10 +37,9 @@ class AppContainer(context: Context) {
     val storageBootstrapper = StorageBootstrapper(context)
     val musicRepository = MusicRepository(context)
     val gameLauncher = GameLauncher(settingsRepository)
-    val configRepository = GinnyConfigRepository(context, settingsRepository)
-
-    /** Credenciales y opciones del scrapper. Deliberadamente fuera de [configRepository] (ginny.cfg). */
+    /** Credenciales y opciones del scrapper. Las credenciales van a `ginny.cfg` solo si el usuario lo activa (opt-in). */
     val scrapperSettingsRepository = ScrapperSettingsRepository(context)
+    val configRepository = GinnyConfigRepository(context, settingsRepository, scrapperSettingsRepository)
     val scrapStorage = ScrapStorage(context, settingsRepository)
     val screenScraperClient = ScreenScraperClient(scrapperSettingsRepository)
     val steamGridDbClient = SteamGridDbClient(scrapperSettingsRepository)

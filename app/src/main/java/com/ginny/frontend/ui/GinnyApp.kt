@@ -38,6 +38,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.runtime.collectAsState
 import com.ginny.frontend.ui.screens.settings.SettingsModal
+import com.ginny.frontend.ui.screens.settings.SaveCredentialsModal
+import com.ginny.frontend.ui.screens.settings.SettingsViewModel
 import com.ginny.frontend.ui.screens.scrap.ScrapLaunchModal
 import com.ginny.frontend.ui.screens.scrap.ScrapProgressModal
 import com.ginny.frontend.ui.screens.scrap.ScrapViewModel
@@ -124,6 +126,12 @@ fun GinnyApp(
         scrapViewModel.cancelPrepare()
     }
     BackHandler(enabled = scrapLaunchOpen, onBack = closeScrapLaunch)
+    // Aviso previo a guardar las credenciales en ginny.cfg (Configuración > Scrapper).
+    var saveCredentialsOpen by remember { mutableStateOf(false) }
+    BackHandler(enabled = saveCredentialsOpen) { saveCredentialsOpen = false }
+    val settingsViewModel: SettingsViewModel = viewModel(
+        factory = viewModelFactory { initializer { SettingsViewModel(appContainer) } },
+    )
     BackHandler(enabled = scrapProgressOpen) { scrapProgressOpen = false }
     val yTakenByModal = openGame != null || scrapProgressOpen
     LaunchedEffect(yTakenByModal) { onGameModalOpenChanged(yTakenByModal) }
@@ -276,19 +284,20 @@ fun GinnyApp(
         // Si hay un modal del scrapper encima, Configuración se desenfoca (si no, sus opciones se
         // transparentan por la cortina como fantasmas).
         val settingsBlur by animateDpAsState(
-            targetValue = if (scrapLaunchOpen || scrapProgressOpen) SettingsBackdropBlur else 0.dp,
+            targetValue = if (scrapLaunchOpen || scrapProgressOpen || saveCredentialsOpen) SettingsBackdropBlur else 0.dp,
             label = "settingsUnderScrapBlur",
         )
         Box(modifier = Modifier.fillMaxSize().blur(settingsBlur)) {
         SettingsModal(
             visible = settingsOpen,
             onClose = onCloseSettings,
-            nestedModalOpen = scrapLaunchOpen || scrapProgressOpen,
+            nestedModalOpen = scrapLaunchOpen || scrapProgressOpen || saveCredentialsOpen,
             onOpenScrapLaunch = {
                 scrapLaunchOpen = true
                 scrapViewModel.prepareLaunch()
             },
             onOpenScrapProgress = { scrapProgressOpen = true },
+            onRequestSaveCredentials = { saveCredentialsOpen = true },
         )
         }
 
@@ -303,5 +312,13 @@ fun GinnyApp(
             },
         )
         ScrapProgressModal(visible = scrapProgressOpen, viewModel = scrapViewModel, onClose = { scrapProgressOpen = false })
+        SaveCredentialsModal(
+            visible = saveCredentialsOpen,
+            onCancel = { saveCredentialsOpen = false },
+            onAccept = {
+                settingsViewModel.setSaveCredentialsInConfig(true)
+                saveCredentialsOpen = false
+            },
+        )
     }
 }

@@ -222,11 +222,22 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         container.configRepository.requestSync()
     }
 
-    // Scrapper: no llama a configRepository.requestSync() a propósito — las credenciales no deben
-    // terminar en ginny.cfg (texto plano en la Carpeta de Usuario).
-    fun setScreenScraperUser(value: String) = viewModelScope.launch { scrapper.setScreenScraperUser(value) }
-    fun setScreenScraperPassword(value: String) = viewModelScope.launch { scrapper.setScreenScraperPassword(value) }
-    fun setSteamGridDbApiKey(value: String) = viewModelScope.launch { scrapper.setSteamGridDbApiKey(value) }
+    // Scrapper: las credenciales solo llegan a ginny.cfg (texto plano en la Carpeta de Usuario) si el usuario activó
+    // "Guardar credenciales en la Carpeta de Usuario"; si no, no se sincroniza nada.
+    fun setScreenScraperUser(value: String) = viewModelScope.launch { scrapper.setScreenScraperUser(value); syncCredentialsIfShared() }
+    fun setScreenScraperPassword(value: String) = viewModelScope.launch { scrapper.setScreenScraperPassword(value); syncCredentialsIfShared() }
+    fun setSteamGridDbApiKey(value: String) = viewModelScope.launch { scrapper.setSteamGridDbApiKey(value); syncCredentialsIfShared() }
+
+    /** Activa o desactiva guardar las credenciales en `ginny.cfg`; al apagarlo, la próxima escritura las borra del archivo. */
+    fun setSaveCredentialsInConfig(enabled: Boolean) = viewModelScope.launch {
+        scrapper.setSaveCredentialsInConfig(enabled)
+        container.configRepository.requestSync()
+    }
+
+    private suspend fun syncCredentialsIfShared() {
+        if (scrapper.saveCredentialsInConfig.first()) container.configRepository.requestSync()
+    }
+
     fun setScrapMediaEnabled(media: ScrapMedia, enabled: Boolean) = viewModelScope.launch { scrapper.setMediaEnabled(media, enabled) }
     fun setScrapOnlyOnWifi(value: Boolean) = viewModelScope.launch { scrapper.setOnlyOnWifi(value) }
 
