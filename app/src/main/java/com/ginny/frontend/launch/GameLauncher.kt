@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.first
 /** Use-case that resolves the user's configured emulator/core/package for a system and launches a game. */
 class GameLauncher(private val settingsRepository: SettingsRepository) {
 
-    suspend fun launch(context: Context, game: GameEntry, saveStateSlot: Int? = null): LaunchResult {
+    suspend fun launch(context: Context, game: GameEntry): LaunchResult {
         val emulator = settingsRepository.emulatorFor(game.systemId).first()
         val strategy = LauncherFactory.forEmulator(emulator)
 
@@ -26,7 +26,6 @@ class GameLauncher(private val settingsRepository: SettingsRepository) {
         val request = LaunchRequest(
             game = game,
             retroArchCoreSoFileName = coreSoFileName,
-            saveStateSlot = saveStateSlot,
         )
         return strategy.launch(context, request, packageOverride)
     }

@@ -29,12 +29,12 @@ class SettingsRepository(private val context: Context) {
         val GRID_ROWS = intPreferencesKey("grid_rows")
         val USER_FOLDER_URI = stringPreferencesKey("user_folder_uri")
         val ROM_FOLDER_URI = stringPreferencesKey("rom_folder_uri")
-        val RETROARCH_SAVES_URI = stringPreferencesKey("retroarch_saves_uri")
         val MUSIC_VOLUME = floatPreferencesKey("music_volume")
         val MUSIC_TRACK = stringPreferencesKey("background_music_track")
         val UI_SOUND_VOLUME = floatPreferencesKey("ui_sound_volume")
         val VIDEO_VOLUME = floatPreferencesKey("video_volume")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
+        val WELCOME_PENDING = booleanPreferencesKey("welcome_pending")
         val LAST_SCAN_AT = longPreferencesKey("last_scan_at")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val FAVORITE_GAMES = stringSetPreferencesKey("favorite_games")
@@ -52,7 +52,6 @@ class SettingsRepository(private val context: Context) {
 
     val userFolderUri: Flow<String?> = context.dataStore.data.map { it[Keys.USER_FOLDER_URI] }
     val romFolderUri: Flow<String?> = context.dataStore.data.map { it[Keys.ROM_FOLDER_URI] }
-    val retroArchSavesUri: Flow<String?> = context.dataStore.data.map { it[Keys.RETROARCH_SAVES_URI] }
 
     /**
      * Carpeta de ROMs propia de un sistema (URI de SAF), elegida en Configuración > Sistemas.
@@ -101,6 +100,13 @@ class SettingsRepository(private val context: Context) {
     }
 
     val onboardingDone: Flow<Boolean> = context.dataStore.data.map { it[Keys.ONBOARDING_DONE] ?: false }
+
+    /**
+     * La bienvenida del primer arranque sigue en curso (se eligieron o faltan carpetas y aún no se escaneó). Es **local**
+     * al dispositivo: no pasa por `ginny.cfg` (a diferencia de [onboardingDone]), porque el escaneo depende de cada
+     * instalación. Quien ya tenía todo configurado antes de la bienvenida nunca lo tiene activo.
+     */
+    val welcomePending: Flow<Boolean> = context.dataStore.data.map { it[Keys.WELCOME_PENDING] ?: false }
 
     /** Timestamp (epoch millis) of the last completed "Escanear biblioteca" run, null if never run. */
     val lastScanAt: Flow<Long?> = context.dataStore.data.map { it[Keys.LAST_SCAN_AT] }
@@ -151,6 +157,11 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    /** Reemplaza todos los favoritos (al aplicar un `ginny.cfg`). */
+    suspend fun setFavoriteKeys(keys: Set<String>) {
+        context.dataStore.edit { it[Keys.FAVORITE_GAMES] = keys }
+    }
+
     suspend fun setUserFolderUri(uri: String?) {
         context.dataStore.edit { prefs ->
             if (uri == null) prefs.remove(Keys.USER_FOLDER_URI) else prefs[Keys.USER_FOLDER_URI] = uri
@@ -163,11 +174,6 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    suspend fun setRetroArchSavesUri(uri: String?) {
-        context.dataStore.edit { prefs ->
-            if (uri == null) prefs.remove(Keys.RETROARCH_SAVES_URI) else prefs[Keys.RETROARCH_SAVES_URI] = uri
-        }
-    }
 
     suspend fun setMusicVolume(volume: Float) {
         context.dataStore.edit { it[Keys.MUSIC_VOLUME] = volume.coerceIn(0f, 1f) }
@@ -183,6 +189,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setOnboardingDone(done: Boolean) {
         context.dataStore.edit { it[Keys.ONBOARDING_DONE] = done }
+    }
+
+    suspend fun setWelcomePending(pending: Boolean) {
+        context.dataStore.edit { it[Keys.WELCOME_PENDING] = pending }
     }
 
     fun emulatorFor(systemId: SystemId): Flow<EmulatorTarget> = context.dataStore.data.map { prefs ->

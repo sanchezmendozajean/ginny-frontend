@@ -46,6 +46,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import com.ginny.frontend.ui.screens.systems.SystemsScreen
+import com.ginny.frontend.ui.screens.welcome.WelcomeScreen
+import kotlinx.coroutines.flow.combine
 import com.ginny.frontend.ui.theme.GinnyThemes
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
@@ -99,6 +101,22 @@ fun GinnyApp(
         factory = viewModelFactory { initializer { ScrapViewModel(appContainer) } },
     )
     val scrapping by scrapViewModel.isRunning.collectAsState()
+
+    // Primer arranque: sin Carpeta de Usuario o sin ROMs (ni general ni de algún sistema) no hay nada que
+    // mostrar, así que en vez de la interfaz de tres piezas va la bienvenida; y se queda hasta que termina el
+    // escaneo inicial (welcomePending, que la propia bienvenida activa). null = todavía leyendo los ajustes (no
+    // se dibuja ninguna, para que quien ya tiene todo configurado no vea la bienvenida un instante).
+    val needsWelcome: Boolean? by remember(appContainer) {
+        val settings = appContainer.settingsRepository
+        combine(
+            settings.userFolderUri,
+            settings.romFolderUri,
+            settings.romFolderOverrides,
+            settings.welcomePending,
+        ) { user, rom, overrides, pending ->
+            user == null || (rom == null && overrides.isEmpty()) || pending
+        }
+    }.collectAsState(initial = null)
     var scrapLaunchOpen by remember { mutableStateOf(false) }
     var scrapProgressOpen by remember { mutableStateOf(false) }
     val closeScrapLaunch = {
@@ -152,7 +170,14 @@ fun GinnyApp(
 
             // Capa 2: la interfaz. Todo lo de adentro puede desenfocar el fondo (ver Container).
             CompositionLocalProvider(LocalHazeState provides hazeState) {
-                Column(
+                if (needsWelcome == true) {
+                    // Un único Container en lugar de cabecera / contenido / pie.
+                    WelcomeScreen(
+                        active = !settingsOpen,
+                        modifier = Modifier.fillMaxSize().padding(18.dp), // mismo margen que la interfaz
+                    )
+                }
+                if (needsWelcome == false) Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(18.dp),                                // margen con los bordes de la pantalla

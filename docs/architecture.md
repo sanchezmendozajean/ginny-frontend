@@ -1,5 +1,13 @@
 # Arquitectura — Ginny Frontend
 
+> **Nota (2026-10-13):** `ginny.cfg` ya no guarda la carpeta de ROMs, las carpetas de ROMs por sistema ni `lastScanAt`
+> (son de cada dispositivo; ver `DEVICE_LOCAL_KEYS` en `GinnyConfigRepository`). Sí guarda `themeMode` y `favorites`, y
+> conserva las claves desconocidas al reescribirse.
+
+> **Nota (2026-10-13):** la pantalla de **Estados guardados** se eliminó (`SaveStatesViewModel`,
+> `SaveStateRepository`, `SaveStateEntry`, `saveStateSlot`/`STATE_SLOT`, ajuste `retroArchSavesUri`). Las
+> menciones a ella más abajo son históricas. Ver [pendientes-etapa-2.md](pendientes-etapa-2.md) punto 1.
+
 > **Nota (2026-09-27):** la capa `ui/` se está reconstruyendo paso a paso — ver
 > [plan-reconstruccion-ui.md](plan-reconstruccion-ui.md). Las secciones de este documento que
 > describen componentes visuales (`PagedFocusGrid`, TopBar, overlays, tema) se refieren a la

@@ -56,11 +56,6 @@ class RetroArchLauncher(override val emulator: EmulatorTarget = EmulatorTarget.R
                 "${Environment.getExternalStorageDirectory().path}/Android/data/$targetPackage/files/retroarch.cfg",
             )
             putExtra("QUITFOCUS", false)
-            // NOTE: RetroArch's Android intent scheme does not have a confirmed, documented extra
-            // for forcing a specific save-state slot on boot. STATE_SLOT is included as a best-effort
-            // attempt and may be ignored depending on the installed RetroArch build — verify manually
-            // (see README, "Estados guardados").
-            request.saveStateSlot?.let { putExtra("STATE_SLOT", it) }
         }
     }
 

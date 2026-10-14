@@ -63,13 +63,12 @@ private enum class ImageState {
 }
 
 /**
- * Un elemento cuadrado de la grilla (sistema, juego o estado guardado), con marco blanco redondeado.
+ * Un elemento cuadrado de la grilla (sistema o juego), con marco blanco redondeado.
  *
  * - [empty] = true: hueco de relleno, para que la grilla conserve su forma aunque no haya
  *   suficientes elementos. Dibuja solo un Container pequeñito en el centro.
  * - Si no: la imagen ([image]) llenando el cuadrado hasta el marco. Es un [Uri] porque así llegan
- *   todas las imágenes reales (GameEntry.iconUri, AssetRepository.systemLogoUri,
- *   SaveStateEntry.thumbnailUri); para recursos de la app, usar `drawableUri(R.drawable.x)`.
+ *   todas las imágenes reales (GameEntry.iconUri, AssetRepository.systemLogoUri); para recursos de la app, usar `drawableUri(R.drawable.x)`.
  *   Sin imagen, o si no carga, muestra el [title] como reemplazo.
  * - Aparición: el elemento queda invisible mientras la imagen carga, y aparece con un fade
  *   ([ElementFadeInMs]) cuando está lista — o con el título, si no hay imagen o falló.

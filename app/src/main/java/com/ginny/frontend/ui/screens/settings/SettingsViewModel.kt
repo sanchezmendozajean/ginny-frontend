@@ -51,8 +51,8 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 
     /** Walks the whole ROM folder (every system) and replaces the cached library index that
      * Systems/Games screens read from — the only place this expensive filesystem scan should run. */
-    fun scanLibrary(context: Context) {
-        scanJob = viewModelScope.launch {
+    fun scanLibrary(context: Context): Job {
+        val job = viewModelScope.launch {
             val romUri = settings.romFolderUri.first()
             val overrides = settings.romFolderOverrides.first().mapValues { Uri.parse(it.value) }
             // Basta con la carpeta de ROMs o con algún sistema que tenga su propia carpeta.
@@ -85,6 +85,8 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                 _isScanningLibrary.value = false
             }
         }
+        scanJob = job
+        return job
     }
 
     /** Cancels an in-progress [scanLibrary] run — cooperative cancellation means the scan abandons
@@ -183,12 +185,6 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
             "${SystemCatalog.byId.getValue(systemId).displayName}: ${games.size} ${if (games.size == 1) "juego" else "juegos"}",
             android.widget.Toast.LENGTH_SHORT,
         ).show()
-    }
-
-    fun onSavesFolderPicked(context: Context, uri: Uri) = viewModelScope.launch {
-        context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        settings.setRetroArchSavesUri(uri.toString())
-        container.configRepository.requestSync()
     }
 
     fun setPackageOverride(systemId: SystemId, pkg: String) = viewModelScope.launch {

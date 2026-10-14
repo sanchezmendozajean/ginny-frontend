@@ -182,7 +182,7 @@ segundo toque/press lo cierra). Una vez abierto es navegable con la cruceta: Arr
 resaltado entre las opciones, **A** confirma la resaltada, **B** lo cierra sin retroceder de
 pantalla.
 
-En Sistemas y en Estados guardados solo tiene **Configuración** y **Salir de Ginny**. Dentro del
+En Sistemas solo tiene **Configuración** y **Salir de Ginny**. Dentro del
 listado de juegos de un sistema aparecen además, en este orden:
 
 1. **Seleccionar emulador** *(con un juego seleccionado)* — abre el mismo modal para elegir
@@ -355,14 +355,10 @@ con el código embebido en los píxeles — ver la sección de íconos más arri
 
 ## Save states
 
-Solo soportado para sistemas manejados por RetroArch en v1. Necesitás:
-
-1. Activar `savestate_thumbnail_enable` en la configuración de RetroArch (para que genere las
-   miniaturas PNG junto a cada save state).
-2. Configurar en Settings, sección "Carpetas", la ruta donde RetroArch guarda esos estados.
-
-Si un juego no tiene save states detectados, se lanza directo (sin mostrar la pantalla intermedia),
-tal como pide el spec.
+Ginny **no tiene pantalla de estados guardados** (eliminada el 2026-10-13: demasiada complejidad para quien
+solo quiere encender la consola y jugar). "Jugar" siempre lanza el juego directo; cargar o guardar estados
+es cosa del propio emulador (en RetroArch, sus atajos y el autoguardado). Ya no hay ajuste de carpeta de
+estados ni se envía `STATE_SLOT`.
 
 ## Sonidos
 

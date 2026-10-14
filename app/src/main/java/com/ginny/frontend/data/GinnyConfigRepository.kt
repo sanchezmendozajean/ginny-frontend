@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.ginny.frontend.data.model.EmulatorTarget
 import com.ginny.frontend.data.model.SystemCatalog
+import com.ginny.frontend.ui.theme.ThemeMode
 import com.ginny.frontend.util.SafUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 
@@ -28,6 +30,16 @@ private const val CONFIG_FILE_NAME = "ginny.cfg"
 private const val CONFIG_MIME_TYPE = "application/octet-stream"
 private const val CONFIG_VERSION = 1
 private const val AUTO_SYNC_DEBOUNCE_MS = 500L
+
+/**
+ * Claves que `ginny.cfg` tuvo en versiones anteriores y que ya no se escriben ni se aplican porque son de cada
+ * dispositivo, no de la Carpeta de Usuario: la carpeta de ROMs (y las propias de cada sistema) son URIs del
+ * selector de Android, que no valen en otro dispositivo (ni en Desktop) y exigen un permiso que solo concede
+ * el usuario en esa instalación; `lastScanAt` describe la caché local de la biblioteca; `retroArchSavesUri` es
+ * de la pantalla de estados guardados, eliminada. Se borran del archivo al reescribirlo. (Dentro de `systems`,
+ * la clave `romFolderUri` de cada sistema se trata igual.)
+ */
+private val DEVICE_LOCAL_KEYS = listOf("romFolderUri", "lastScanAt", "retroArchSavesUri")
 
 /**
  * Mirrors every app setting except the "Carpeta de Usuario" location itself (that Uri is what
@@ -100,8 +112,9 @@ class GinnyConfigRepository(
     }
 
     private suspend fun writeConfigTo(root: DocumentFile) {
-        val json = buildConfigJson()
-        val file = findConfigFile(root)
+        val existing = findConfigFile(root)
+        val json = buildConfigJson(base = existing?.let { readExistingJson(it) })
+        val file = existing
             ?: root.createFile(CONFIG_MIME_TYPE, CONFIG_FILE_NAME)
             ?: throw IOException("No se pudo crear $CONFIG_FILE_NAME")
         context.contentResolver.openOutputStream(file.uri, "wt")?.use { out ->
@@ -123,37 +136,47 @@ class GinnyConfigRepository(
         return exact
     }
 
-    private suspend fun buildConfigJson(): JSONObject {
+    /** Contenido actual de `ginny.cfg`, o null si no se puede leer o no es un JSON válido. */
+    private fun readExistingJson(file: DocumentFile): JSONObject? = runCatching {
+        context.contentResolver.openInputStream(file.uri)?.use { JSONObject(it.reader(Charsets.UTF_8).readText()) }
+    }.getOrNull()
+
+    /**
+     * Construye el JSON a escribir. Parte de una copia de [base] (el `ginny.cfg` que ya había) en vez
+     * de un objeto vacío, para **conservar las claves que esta app no conoce** — Ginny Frontend Desktop
+     * comparte este archivo y puede agregar las suyas; reescribirlo desde cero las borraría. Las claves
+     * conocidas se sobrescriben siempre con el valor actual.
+     */
+    private suspend fun buildConfigJson(base: JSONObject? = null): JSONObject {
         val buttonMapping = settings.buttonMapping.first()
-        val buttonsJson = JSONObject().apply {
-            LogicalButton.values().forEach { button -> put(button.name, buttonMapping.keyCodeFor(button)) }
+        val buttonsJson = base?.optJSONObject("buttonMapping")?.copy() ?: JSONObject()
+        LogicalButton.values().forEach { button -> buttonsJson.put(button.name, buttonMapping.keyCodeFor(button)) }
+
+        val systemsJson = base?.optJSONObject("systems")?.copy() ?: JSONObject()
+        for (system in SystemCatalog.all) {
+            val systemJson = systemsJson.optJSONObject(system.id.name) ?: JSONObject()
+            systemJson.put("emulator", settings.emulatorFor(system.id).first().name)
+            systemJson.putOrRemove("core", settings.retroArchCoreFor(system.id).first())
+            systemJson.putOrRemove("packageOverride", settings.packageOverrideFor(system.id).first())
+            systemJson.remove("romFolderUri") // obsoleta: las rutas de ROMs son de cada dispositivo (ver [DEVICE_LOCAL_KEYS])
+            systemsJson.put(system.id.name, systemJson)
         }
 
-        val systemsJson = JSONObject().apply {
-            for (system in SystemCatalog.all) {
-                val systemJson = JSONObject().apply {
-                    put("emulator", settings.emulatorFor(system.id).first().name)
-                    settings.retroArchCoreFor(system.id).first()?.let { put("core", it) }
-                    settings.packageOverrideFor(system.id).first()?.let { put("packageOverride", it) }
-                    settings.romFolderOverrideFor(system.id).first()?.let { put("romFolderUri", it) }
-                }
-                put(system.id.name, systemJson)
-            }
-        }
+        val favoritesJson = JSONArray().apply { settings.favoriteGameKeys.first().sorted().forEach { put(it) } }
 
-        return JSONObject().apply {
+        return (base?.copy() ?: JSONObject()).apply {
+            DEVICE_LOCAL_KEYS.forEach { remove(it) }
             put("version", CONFIG_VERSION)
             put("gridRows", settings.gridRows.first())
             put("buttonLayout", settings.buttonLayout.first().name)
             put("swapDisplays", settings.swapDisplays.first())
+            put("themeMode", settings.themeMode.first().name)
+            put("favorites", favoritesJson)
             put("musicVolume", settings.musicVolume.first().toDouble())
             put("uiSoundVolume", settings.uiSoundVolume.first().toDouble())
             put("videoVolume", settings.videoVolume.first().toDouble())
             put("backgroundMusicTrack", settings.backgroundMusicTrack.first() ?: JSONObject.NULL)
-            put("romFolderUri", settings.romFolderUri.first() ?: JSONObject.NULL)
-            put("retroArchSavesUri", settings.retroArchSavesUri.first() ?: JSONObject.NULL)
             put("onboardingDone", settings.onboardingDone.first())
-            put("lastScanAt", settings.lastScanAt.first() ?: JSONObject.NULL)
             put("buttonMapping", buttonsJson)
             put("systems", systemsJson)
         }
@@ -168,15 +191,19 @@ class GinnyConfigRepository(
         json.optStringOrNull("buttonLayout")
             ?.let { name -> runCatching { ButtonLayout.valueOf(name) }.getOrNull() }
             ?.let { settings.setButtonLayout(it) }
+        json.optStringOrNull("themeMode")
+            ?.let { name -> runCatching { ThemeMode.valueOf(name) }.getOrNull() }
+            ?.let { settings.setThemeMode(it) }
+        json.optJSONArray("favorites")?.let { array ->
+            val keys = (0 until array.length()).map { array.optString(it) }.filter { it.isNotBlank() }.toSet()
+            settings.setFavoriteKeys(keys)
+        }
         if (json.has("swapDisplays")) settings.setSwapDisplays(json.optBoolean("swapDisplays", false))
         if (json.has("musicVolume")) settings.setMusicVolume(json.optDouble("musicVolume", 0.5).toFloat())
         if (json.has("uiSoundVolume")) settings.setUiSoundVolume(json.optDouble("uiSoundVolume", 0.7).toFloat())
         if (json.has("videoVolume")) settings.setVideoVolume(json.optDouble("videoVolume", 0.5).toFloat())
         json.optStringOrNull("backgroundMusicTrack")?.let { settings.setBackgroundMusicTrack(it) }
-        json.optStringOrNull("romFolderUri")?.let { settings.setRomFolderUri(it) }
-        json.optStringOrNull("retroArchSavesUri")?.let { settings.setRetroArchSavesUri(it) }
         if (json.has("onboardingDone")) settings.setOnboardingDone(json.optBoolean("onboardingDone", false))
-        if (json.has("lastScanAt") && !json.isNull("lastScanAt")) settings.setLastScanAt(json.optLong("lastScanAt"))
 
         json.optJSONObject("buttonMapping")?.let { buttonsJson ->
             LogicalButton.values().forEach { button ->
@@ -192,10 +219,15 @@ class GinnyConfigRepository(
                     ?.let { settings.setEmulatorFor(system.id, it) }
                 systemJson.optStringOrNull("core")?.let { settings.setRetroArchCoreFor(system.id, it) }
                 systemJson.optStringOrNull("packageOverride")?.let { settings.setPackageOverride(system.id, it) }
-                systemJson.optStringOrNull("romFolderUri")?.let { settings.setRomFolderOverride(system.id, it) }
-                systemJson.optStringOrNull("romFolderUri")?.let { settings.setRomFolderOverride(system.id, it) }
             }
         }
+    }
+
+    private fun JSONObject.copy(): JSONObject = JSONObject(toString())
+
+    /** Escribe [value], o quita la clave si es null — con una base heredada, dejarla sería conservar un valor viejo. */
+    private fun JSONObject.putOrRemove(name: String, value: String?) {
+        if (value != null) put(name, value) else remove(name)
     }
 
     private fun JSONObject.optStringOrNull(name: String): String? =

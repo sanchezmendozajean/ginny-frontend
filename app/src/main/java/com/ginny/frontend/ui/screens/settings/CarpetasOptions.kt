@@ -39,7 +39,7 @@ import java.util.Locale
 
 /**
  * Opciones de la sección Carpetas: Carpeta de Usuario (assets y ginny.cfg), biblioteca (carpeta de
- * ROMs + escanear) y estados guardados de RetroArch. Cada carpeta se elige con el selector de
+ * ROMs + escanear). Cada carpeta se elige con el selector de
  * carpetas del sistema (SAF); el ViewModel guarda el permiso persistente.
  */
 @Composable
@@ -49,7 +49,6 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
     val userFolder by settings.userFolderUri.collectAsState(initial = null)
     val romFolder by settings.romFolderUri.collectAsState(initial = null)
     val romOverrides by settings.romFolderOverrides.collectAsState(initial = emptyMap())
-    val savesFolder by settings.retroArchSavesUri.collectAsState(initial = null)
     val lastScanAt by settings.lastScanAt.collectAsState(initial = null)
     val scanning by viewModel.isScanningLibrary.collectAsState()
     val scanProgress by viewModel.scanProgress.collectAsState()
@@ -63,9 +62,6 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
     }
     val pickRomFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let { viewModel.onRomFolderPicked(context, it) }
-    }
-    val pickSavesFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        uri?.let { viewModel.onSavesFolderPicked(context, it) }
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -116,16 +112,6 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
             if (showProgress || scanning) {
                 SettingsDivider()
                 ScanProgress(scanning = scanning, entries = scanProgress)
-            }
-        }
-
-        SettingsGroup("RetroArch") {
-            SettingsRow(
-                title = "Estados guardados (opcional)",
-                subtitle = folderLabel(savesFolder) +
-                    "\nActiva \"savestate_thumbnail_enable\" en RetroArch para ver miniaturas",
-            ) {
-                GinnyButton("Elegir", onClick = { pickSavesFolder.launch(null) })
             }
         }
     }

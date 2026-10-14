@@ -24,11 +24,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-sealed interface GameSelectionOutcome {
-    data class NavigateToSaveStates(val game: GameEntry) : GameSelectionOutcome
-    data class Launched(val result: LaunchResult) : GameSelectionOutcome
-}
-
 class GamesViewModel(
     private val container: AppContainer,
     val scope: GamesScope,
@@ -80,17 +75,6 @@ class GamesViewModel(
         focusedIndex = focusedIndex.coerceIn(0, (_games.value.size - 1).coerceAtLeast(0))
     }
 
-    /** Per spec: skip straight to launching when the game has no detected save states. */
-    suspend fun onGameSelected(game: GameEntry): GameSelectionOutcome {
-        val savesUri = container.settingsRepository.retroArchSavesUri.first()?.let(Uri::parse)
-        val saveStates = container.saveStateRepository.listSaveStates(savesUri, game)
-        return if (saveStates.isNotEmpty()) {
-            GameSelectionOutcome.NavigateToSaveStates(game)
-        } else {
-            GameSelectionOutcome.Launched(container.gameLauncher.launch(container.applicationContext, game))
-        }
-    }
-
     // Emulador, core y package desde el modal del juego. Son del sistema (afectan a todos sus
     // juegos), igual que en Configuración > Sistemas; también se sincronizan con ginny.cfg.
     fun setEmulator(systemId: SystemId, emulator: EmulatorTarget) = viewModelScope.launch {
@@ -115,6 +99,7 @@ class GamesViewModel(
     suspend fun toggleFavorite(game: GameEntry) {
         val isFavorite = game.favoriteKey() in favoriteGameKeys.value
         container.settingsRepository.setFavorite(game, !isFavorite)
+        container.configRepository.requestSync()
     }
 
     /** Guards against a second tap re-entering [rescanSystem] while one is already in flight —

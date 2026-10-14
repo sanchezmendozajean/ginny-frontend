@@ -18,11 +18,10 @@ private fun Context.findActivity(): Activity? {
     return null
 }
 
-/** What to launch a game with: the game itself, the RetroArch core (if applicable) and an optional save slot. */
+/** What to launch a game with: the game itself, and the RetroArch core (if applicable). */
 data class LaunchRequest(
     val game: GameEntry,
     val retroArchCoreSoFileName: String? = null,
-    val saveStateSlot: Int? = null,
 )
 
 sealed interface LaunchResult {

@@ -12,7 +12,7 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
 
 ## A. Imprescindibles para usar la app con mando
 
-### 1. Pantalla de Estados guardados ⬜
+### 1. Pantalla de Estados guardados ❌ (descartada)
 - **Qué falta:** si el juego tiene saves de RetroArch, "Jugar" debería llevar primero a una
   pantalla con los estados guardados (el primer elemento siempre es **"Juego nuevo"**). Hoy
   "Jugar" lanza el juego siempre directo.
@@ -23,9 +23,14 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
   saveStateSlot)`. Referencia: `docs/ui-legacy/ui/screens/savestates/`.
 - **A decidir:** ¿pantalla completa (otra `Screen` en la grilla, con miniaturas) o dentro del
   modal del juego? ¿Qué muestra cada estado (miniatura, fecha, número de slot)?
-- **Decisión:**
+- **Decisión (2026-10-13):** se **elimina** la pantalla y la función. Es demasiada complejidad para el usuario
+  que solo quiere encender la consola y jugar (además nunca se logró activar bien). "Jugar" lanza siempre directo;
+  los estados los gestiona el propio emulador. Se quitó del código: `SaveStatesViewModel`, `SaveStateRepository`,
+  `SaveStateEntry`, `GamesViewModel.onGameSelected`, el parámetro `saveStateSlot` (y el extra `STATE_SLOT` de
+  RetroArch) y el ajuste "Estados guardados" de Configuración > Carpetas (`retroArchSavesUri`; si `ginny.cfg`
+  ya traía esa clave, se conserva sin usarse). En el punto 5, «y Estados guardados» ya no aplica.
 
-### 2. Navegar la Configuración con la cruceta ⬜
+### 2. Navegar la Configuración con la cruceta ✅ (cerrado)
 - **Qué falta:** dentro de las opciones (filas, desplegables, botones, deslizadores) solo se puede
   tocar. Con la cruceta solo se cambia de sección. En una consola sin pantalla táctil la
   Configuración no se puede usar.
@@ -33,9 +38,10 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
   la opción enfocada (¿mismo cursor de la grilla? ¿resaltado de la fila?), qué hace A en cada
   control (abrir desplegable, mover deslizador con izquierda/derecha, etc.), y que el panel se
   desplace solo hasta la opción enfocada.
-- **Decisión:**
+- **Decisión (2026-10-13):** cerrado. La Configuración ya se navega con el mando y el usuario no ha detectado
+  puntos muertos. Si aparece algún caso, entra como soporte, no como pendiente de diseño.
 
-### 3. Mapeo de botones ⬜
+### 3. Mapeo de botones ⏸️ (pospuesto)
 - **Qué falta:** asignar las teclas físicas (A, B, Y, Menú, L, R, cruceta). Es la única opción de
   Configuración del diseño anterior que todavía no tiene lugar en la UI nueva (regla: "todo debe
   seguir existiendo").
@@ -44,16 +50,24 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
   de botones en `docs/ui-legacy/ui/screens/settings/SettingsScreen.kt`.
 - **A decidir:** ¿grupo dentro de Interfaz > Botones (junto a "Distribución") o sección propia?
   ¿Cómo se ve el modo "presiona un botón…"?
-- **Decisión:**
+- **Decisión (2026-10-13):** no se hace pantalla de mapeo por ahora. Android ya entrega códigos estándar (A=96, B=97, X=99, Y=100…)
+  y las consolas (AYN, Retroid, Anbernic) los respetan; su opción AB/XY ↔ BA/YX solo cambia qué botón físico emite cada
+  código, y Ginny ya lo cubre con Interfaz > Botones > Distribución. Si aparece una casuística real (un mando que no
+  siga el estándar), se implementa entonces: la lógica ya existe en `SettingsViewModel` y `ginny.cfg` conserva `buttonMapping`.
 
-### 4. Primer arranque y estados vacíos ⬜
+### 4. Primer arranque y estados vacíos 🟨 (bienvenida hecha; estados vacíos pendientes)
 - **Qué falta:** sin carpetas configuradas o sin escanear, la grilla queda vacía sin explicación.
   Tampoco hay mensaje cuando un sistema o Favoritos quedan sin juegos.
 - **Lo que ya existe:** `SettingsRepository.onboardingDone`, `isScanning` en los ViewModels
   (distingue "cargando" de "vacío").
 - **A decidir:** ¿asistente de primer arranque (elegir carpetas → escanear) o solo un mensaje en
   la zona de contenido con un botón que abra Configuración > Carpetas? Texto de cada caso.
-- **Decisión:**
+- **Decisión (2026-10-13):** pantalla de **bienvenida** (hecha, sin compilar): mismo fondo y un único `Container` en
+  lugar de cabecera/contenido/pie, con texto breve, «Especifique las siguientes carpetas:», botones **Usuario**, **ROMs** y
+  **Continuar** (este se habilita al elegir ambas), y una nota de que se pueden cambiar luego en Configuración. Continuar
+  limpia el contenido y escanea la biblioteca mostrando los sistemas a medida que aparecen; al terminar se muestra la
+  interfaz. Aparece mientras falten carpetas o el escaneo inicial no haya terminado. Detalle en el registro de avances de
+  `plan-reconstruccion-ui.md`. **Siguen pendientes** los mensajes para un sistema o Favoritos sin juegos.
 
 ---
 
@@ -61,7 +75,7 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
 
 ### 5. Y en Juegos abre las opciones del juego ⬜
 - **Qué falta:** en la pantalla de Juegos, **Y** debería abrir el modal del juego (opciones); hoy
-  abre Configuración. En Sistemas y Estados guardados, Y sigue abriendo Configuración.
+  abre Configuración. En Sistemas, Y sigue abriendo Configuración.
 - **A decidir:** ¿Y abre el mismo modal que A, o A pasa a lanzar directo y Y abre el modal? Hoy A
   abre el modal y "Jugar" lanza.
 - **Decisión:**
@@ -137,7 +151,7 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
 
 ---
 
-## Orden sugerido
+## Orden sugerido (histórico; 1 y 2 cerrados el 2026-10-13)
 
 Empezar por **1** (estados guardados) y **2** (cruceta en Configuración): sin ellos el flujo con
 mando no está completo. Después **3** (mapeo de botones) y **4** (primer arranque). El **10**

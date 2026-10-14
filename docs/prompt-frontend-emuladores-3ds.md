@@ -259,6 +259,9 @@ Pantalla de ajustes accesible desde el panel de opciones, debe incluir al menos 
 
 ## Estados guardados (Save States)
 
+> **Eliminado el 2026-10-13.** Esta sección queda solo como historia: la pantalla de estados guardados ya no
+> existe en Ginny; "Jugar" lanza siempre directo y los estados los gestiona el emulador.
+
 **Viabilidad técnica** (para contexto, ya investigado):
 - Para sistemas manejados por RetroArch: viable leyendo las miniaturas PNG que RetroArch genera automáticamente junto a cada save state (opción `savestate_thumbnail_enable` en RetroArch, activación manual requerida — documentar el paso en el README). Nuestra app solo necesita leer esa carpeta (ruta configurable en Settings) y mostrar las miniaturas encontradas.
 - Para emuladores standalone (Dolphin, PPSSPP, AetherSX2/NetherSX2): cada uno usa un formato propio (ej. PPSSPP embebe la captura dentro del `.ppst`), por lo que queda fuera del alcance de v1; a investigar como fase 2 si se desea más adelante.

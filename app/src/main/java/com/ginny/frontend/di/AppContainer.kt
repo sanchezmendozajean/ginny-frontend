@@ -10,7 +10,6 @@ import com.ginny.frontend.data.GameIndexRepository
 import com.ginny.frontend.data.GinnyConfigRepository
 import com.ginny.frontend.data.MusicRepository
 import com.ginny.frontend.data.RomRepository
-import com.ginny.frontend.data.SaveStateRepository
 import com.ginny.frontend.data.SettingsRepository
 import com.ginny.frontend.data.StorageBootstrapper
 import com.ginny.frontend.data.scrap.ScrapNetwork
@@ -35,7 +34,6 @@ class AppContainer(context: Context) {
     val assetRepository = AssetRepository(context)
     val romRepository = RomRepository(context, assetRepository)
     val gameIndexRepository = GameIndexRepository(context)
-    val saveStateRepository = SaveStateRepository(context)
     val storageBootstrapper = StorageBootstrapper(context)
     val musicRepository = MusicRepository(context)
     val gameLauncher = GameLauncher(settingsRepository)
