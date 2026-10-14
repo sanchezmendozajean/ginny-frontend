@@ -73,39 +73,39 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
 
 ## B. Reglas establecidas que la UI nueva todavía no cumple
 
-### 5. Y en Juegos abre las opciones del juego ⬜
+### 5. Y en Juegos abre las opciones del juego ❌ (obsoleto)
 - **Qué falta:** en la pantalla de Juegos, **Y** debería abrir el modal del juego (opciones); hoy
   abre Configuración. En Sistemas, Y sigue abriendo Configuración.
 - **A decidir:** ¿Y abre el mismo modal que A, o A pasa a lanzar directo y Y abre el modal? Hoy A
   abre el modal y "Jugar" lanza.
-- **Decisión:**
+- **Decisión (2026-10-14):** obsoleto. Ya no hay «opciones del juego»: el modal que se abre con A lo sustituye. Y abre Configuración en todas las pantallas.
 
-### 6. "Reescanear este sistema" en el modal del juego ⬜
+### 6. "Reescanear este sistema" ✅ (hecho, en Configuración)
 - **Qué falta:** el modal anterior lo tenía; el nuevo no. `GamesViewModel.rescanSystem` ya existe.
 - **A decidir:** ¿se agrega al modal (dónde, táctil o con botón)? ¿O alcanza con que cambiar la
   carpeta en Sistemas ya reescanea?
-- **Decisión:**
+- **Decisión (2026-10-14):** no va en el modal del juego sino en **Configuración > Carpetas**, debajo de «Escanear biblioteca»: fila «Escanear el sistema <nombre>» con botón «Escanear». El sistema es el de la pantalla de Juegos abierta o, en Sistemas, el seleccionado en la grilla (con Favoritos o sin selección la fila queda apagada y explica qué hacer). Usa `SettingsViewModel.scanSystem` → `rescanSystem` (la misma lógica de siempre) y avisa con un toast. Sin compilar.
 
-### 7. Emulador no instalado ⬜
+### 7. Emulador no instalado ✅ (se queda como está)
 - **Qué falta:** hoy solo aparece un aviso (Toast). La regla pide mostrar el selector de emulador
   con un mensaje de error (y, si existe, enlace a la tienda: `LaunchResult.EmulatorNotInstalled`
   trae `storeUrl`).
 - **A decidir:** ¿mensaje dentro del mismo modal del juego, resaltando el desplegable de
   Aplicación? ¿Botón "Ir a la tienda"?
-- **Decisión:**
+- **Decisión (2026-10-14):** se queda como está: basta con el toast. El usuario elige otro emulador de la lista (en el modal del juego o en Configuración > Sistemas) o lo instala por su cuenta. Sin selector de error ni enlace a la tienda.
 
-### 8. Acceso táctil a Configuración desde el header ⬜
+### 8. Acceso táctil a Configuración ✅ (cerrado)
 - **Qué falta:** la regla pide un acceso a Configuración en la barra superior (junto a hora y
   batería). Hoy solo se abre con Menú / Y.
 - **A decidir:** ¿ícono de engranaje (`ic_gear` ya existe) dentro del Container de hora/batería o
   aparte?
-- **Decisión:**
+- **Decisión (2026-10-14):** cerrado. Configuración se abre con Y (y con Menú) y tocando la leyenda del pie, sin ícono nuevo en el header. Corrección: esa leyenda decía «Opciones»; ahora dice **«Configuración»** (`GinnyFooter`).
 
-### 9. Batería oculta si sus datos no son confiables ⬜
+### 9. Batería oculta si sus datos no son confiables ✅ (verificado y corregido)
 - **Qué falta:** verificar en la UI nueva que la batería se oculta cuando `BatteryObserver` indica
   datos no confiables (regla del spec).
 - **A decidir:** solo verificar / corregir.
-- **Decisión:**
+- **Decisión (2026-10-14):** se verificó por lectura del código que la UI oculta el ícono y el porcentaje cuando `BatteryObserver` no da un valor. Se corrigió un hueco: ahora también se oculta si el sistema dice que **no hay batería** (`EXTRA_PRESENT` = false), caso típico de un mini PC o TV box con Android que reporta «100 % enchufado». No se tocó el resto (la regla de los 10 minutos solo se evalúa al llegar avisos, y «no confiable» es permanente hasta reiniciar): el spec no lo pide. Probar con `adb shell dumpsys battery set present 0` (y `reset` al terminar). Sin compilar ni probar en dispositivo.
 
 ---
 

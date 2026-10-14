@@ -27,6 +27,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ginny.frontend.data.model.SystemCatalog
+import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.ui.components.settings.GinnyButton
 import com.ginny.frontend.ui.components.settings.SettingsDivider
 import com.ginny.frontend.ui.components.settings.SettingsGroup
@@ -43,7 +45,11 @@ import java.util.Locale
  * carpetas del sistema (SAF); el ViewModel guarda el permiso persistente.
  */
 @Composable
-fun CarpetasOptions(viewModel: SettingsViewModel) {
+fun CarpetasOptions(
+    viewModel: SettingsViewModel,
+    /** El sistema abierto (pantalla de Juegos) o seleccionado en la grilla de Sistemas; null si no hay ninguno (ej. Favoritos). */
+    contextSystem: SystemId? = null,
+) {
     val context = LocalContext.current
     val settings = viewModel.settings
     val userFolder by settings.userFolderUri.collectAsState(initial = null)
@@ -56,6 +62,8 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
     // El progreso se muestra desde que se toca "Escanear" hasta salir de la sección (queda visible
     // el resultado final). Si el escaneo ya estaba en curso al entrar, también.
     var showProgress by remember { mutableStateOf(false) }
+    // Escaneo de un solo sistema en curso (el botón queda apagado y avisa).
+    var scanningSystem by remember { mutableStateOf(false) }
 
     val pickUserFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let { viewModel.onUserFolderPicked(context, it) }
@@ -112,6 +120,31 @@ fun CarpetasOptions(viewModel: SettingsViewModel) {
             if (showProgress || scanning) {
                 SettingsDivider()
                 ScanProgress(scanning = scanning, entries = scanProgress)
+            }
+            SettingsDivider()
+            // Debajo de "Escanear biblioteca": solo el sistema abierto o seleccionado (antes estaba en el modal del juego).
+            val systemName = contextSystem?.let { SystemCatalog.byId.getValue(it).displayName }
+            val hasRomsSource = romFolder != null || (contextSystem != null && contextSystem in romOverrides)
+            SettingsRow(
+                title = if (systemName != null) "Escanear el sistema $systemName" else "Escanear un sistema",
+                subtitle = when {
+                    systemName == null -> "Abre un sistema, o selecciónalo en la lista, para escanearlo solo"
+                    userFolder == null -> "Elige primero la Carpeta de Usuario"
+                    !hasRomsSource -> "Elige primero la carpeta de ROMs"
+                    else -> "Actualiza solo los juegos de este sistema"
+                },
+                subtitleMaxLines = 2,
+            ) {
+                GinnyButton(
+                    if (scanningSystem) "Escaneando..." else "Escanear",
+                    enabled = contextSystem != null && userFolder != null && hasRomsSource && !scanning && !scanningSystem,
+                    onClick = {
+                        contextSystem?.let { id ->
+                            scanningSystem = true
+                            viewModel.scanSystem(context, id).invokeOnCompletion { scanningSystem = false }
+                        }
+                    },
+                )
             }
         }
     }

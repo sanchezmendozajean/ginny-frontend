@@ -20,6 +20,7 @@ data class BatteryStatus(val percent: Int, val isCharging: Boolean)
  * show in the top bar, per the "Detección de batería no confiable" spec:
  * - No sticky broadcast at all within a short grace period after registering -> hidden.
  * - Level outside 0..100 -> hidden.
+ * - The system reports no battery present (`EXTRA_PRESENT` = false) -> hidden.
  * - Level frozen at the exact same value for longer than [stuckThresholdMs] while NOT charging ->
  *   hidden (a value that never moves while draining is almost certainly a stub/fake reading;
  *   pinned-at-100-while-charging is normal and explicitly excluded from this check).
@@ -65,6 +66,12 @@ class BatteryObserver(
         if (unreliable) return
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+        // Equipo sin batería (mini PC, TV box con Android): suele reportar "100 % enchufado", que parece un dato real y no lo es.
+        // EXTRA_PRESENT solo es false si el sistema lo dice; si falta el extra se asume que hay batería.
+        if (!intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true)) {
+            markUnreliable()
+            return
+        }
         val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
         val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
         val charging = plugged || status == BatteryManager.BATTERY_STATUS_CHARGING ||

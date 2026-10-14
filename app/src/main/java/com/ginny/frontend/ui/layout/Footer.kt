@@ -21,7 +21,7 @@ import com.ginny.frontend.ui.components.SelectionInfo
 /**
  * Barra inferior: elemento enfocado a la izquierda; a la derecha, los puntos de página sobre la
  * leyenda de botones. [onBack]: si hay a dónde regresar (fuera de Sistemas), muestra "Regresar".
- * [canOpen]: false oculta "Abrir" (grilla vacía). [onOpen] y [onOptions]: tocar "Abrir" y "Opciones".
+ * [canOpen]: false oculta "Abrir" (grilla vacía). [onOpen] y [onOptions]: tocar "Abrir" y "Configuración".
  */
 @Composable
 fun GinnyFooter(
@@ -75,7 +75,7 @@ fun GinnyFooter(
                 }
                 ButtonLegend(
                     FaceButton.Y,
-                    "Opciones",
+                    "Configuración",
                     modifier = Modifier.pointerInput(onOptions) { detectTapGestures { onOptions() } },
                 )
             }

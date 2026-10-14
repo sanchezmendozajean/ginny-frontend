@@ -353,7 +353,7 @@ quiere cambiarlo), el diálogo ganó parámetros `title`/`description` para no m
 
 ## Batería no confiable
 
-`BatteryObserver` oculta el indicador si: no llega ningún `ACTION_BATTERY_CHANGED` en los primeros
+`BatteryObserver` oculta el indicador si: el sistema reporta que no hay batería (`EXTRA_PRESENT` falso, desde 2026-10-14), no llega ningún `ACTION_BATTERY_CHANGED` en los primeros
 5s tras registrar el receiver, el valor reportado está fuera de 0–100, o el valor queda exactamente
 fijo por más de 10 minutos de uso *sin estar cargando* (para no confundir un 100% real mientras carga
 con un valor stub).

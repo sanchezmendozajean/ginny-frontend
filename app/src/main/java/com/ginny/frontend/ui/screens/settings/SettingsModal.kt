@@ -1,6 +1,7 @@
 package com.ginny.frontend.ui.screens.settings
 
 import androidx.compose.animation.AnimatedVisibility
+import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.ui.components.settings.SettingsCursorOverlay
 import com.ginny.frontend.ui.components.settings.SettingsNav
 import com.ginny.frontend.ui.components.settings.LocalSettingsNav
@@ -77,6 +78,8 @@ fun SettingsModal(
     onOpenScrapProgress: () -> Unit = {},
     /** Pide confirmar (modal de GinnyApp) antes de activar "Guardar credenciales en la Carpeta de Usuario". */
     onRequestSaveCredentials: () -> Unit = {},
+    /** El sistema abierto o seleccionado, para "Escanear el sistema X" en Carpetas; null si no hay. */
+    contextSystem: SystemId? = null,
 ) {
     AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
         val palette = GinnyThemes.current
@@ -202,7 +205,7 @@ fun SettingsModal(
                     SettingsContent(modifier = Modifier.weight(1f)) {
                         when (section) {
                             SettingsSection.Interfaz -> InterfazOptions(viewModel)
-                            SettingsSection.Carpetas -> CarpetasOptions(viewModel)
+                            SettingsSection.Carpetas -> CarpetasOptions(viewModel, contextSystem)
                             SettingsSection.Sistemas -> SistemasOptions(viewModel)
                             SettingsSection.Scrapper -> ScrapperOptions(viewModel, onOpenScrapLaunch, onOpenScrapProgress, onRequestSaveCredentials)
                             SettingsSection.Creditos -> CreditosOptions()

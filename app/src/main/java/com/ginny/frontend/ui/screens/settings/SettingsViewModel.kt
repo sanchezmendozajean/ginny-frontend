@@ -173,6 +173,9 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         rescanSystem(context, systemId)
     }
 
+    /** "Escanear el sistema X" (Configuración > Carpetas): actualiza solo ese sistema, sin recorrer toda la biblioteca. */
+    fun scanSystem(context: Context, systemId: SystemId) = viewModelScope.launch { rescanSystem(context, systemId) }
+
     /** Actualiza la biblioteca guardada de un solo sistema (su carpeta cambió). */
     private suspend fun rescanSystem(context: Context, systemId: SystemId) {
         val romUri = settings.romFolderUri.first()?.let(Uri::parse)

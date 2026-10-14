@@ -29,6 +29,8 @@ import com.ginny.frontend.ui.navigation.Screen
 import com.ginny.frontend.ui.screens.games.GamesScreen
 import com.ginny.frontend.ui.screens.games.GameModal
 import com.ginny.frontend.ui.screens.games.GamesViewModel
+import com.ginny.frontend.ui.screens.games.GamesScope
+import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.ui.util.appContainer
 import com.ginny.frontend.ui.util.LocalSoundManager
 import com.ginny.frontend.data.ButtonMapping
@@ -64,7 +66,7 @@ val SettingsBackdropBlur = 16.dp
  *
  * [settingsOpen]: si el modal de Configuración está abierto (lo controla MainActivity).
  * [onCloseSettings]: cerrarlo desde la interfaz (ej. tocando "Cerrar").
- * [onOpenSettings]: abrirlo desde la interfaz (tocando "Opciones" en el pie).
+ * [onOpenSettings]: abrirlo desde la interfaz (tocando "Configuración" en el pie).
  */
 @Composable
 fun GinnyApp(
@@ -127,6 +129,12 @@ fun GinnyApp(
         scrapViewModel.cancelPrepare()
     }
     BackHandler(enabled = scrapLaunchOpen, onBack = closeScrapLaunch)
+    // El sistema "en contexto" para Configuración > Carpetas > "Escanear el sistema X": el de la pantalla de Juegos abierta o,
+    // en Sistemas, el de la grilla seleccionado (Favoritos no es un sistema: null).
+    val contextSystem: SystemId? = when (val current = screen) {
+        is Screen.Games -> (current.scope as? GamesScope.Single)?.systemId
+        Screen.Systems -> selected?.key?.let { key -> SystemId.entries.firstOrNull { it.name == key } }
+    }
     // Aviso previo a guardar las credenciales en ginny.cfg (Configuración > Scrapper).
     var saveCredentialsOpen by remember { mutableStateOf(false) }
     BackHandler(enabled = saveCredentialsOpen) { saveCredentialsOpen = false }
@@ -309,6 +317,7 @@ fun GinnyApp(
             },
             onOpenScrapProgress = { scrapProgressOpen = true },
             onRequestSaveCredentials = { saveCredentialsOpen = true },
+            contextSystem = contextSystem,
         )
         }
 
