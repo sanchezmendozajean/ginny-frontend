@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.theme.GinnyThemes
 
@@ -28,8 +29,17 @@ import com.ginny.frontend.ui.theme.GinnyThemes
  */
 @Composable
 fun ScrapActivityIcon(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val palette = GinnyThemes.current
     val currentOnClick by rememberUpdatedState(onClick)
+    ScrapSpinner(modifier = modifier.pointerInput(Unit) { detectTapGestures { currentOnClick() } })
+}
+
+/**
+ * La animación del ícono de descarga, sola (sin toque): también se usa en el modal de avance, junto a la media que
+ * se está descargando. Todas las medidas escalan con [iconSize] (20 dp es el tamaño de la barra superior).
+ */
+@Composable
+fun ScrapSpinner(modifier: Modifier = Modifier, iconSize: Dp = 20.dp) {
+    val palette = GinnyThemes.current
     val transition = rememberInfiniteTransition(label = "scrapActivity")
     val spin by transition.animateFloat(
         initialValue = 0f,
@@ -44,12 +54,9 @@ fun ScrapActivityIcon(onClick: () -> Unit, modifier: Modifier = Modifier) {
         label = "scrapBob",
     )
 
-    Canvas(
-        modifier = modifier
-            .size(20.dp)
-            .pointerInput(Unit) { detectTapGestures { currentOnClick() } },
-    ) {
-        val stroke = 2.dp.toPx()
+    Canvas(modifier = modifier.size(iconSize)) {
+        val k = this.size.width / 20.dp.toPx() // escala respecto al tamaño de referencia
+        val stroke = 2.dp.toPx() * k
         val inset = stroke / 2
         val ring = Size(size.width - stroke, size.height - stroke)
         // Aro tenue + arco que gira.
@@ -67,9 +74,9 @@ fun ScrapActivityIcon(onClick: () -> Unit, modifier: Modifier = Modifier) {
         }
         // Flecha hacia abajo, que sube y baja un poco.
         val cx = size.width / 2
-        val cy = size.height / 2 + bob * 0.8.dp.toPx()
-        val half = 3.dp.toPx()
-        val arrow = Stroke(1.6.dp.toPx(), cap = StrokeCap.Round)
+        val cy = size.height / 2 + bob * 0.8.dp.toPx() * k
+        val half = 3.dp.toPx() * k
+        val arrow = Stroke(1.6.dp.toPx() * k, cap = StrokeCap.Round)
         drawLine(palette.ink, Offset(cx, cy - half), Offset(cx, cy + half), arrow.width, StrokeCap.Round)
         drawLine(palette.ink, Offset(cx - half * 0.8f, cy + half * 0.1f), Offset(cx, cy + half), arrow.width, StrokeCap.Round)
         drawLine(palette.ink, Offset(cx + half * 0.8f, cy + half * 0.1f), Offset(cx, cy + half), arrow.width, StrokeCap.Round)

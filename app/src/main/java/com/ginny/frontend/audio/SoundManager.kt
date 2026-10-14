@@ -45,6 +45,7 @@ class SoundManager(
     private var launchSoundId = 0
     private var enterSystemSoundId = 0
     private var openModalSoundId = 0
+    private var backSoundId = 0
     private var musicPlayer: MediaPlayer? = null
     private var currentMusicKey: String? = null
 
@@ -60,6 +61,7 @@ class SoundManager(
         launchSoundId = soundPool.load(context, R.raw.sfx_launch, 1)
         enterSystemSoundId = soundPool.load(context, R.raw.sfx_enter_system, 1)
         openModalSoundId = soundPool.load(context, R.raw.sfx_open_modal, 1)
+        backSoundId = soundPool.load(context, R.raw.sfx_back, 1)
 
         scope.launch {
             settingsRepository.uiSoundVolume.collect { uiVolume = it }
@@ -124,6 +126,11 @@ class SoundManager(
 
     fun playOpenModalSound() {
         soundPool.play(openModalSoundId, uiVolume, uiVolume, 1, 0, 1f)
+    }
+
+    /** Al volver a la lista de sistemas o cerrar un modal (Kenney "minimize_008"). */
+    fun playBackSound() {
+        soundPool.play(backSoundId, uiVolume, uiVolume, 1, 0, 1f)
     }
 
     fun release() {

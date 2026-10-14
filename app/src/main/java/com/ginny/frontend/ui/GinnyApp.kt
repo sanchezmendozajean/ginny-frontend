@@ -30,6 +30,7 @@ import com.ginny.frontend.ui.screens.games.GamesScreen
 import com.ginny.frontend.ui.screens.games.GameModal
 import com.ginny.frontend.ui.screens.games.GamesViewModel
 import com.ginny.frontend.ui.util.appContainer
+import com.ginny.frontend.ui.util.LocalSoundManager
 import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.model.GameEntry
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -133,6 +134,8 @@ fun GinnyApp(
         factory = viewModelFactory { initializer { SettingsViewModel(appContainer) } },
     )
     BackHandler(enabled = scrapProgressOpen) { scrapProgressOpen = false }
+    // Con el modal de avance abierto el scrapeo va al ritmo de la pantalla (para que se vean los fundidos); cerrado, de corrido.
+    LaunchedEffect(scrapProgressOpen) { scrapViewModel.setProgressVisible(scrapProgressOpen) }
     val yTakenByModal = openGame != null || scrapProgressOpen
     LaunchedEffect(yTakenByModal) { onGameModalOpenChanged(yTakenByModal) }
 
@@ -155,6 +158,14 @@ fun GinnyApp(
 
     // La grilla responde solo si no hay nada encima.
     val gridActive = !settingsOpen && openGame == null && !scrapProgressOpen
+
+    // Sonido de "volver": al regresar a la lista de sistemas y al cerrar cualquier modal (cada uno suena al cerrarse).
+    BackSoundOnClose(open = screen != Screen.Systems)
+    BackSoundOnClose(open = settingsOpen)
+    BackSoundOnClose(open = openGame != null)
+    BackSoundOnClose(open = scrapLaunchOpen)
+    BackSoundOnClose(open = scrapProgressOpen)
+    BackSoundOnClose(open = saveCredentialsOpen)
 
     // Une el fondo (que se desenfoca) con los Container (que lo desenfocan detrás de sí).
     val hazeState = remember { HazeState() }
@@ -320,5 +331,16 @@ fun GinnyApp(
                 saveCredentialsOpen = false
             },
         )
+    }
+}
+
+/** Reproduce el sonido de "volver" cuando [open] pasa de verdadero a falso (se cerró un modal o se volvió a Sistemas). */
+@Composable
+private fun BackSoundOnClose(open: Boolean) {
+    val sound = LocalSoundManager.current
+    var wasOpen by remember { mutableStateOf(open) }
+    LaunchedEffect(open) {
+        if (wasOpen && !open) sound?.playBackSound()
+        wasOpen = open
     }
 }

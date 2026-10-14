@@ -1,5 +1,13 @@
 package com.ginny.frontend.ui.screens.scrap
 
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloatAsState
+import com.ginny.frontend.ui.components.ScrapSpinner
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -141,6 +149,12 @@ fun ScrapProgressModal(visible: Boolean, viewModel: ScrapViewModel, onClose: () 
 /** Cuántas medias se muestran por fila en el modal de avance. */
 private const val MEDIA_PER_ROW = 3
 
+/** Duración del fundido de la caja de datos al pasar al juego siguiente (sale, y luego entra la nueva). */
+private const val BOX_FADE_MS = 180
+
+/** Tamaño de la animación junto a la media que se está descargando. */
+private val MEDIA_SPINNER_SIZE = 14.dp
+
 private fun title(progress: ScrapProgress?, running: Boolean): String = when {
     running -> "Scrapeando"
     progress?.stopReason != null -> "Scrapeo detenido"
@@ -183,28 +197,22 @@ private fun ProgressDetails(progress: ScrapProgress) {
     val current = progress.current
 
     if (current != null) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(14.dp))
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            InfoLine("Archivo", current.fileName)
-            InfoLine("Sistema", current.systemName)
-            if (current.metadataWanted) InfoLine("Metadatos", yesNo(current.metadata))
-            // Siempre presente si hay imágenes elegidas (con "..." mientras no se sabe): la lista no salta.
-            if (current.media.keys.any { it != ScrapMedia.VIDEO }) InfoLine("Imágenes", yesNo(current.images))
-            // Las medias, de a tres por fila para no ocupar tanto alto.
-            current.media.entries.chunked(MEDIA_PER_ROW).forEach { rowItems ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    rowItems.forEach { (media, has) -> MediaCell(media.label, yesNo(has), Modifier.weight(1f)) }
-                    // Completa la última fila para que las columnas coincidan.
-                    repeat(MEDIA_PER_ROW - rowItems.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
-            InfoLine("Estado", stateText(current))
-        }
+        // Al pasar al juego siguiente, la caja del que terminó se desvanece y luego entra la nueva (también con un fundido).
+        // contentKey = el número del juego: los cambios dentro del mismo juego (otra media, otro estado) no animan nada y
+        // la caja que sale conserva los datos con que terminó.
+        AnimatedContent(
+            targetState = current,
+            contentKey = { it.index },
+            transitionSpec = {
+                ContentTransform(
+                    targetContentEnter = fadeIn(tween(BOX_FADE_MS, delayMillis = BOX_FADE_MS)),
+                    initialContentExit = fadeOut(tween(BOX_FADE_MS)),
+                    sizeTransform = null,
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            label = "scrapCurrentBox",
+        ) { shown -> CurrentGameBox(shown) }
     }
 
     Text(
@@ -217,6 +225,35 @@ private fun ProgressDetails(progress: ScrapProgress) {
     )
     progress.warnings.forEach { Note("⚠ $it") }
     progress.stopReason?.let { Note("Se detuvo: $it") }
+}
+
+/** Caja con los datos del juego en curso: archivo, sistema, qué se consiguió y qué se está haciendo. */
+@Composable
+private fun CurrentGameBox(current: ScrapCurrent) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(14.dp))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        InfoLine("Archivo", current.fileName)
+        InfoLine("Sistema", current.systemName)
+        if (current.metadataWanted) InfoLine("Metadatos", yesNo(current.metadata))
+        // Siempre presente si hay imágenes elegidas (con "..." mientras no se sabe): la lista no salta.
+        if (current.media.keys.any { it != ScrapMedia.VIDEO }) InfoLine("Imágenes", yesNo(current.images))
+        // Las medias, de a tres por fila para no ocupar tanto alto. La que se está descargando lleva la animación al lado.
+        current.media.entries.chunked(MEDIA_PER_ROW).forEach { rowItems ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                rowItems.forEach { (media, has) ->
+                    MediaCell(media.label, yesNo(has), downloading = media == current.downloading, modifier = Modifier.weight(1f))
+                }
+                // Completa la última fila para que las columnas coincidan.
+                repeat(MEDIA_PER_ROW - rowItems.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+        InfoLine("Estado", stateText(current))
+    }
 }
 
 private fun yesNo(value: Boolean?): String = when (value) {
@@ -235,7 +272,7 @@ private fun stateText(current: ScrapCurrent): String = current.step ?: when (cur
 
 /** Una media (ícono, wheel, caja…) con su Sí/No, para la cuadrícula de tres por fila. */
 @Composable
-private fun MediaCell(label: String, value: String, modifier: Modifier = Modifier) {
+private fun MediaCell(label: String, value: String, downloading: Boolean, modifier: Modifier = Modifier) {
     val palette = GinnyThemes.current
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Text(
@@ -248,6 +285,16 @@ private fun MediaCell(label: String, value: String, modifier: Modifier = Modifie
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false).padding(end = 6.dp),
         )
+        // El hueco existe siempre (con o sin animación): así los valores no se corren cuando la media empieza a descargarse.
+        // Aparece y se va con un fundido (animateFloatAsState en vez de AnimatedVisibility: dentro de un Row, este último
+        // resuelve a la variante de RowScope y no compila desde un Box anidado).
+        val spinnerAlpha by animateFloatAsState(if (downloading) 1f else 0f, tween(150), label = "mediaSpinnerAlpha")
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(MEDIA_SPINNER_SIZE)) {
+            if (spinnerAlpha > 0f) {
+                ScrapSpinner(iconSize = MEDIA_SPINNER_SIZE, modifier = Modifier.graphicsLayer { alpha = spinnerAlpha })
+            }
+        }
+        Spacer(Modifier.width(6.dp))
         Text(text = value, fontFamily = GinnyFont, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = palette.ink, maxLines = 1)
     }
 }

@@ -35,6 +35,8 @@ data class ScrapCurrent(
     val media: Map<ScrapMedia, Boolean?> = emptyMap(),
     /** null mientras se procesa. */
     val outcome: ScrapOutcome? = null,
+    /** La media que se está descargando en este momento (la animación del modal de avance va a su lado); null si ninguna. */
+    val downloading: ScrapMedia? = null,
 ) {
     /** Resumen de todas las imágenes (ícono, wheel, cajas): sí si las tiene todas, no si falta alguna. */
     val images: Boolean?
@@ -78,7 +80,7 @@ data class ScrapProgress(
         failed = failed + if (outcome == ScrapOutcome.FAILED) 1 else 0,
     )
 
-    fun stopped(reason: String) = copy(current = current?.copy(step = null), stopReason = reason, finished = true)
+    fun stopped(reason: String) = copy(current = current?.copy(step = null, downloading = null), stopReason = reason, finished = true)
 
-    fun completed() = copy(current = current?.copy(step = null), finished = true)
+    fun completed() = copy(current = current?.copy(step = null, downloading = null), finished = true)
 }

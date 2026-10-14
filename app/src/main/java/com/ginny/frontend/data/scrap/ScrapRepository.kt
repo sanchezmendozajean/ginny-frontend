@@ -16,6 +16,7 @@ import com.ginny.frontend.data.scrap.steamgriddb.SteamGridDbClient
 import com.ginny.frontend.data.scrap.steamgriddb.SteamGridDbImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
@@ -98,6 +99,14 @@ class ScrapRepository(
      * vuelve a pedir también lo que ya está guardado y lo reemplaza (si la descarga nueva falla, lo
      * anterior queda intacto); sin él, **nunca** se sobrescribe un archivo existente.
      */
+    /**
+     * true mientras el modal de avance está abierto: el lote se pone al ritmo de la pantalla (cada juego dura al menos
+     * [UI_MIN_GAME_MS], para que se vea el fundido entre una caja de datos y la siguiente). Con el modal cerrado, el lote
+     * corre de corrido. Lo lee [run] antes de cada juego, así que se puede abrir y cerrar el modal a mitad de lote.
+     */
+    @Volatile
+    var paceForUi: Boolean = false
+
     fun run(games: List<GameEntry>, force: Boolean = false, overwrite: Boolean = false): Flow<ScrapProgress> = flow {
         val session = Session(wanted = scrapperSettings.enabledMedia.first(), force = force, overwrite = overwrite)
         val onlyOnWifi = scrapperSettings.onlyOnWifi.first()
@@ -109,6 +118,7 @@ class ScrapRepository(
 
         for ((position, game) in games.withIndex()) {
             currentCoroutineContext().ensureActive()
+            val gameStartedAt = System.currentTimeMillis()
 
             (network.check(onlyOnWifi) as? ScrapResult.Failure)?.let {
                 emit(progress.stopped(it.message))
@@ -128,7 +138,13 @@ class ScrapRepository(
             }
 
             val systemName = SystemCatalog.byId.getValue(game.systemId).displayName
-            val report: suspend (ScrapCurrent) -> Unit = { emit(progress.withCurrent(it)) }
+            // El juego en curso se guarda en `progress` (no solo se emite): entre un juego y el siguiente, lo que se emite sigue
+            // trayendo el último juego con su resultado. Antes llevaba `current = null` en ese intervalo, y el modal de avance
+            // quitaba la caja de datos de golpe (sin fundido) y la volvía a poner con el juego siguiente.
+            val report: suspend (ScrapCurrent) -> Unit = {
+                progress = progress.withCurrent(it)
+                emit(progress)
+            }
 
             when (val result = processGame(game, assets, session, position + 1, systemName, report)) {
                 is GameResult.Done -> progress = progress.after(result.outcome).copy(warnings = session.warnings.toList())
@@ -138,6 +154,12 @@ class ScrapRepository(
                 }
             }
             emit(progress)
+            if (paceForUi) {
+                // La caja del juego que terminó se queda a la vista lo que falte hasta el mínimo; el siguiente juego la
+                // desvanece (y la nueva entra con otro fundido) mientras ya se está procesando.
+                val remaining = UI_MIN_GAME_MS - (System.currentTimeMillis() - gameStartedAt)
+                if (remaining > 0) delay(remaining)
+            }
         }
         emit(progress.completed())
     }
@@ -163,7 +185,7 @@ class ScrapRepository(
         val metadataWanted = ScrapMedia.METADATA in session.wanted
         state.metadataShown = if (metadataWanted && previous?.hasDetails == true && !session.overwrite) true else null
         shown.forEach { state.mediaShown[it] = if (it in present && !session.overwrite) true else null }
-        suspend fun publish(step: String?, outcome: ScrapOutcome? = null) {
+        suspend fun publish(step: String?, outcome: ScrapOutcome? = null, downloading: ScrapMedia? = null) {
             report(
                 ScrapCurrent(
                     index = index,
@@ -174,6 +196,7 @@ class ScrapRepository(
                     metadata = state.metadataShown,
                     media = state.mediaShown.toMap(),
                     outcome = outcome,
+                    downloading = downloading,
                 ),
             )
         }
@@ -189,7 +212,7 @@ class ScrapRepository(
         }
 
         val stopReason = try {
-            runProviders(game, assets, plan, useScreenScraper, useSteamGridDb, session, state) { step -> publish(step) }
+            runProviders(game, assets, plan, useScreenScraper, useSteamGridDb, session, state) { step, media -> publish(step, downloading = media) }
         } finally {
             // Aunque se cancele o se corte el lote, lo averiguado hasta aquí se guarda: así la próxima
             // corrida no vuelve a preguntar lo mismo.
@@ -220,12 +243,12 @@ class ScrapRepository(
         useSteamGridDb: Boolean,
         session: Session,
         state: GameState,
-        publish: suspend (step: String) -> Unit,
+        publish: suspend (step: String, downloading: ScrapMedia?) -> Unit,
     ): String? {
         val rom = game.romFileName
 
         if (useScreenScraper) {
-            publish("Consultando ScreenScraper...")
+            publish("Consultando ScreenScraper...", null)
             when (val found = screenScraper.findGame(lookupFor(game))) {
                 is ScrapResult.Ok -> {
                     session.connectionWorked()
@@ -245,7 +268,7 @@ class ScrapRepository(
                             state.mark(media, false)
                             continue
                         }
-                        publish("Descargando ${media.label.lowercase()}...")
+                        publish("Descargando ${media.label.lowercase()}...", media)
                         when (val saved = saveScreenScraperMedia(assets, rom, media, chosen, session.overwrite)) {
                             is ScrapResult.Ok -> {
                                 state.obtained += media
@@ -284,12 +307,12 @@ class ScrapRepository(
         if (useSteamGridDb) {
             // El nombre estándar de ScreenScraper busca mucho mejor que el del archivo.
             val name = state.canonicalName ?: game.displayName
-            publish("Buscando el ícono en SteamGridDB...")
+            publish("Buscando el ícono en SteamGridDB...", null)
             when (val found = steamGridDb.findIcon(name, state.year)) {
                 is ScrapResult.Ok -> {
                     session.connectionWorked()
                     val match = found.value
-                    publish("Descargando ícono...")
+                    publish("Descargando ícono...", ScrapMedia.ICON)
                     when (val saved = saveIcon(assets, rom, match.image, session.overwrite)) {
                         is ScrapResult.Ok -> {
                             state.obtained += ScrapMedia.ICON
@@ -481,5 +504,11 @@ class ScrapRepository(
     companion object {
         /** Fallos de conexión seguidos (en cualquier proveedor) tras los cuales se corta el lote. */
         const val MAX_CONSECUTIVE_FAILURES = 5
+
+        /**
+         * Duración mínima de cada juego con el modal de avance abierto ([paceForUi]): el fundido de salida y el de entrada
+         * de la caja de datos (2 × `BOX_FADE_MS` = 360 ms, en ScrapProgressModal) más un rato con el resultado a la vista.
+         */
+        const val UI_MIN_GAME_MS = 700L
     }
 }

@@ -84,6 +84,9 @@ class ScrapViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     /** Cierra el modal de lanzamiento: deja de revisar. */
+    /** El modal de avance se abrió o se cerró: abierto, el lote va al ritmo de la pantalla; cerrado, de corrido. */
+    fun setProgressVisible(visible: Boolean) = runner.setProgressVisible(visible)
+
     fun cancelPrepare() {
         inspectJob?.cancel()
         inspectJob = null

@@ -28,6 +28,14 @@ class ScrapRunner(
     private val _progress = MutableStateFlow<ScrapProgress?>(null)
     val progress: StateFlow<ScrapProgress?> = _progress
 
+    /**
+     * El modal de avance está abierto: el lote se pone al ritmo de la pantalla (ver [ScrapRepository.paceForUi]); cerrado,
+     * corre de corrido.
+     */
+    fun setProgressVisible(visible: Boolean) {
+        repository.paceForUi = visible
+    }
+
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning
 
