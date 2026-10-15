@@ -121,18 +121,22 @@ fun Element(
             // falló), sube a 1 con un fade. Animatable + LaunchedEffect (y no animateFloatAsState)
             // para que también haya fade cuando el elemento ya nace sin imagen.
             val alpha = remember(image, icon) { Animatable(0f) }
+            val shadowAmount = remember(image, icon) { Animatable(0f) }
             LaunchedEffect(state) {
-                if (state != ImageState.Loading) alpha.animateTo(1f, tween(ElementFadeInMs))
+                if (state != ImageState.Loading) {
+                    alpha.animateTo(1f, tween(ElementFadeInMs))
+                    shadowAmount.animateTo(1f, tween(ElementFadeInMs)) // la sombra entra después del fade
+                }
             }
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { this.alpha = alpha.value } // se lee al dibujar: no recompone
-                    // Sombra antes del fondo y la imagen: se dibuja por fuera del elemento. Con
-                    // clip = true además recorta el contenido a las esquinas redondeadas; un
-                    // .clip(shape) antes de la sombra la cortaría.
-                    .shadow(ElementShadowElevation, shape, clip = true)
+                    // Sombra aparte del fade: con alpha < 1 la capa recortaría la sombra (sale por fuera del
+                    // recuadro) y se vería sucia; por eso entra (shadowAmount) cuando el elemento ya es opaco.
+                    // clip = true además recorta el contenido a las esquinas redondeadas.
+                    .shadow(ElementShadowElevation * shadowAmount.value, shape, clip = true)
                     .background(Color.White),
                     //.border(ElementFrameWidth, Color.White, shape), // marco blanco, encima de la imagen
                 contentAlignment = Alignment.Center,
