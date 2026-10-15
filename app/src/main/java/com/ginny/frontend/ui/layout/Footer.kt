@@ -20,7 +20,7 @@ import com.ginny.frontend.ui.components.SelectionInfo
 
 /**
  * Barra inferior: elemento enfocado a la izquierda; a la derecha, los puntos de página sobre la
- * leyenda de botones. [onBack]: si hay a dónde regresar (fuera de Sistemas), muestra "Regresar".
+ * leyenda de botones. [onBack]: si hay a dónde regresar (fuera de Sistemas), muestra "Regresar"; en Sistemas, [onClose] muestra "Cerrar".
  * [canOpen]: false oculta "Abrir" (grilla vacía). [onOpen] y [onOptions]: tocar "Abrir" y "Configuración".
  */
 @Composable
@@ -31,6 +31,8 @@ fun GinnyFooter(
     pageCount: Int = 1,
     currentPage: Int = 0,
     onBack: (() -> Unit)? = null,
+    /** En Sistemas (sin a dónde regresar): cerrar la aplicación, con la leyenda "Cerrar" en el botón B. */
+    onClose: (() -> Unit)? = null,
     canOpen: Boolean = true,
     onOpen: () -> Unit = {},
     onOptions: () -> Unit = {},
@@ -71,6 +73,13 @@ fun GinnyFooter(
                         FaceButton.B,
                         "Regresar",
                         modifier = Modifier.pointerInput(onBack) { detectTapGestures { onBack() } },
+                    )
+                } else if (onClose != null) {
+                    // Cerrar: solo en Sistemas. Tocable; pide confirmación antes de cerrar la app.
+                    ButtonLegend(
+                        FaceButton.B,
+                        "Cerrar",
+                        modifier = Modifier.pointerInput(onClose) { detectTapGestures { onClose() } },
                     )
                 }
                 ButtonLegend(

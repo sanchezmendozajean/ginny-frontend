@@ -222,8 +222,8 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 // B cierra Configuración; si está cerrada, regresa a la pantalla anterior (lo
-                // maneja el BackHandler de GinnyApp). Solo si hay a dónde volver: en Sistemas,
-                // B no hace nada (el "atrás" por defecto cerraría la app).
+                // maneja el BackHandler de GinnyApp). En Sistemas, el BackHandler de GinnyApp
+                // pide confirmación para cerrar la app (el "atrás" por defecto la cerraría sin preguntar).
                 LogicalButton.B -> {
                     if (settingsOpen.value) {
                         // Con Configuración abierta, los únicos callbacks activos son los de los modales

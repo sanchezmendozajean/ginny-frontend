@@ -54,6 +54,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import com.ginny.frontend.ui.screens.systems.SystemsScreen
+import com.ginny.frontend.ui.screens.exit.ExitConfirmModal
 import com.ginny.frontend.ui.screens.welcome.WelcomeScreen
 import kotlinx.coroutines.flow.combine
 import com.ginny.frontend.ui.theme.GinnyThemes
@@ -91,8 +92,8 @@ fun GinnyApp(
     var activateTick by remember { mutableIntStateOf(0) }
 
     // Pantalla actual. B (vía MainActivity → onBackPressedDispatcher), el gesto atrás del sistema
-    // o tocar "Regresar" vuelven a Sistemas. En Sistemas no hay a dónde volver: BackHandler queda
-    // deshabilitado y MainActivity no deja que B cierre la app.
+    // o tocar "Regresar" vuelven a Sistemas. En Sistemas no hay a dónde volver: ese BackHandler queda
+    // deshabilitado y B pide confirmación para cerrar la app (más abajo, `exitConfirmOpen`).
     var screen by remember { mutableStateOf<Screen>(Screen.Systems) }
     val goBack = { screen = Screen.Systems }
     BackHandler(enabled = screen != Screen.Systems && !settingsOpen, onBack = goBack)
@@ -145,6 +146,15 @@ fun GinnyApp(
         factory = viewModelFactory { initializer { SettingsViewModel(appContainer) } },
     )
     BackHandler(enabled = scrapProgressOpen) { scrapProgressOpen = false }
+
+    // B en la lista de Sistemas (sin nada abierto encima): pide confirmación para cerrar la aplicación.
+    var exitConfirmOpen by remember { mutableStateOf(false) }
+    val activity = LocalContext.current.findActivity()
+    BackHandler(
+        enabled = needsWelcome == false && screen == Screen.Systems && !settingsOpen && openGame == null &&
+            !scrapLaunchOpen && !scrapProgressOpen && !saveCredentialsOpen && !exitConfirmOpen,
+    ) { exitConfirmOpen = true }
+    BackHandler(enabled = exitConfirmOpen) { exitConfirmOpen = false }
     // Con el modal de avance abierto el scrapeo va al ritmo de la pantalla (para que se vean los fundidos); cerrado, de corrido.
     LaunchedEffect(scrapProgressOpen) { scrapViewModel.setProgressVisible(scrapProgressOpen) }
     val yTakenByModal = openGame != null || scrapProgressOpen
@@ -168,7 +178,7 @@ fun GinnyApp(
     }
 
     // La grilla responde solo si no hay nada encima.
-    val gridActive = !settingsOpen && openGame == null && !scrapProgressOpen
+    val gridActive = !settingsOpen && openGame == null && !scrapProgressOpen && !exitConfirmOpen
 
     // Sonido de "volver": al regresar a la lista de sistemas y al cerrar cualquier modal (cada uno suena al cerrarse).
     BackSoundOnClose(open = screen != Screen.Systems)
@@ -177,6 +187,7 @@ fun GinnyApp(
     BackSoundOnClose(open = scrapLaunchOpen)
     BackSoundOnClose(open = scrapProgressOpen)
     BackSoundOnClose(open = saveCredentialsOpen)
+    BackSoundOnClose(open = exitConfirmOpen)
 
     // Une el fondo (que se desenfoca) con los Container (que lo desenfocan detrás de sí).
     val hazeState = remember { HazeState() }
@@ -184,7 +195,7 @@ fun GinnyApp(
     // Desenfoque animado de la interfaz de atrás mientras Configuración está abierta.
     // Modifier.blur funciona en API 31+; en 29-30 no hace nada y queda solo la cortina oscura.
     val backdropBlur by animateDpAsState(
-        targetValue = if (settingsOpen || openGame != null || scrapProgressOpen) SettingsBackdropBlur else 0.dp,
+        targetValue = if (settingsOpen || openGame != null || scrapProgressOpen || exitConfirmOpen) SettingsBackdropBlur else 0.dp,
         label = "settingsBackdropBlur",
     )
 
@@ -266,6 +277,7 @@ fun GinnyApp(
                         pageCount = pageCount,
                         currentPage = currentPage,
                         onBack = if (screen == Screen.Systems) null else goBack,
+                        onClose = if (screen == Screen.Systems) ({ exitConfirmOpen = true }) else null,
                         canOpen = selected != null,                     // sin elementos no hay nada que abrir
                         onOpen = { if (gridActive) activateTick++ },
                         onOptions = onOpenSettings,
@@ -346,6 +358,14 @@ fun GinnyApp(
                 saveCredentialsOpen = false
             },
         )
+        ExitConfirmModal(
+            visible = exitConfirmOpen,
+            onCancel = { exitConfirmOpen = false },
+            onConfirm = {
+                exitConfirmOpen = false
+                activity?.finishAffinity()
+            },
+        )
 
         // ── Menús desplegables abiertos: lo último, encima de todo (también de los modales) ───────────────
         GinnyMenuHost(menuHost)
@@ -362,4 +382,11 @@ private fun BackSoundOnClose(open: Boolean) {
         if (wasOpen && !open) sound?.playBackSound()
         wasOpen = open
     }
+}
+
+/** La Activity que hay detrás de un Context (el de Compose puede venir envuelto), o null. */
+private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
+    is android.app.Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

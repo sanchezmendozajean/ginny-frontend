@@ -21,8 +21,9 @@ import kotlinx.coroutines.launch
 
 class SystemsViewModel(private val container: AppContainer) : ViewModel() {
 
-    val gridRows: StateFlow<Int> = container.settingsRepository.gridRows
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
+    /** Filas visibles de la grilla; null mientras no se leyó el ajuste (no se adivina un valor: la grilla cambiaría de forma al llegar el real). */
+    val gridRows: StateFlow<Int?> = container.settingsRepository.gridRows
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val buttonMapping: StateFlow<ButtonMapping> = container.settingsRepository.buttonMapping
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ButtonMapping.DEFAULT)

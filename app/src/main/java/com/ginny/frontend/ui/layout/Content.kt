@@ -34,8 +34,8 @@ import com.ginny.frontend.ui.util.LocalSoundManager
  * - [selectedIndex] / [onSelectedIndexChange]: la selección la guarda la pantalla (en su
  *   ViewModel, regla del spec). Aquí solo se suena el efecto de foco al cambiarla.
  * - [onActivate]: A o tocar el elemento seleccionado (suena el efecto de activar).
- * - [loading] = true: todavía no se sabe qué mostrar; queda el espacio vacío, así los elementos
- *   no aparecen a medias (ej. sin logo) para completarse un instante después.
+ * - [loading] = true: todavía no se sabe qué mostrar; la grilla se ve con todos sus huecos (puntos blancos) y sin
+ *   elementos, así no aparecen a medias (ej. sin logo) para completarse un instante después.
  * - [onSelectionChanged] y [onPagingChanged] informan hacia afuera el elemento seleccionado y las
  *   páginas (total, actual), para que el footer los muestre.
  * - [active] = false (ej. con Configuración abierta): la grilla no responde a la cruceta; al volver
@@ -44,7 +44,8 @@ import com.ginny.frontend.ui.util.LocalSoundManager
 @Composable
 fun Content(
     entries: List<GridEntry>,
-    rows: Int,
+    /** Filas visibles (Configuración); null = todavía no se leyó: no se dibuja la grilla (con un valor supuesto cambiaría de forma al llegar el real). */
+    rows: Int?,
     selectedIndex: Int,
     onSelectedIndexChange: (Int) -> Unit,
     buttonMapping: ButtonMapping,
@@ -101,9 +102,14 @@ fun Content(
             onClick = { currentLayout?.let { select(GridNavigation.previousPage(selected, it, entries.size)) } },
         )
 
-        if (!loading) {
+        // Una sola grilla en ambos casos: mientras se carga (loading) va sin elementos, o sea toda de huecos (los puntos
+        // blancos), así la pantalla no queda vacía y las flechas no saltan; al llegar los datos, los elementos ocupan su lugar.
+        if (rows == null) {
+            // Sin las filas no se sabe la forma de la grilla: el mismo espacio vacío, para que las flechas no salten.
+            Spacer(Modifier.weight(1f))
+        } else {
             ElementGrid(
-                entries = entries,
+                entries = if (loading) emptyList() else entries,
                 rows = rows,
                 selectedIndex = selected,
                 onSelectedIndexChange = ::select,
@@ -121,9 +127,6 @@ fun Content(
                     .padding(vertical = 16.dp), // aire arriba y abajo (también para el cursor)
                 onLayoutChanged = { layout = it },
             )
-        } else {
-            // Mientras tanto, el mismo espacio vacío, para que las flechas no salten de lugar.
-            Spacer(Modifier.weight(1f))
         }
 
         PageArrow(
