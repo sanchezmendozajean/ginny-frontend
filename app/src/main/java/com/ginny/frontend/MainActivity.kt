@@ -25,6 +25,7 @@ import com.ginny.frontend.data.ButtonMapping
 import com.ginny.frontend.data.LogicalButton
 import com.ginny.frontend.data.model.ButtonLayout
 import com.ginny.frontend.ui.GinnyApp
+import com.ginny.frontend.ui.components.GinnyMenus
 import com.ginny.frontend.ui.components.LocalButtonLayout
 import com.ginny.frontend.ui.display.SecondaryDisplayActivity
 import com.ginny.frontend.ui.display.mainDisplayId
@@ -215,7 +216,7 @@ class MainActivity : ComponentActivity() {
                 // (regla del spec: en Juegos, Y abrirá las opciones del juego).
                 LogicalButton.MENU, LogicalButton.Y -> {
                     val yBelongsToGameModal = button == LogicalButton.Y && gameModalOpen
-                    if (!settingsOpen.value && !yBelongsToGameModal) {
+                    if (!settingsOpen.value && !yBelongsToGameModal && !GinnyMenus.isOpen) {
                         settingsOpen.value = true
                         return true
                     }

@@ -1,5 +1,11 @@
 package com.ginny.frontend.ui.screens.games
 
+import com.ginny.frontend.ui.components.GinnyMenuItem
+import com.ginny.frontend.ui.components.GinnyMenu
+import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.geometry.Rect
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -717,8 +723,8 @@ private fun GameMenuButton(
         MenuEntry(if (isFavorite) "Quitar de favoritos" else "Agregar a favoritos", palette.ink, onToggleFavorite),
         MenuEntry("Eliminar", DeleteRed, onDelete),
     )
-    var highlight by remember { mutableIntStateOf(0) }
-    val menuFocus = remember { FocusRequester() }
+    // Dónde está el botón (en la raíz), para anclar el menú. Se lee al abrirlo: Y también lo abre, así que se calcula aquí.
+    var buttonCoords by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
 
     fun close() {
         onExpandedChange(false)
@@ -732,51 +738,25 @@ private fun GameMenuButton(
     }
 
     Box(modifier = modifier) {
-        PillButton(background = palette.background, onClick = { onExpandedChange(true) }) {
-            FaceButtonIcon(FaceButton.Y, size = 20.dp)
-            Text("Más", style = buttonText(palette.ink))
+        Box(modifier = Modifier.onGloballyPositioned { buttonCoords = it }) {
+            PillButton(background = palette.background, onClick = { onExpandedChange(true) }) {
+                FaceButtonIcon(FaceButton.Y, size = 20.dp)
+                Text("Más", style = buttonText(palette.ink))
+            }
         }
 
-        androidx.compose.material3.DropdownMenu(
+        // El menú se dibuja en el host de GinnyApp (misma ventana, encima de todo; no una ventana aparte): ver GinnyMenu.
+        GinnyMenu(
             expanded = expanded,
-            onDismissRequest = ::close,
-            modifier = Modifier
-                .background(Color.White) // sin esto, Material usa un fondo lila por defecto
-                .focusRequester(menuFocus)
-                .focusable()
-                .onKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onKeyEvent true
-                    when (buttonMapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)) {
-                        LogicalButton.DPAD_UP -> if (highlight > 0) { highlight--; sound?.playFocusSound() }
-                        LogicalButton.DPAD_DOWN -> if (highlight < entries.lastIndex) { highlight++; sound?.playFocusSound() }
-                        LogicalButton.A -> { sound?.playActivateSound(); choose(entries[highlight]) }
-                        LogicalButton.B, LogicalButton.Y, LogicalButton.DPAD_LEFT -> close()
-                        else -> Unit
-                    }
-                    true // el menú se queda con todas las teclas mientras está abierto
-                },
-        ) {
-            // Ya en pantalla: empieza resaltando la primera opción y toma el foco de teclas.
-            LaunchedEffect(Unit) {
-                highlight = 0
-                runCatching { menuFocus.requestFocus() }
-            }
-            entries.forEachIndexed { index, entry ->
-                androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(entry.label, fontFamily = GinnyFont, fontWeight = FontWeight.Bold, color = entry.color) },
-                    onClick = { choose(entry) },
-                    modifier = Modifier
-                        .padding(horizontal = 6.dp)
-                        .then(
-                            if (index == highlight) {
-                                Modifier.background(palette.accent.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                            } else {
-                                Modifier
-                            },
-                        ),
-                )
-            }
-        }
+            anchor = if (expanded) buttonCoords?.takeIf { it.isAttached }?.let { Rect(it.positionInRoot(), it.size.toSize()) } else null,
+            items = entries.map { GinnyMenuItem(it.label, color = it.color.takeIf { c -> c != palette.ink }) },
+            onChoose = { index -> choose(entries[index]) },
+            onDismiss = ::close,
+            buttonMapping = buttonMapping,
+            sound = sound,
+            width = 240.dp,
+            closeButtons = setOf(LogicalButton.Y, LogicalButton.DPAD_LEFT),
+        )
     }
 }
 

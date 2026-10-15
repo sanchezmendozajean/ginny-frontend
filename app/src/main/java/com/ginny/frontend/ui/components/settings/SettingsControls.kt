@@ -1,5 +1,10 @@
 package com.ginny.frontend.ui.components.settings
 
+import com.ginny.frontend.ui.components.GinnyMenuItem
+import com.ginny.frontend.ui.components.GinnyMenu
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.animation.animateColorAsState
 import kotlin.math.roundToInt
 import com.ginny.frontend.ui.util.LocalSoundManager
@@ -44,8 +49,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -352,19 +355,19 @@ fun <T> GinnyDropdown(
     val density = LocalDensity.current
     var expanded by remember { mutableStateOf(false) }
     val selectedIndex = options.indexOfFirst { it.second == selected }.coerceAtLeast(0)
-    var highlight by remember { mutableIntStateOf(selectedIndex) }
     val selectedLabel = options.getOrNull(selectedIndex)?.first.orEmpty()
-    val menuScroll = rememberScrollState()
-    val menuFocus = remember { FocusRequester() }
+    // Dónde está el botón (en la raíz), para anclar el menú; se lee al abrirlo (no en cada cuadro del desplazamiento).
+    var anchorCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    var anchor by remember { mutableStateOf<Rect?>(null) }
 
     fun open() {
-        highlight = selectedIndex
-        expanded = true
+        anchor = anchorCoords?.takeIf { it.isAttached }?.rectInRoot()
+        expanded = anchor != null
     }
 
     fun close() {
         expanded = false
-        nav?.reclaimFocus?.invoke() // el menú es otra ventana: al cerrarse, las teclas vuelven al modal
+        nav?.reclaimFocus?.invoke() // el menú tiene el foco de teclas: al cerrarse, vuelve al modal
     }
 
     Box(modifier = modifier) {
@@ -373,6 +376,7 @@ fun <T> GinnyDropdown(
             modifier = Modifier
                 .width(width)
                 .height(40.dp)
+                .onGloballyPositioned { anchorCoords = it }
                 .settingsFocus(onActivate = ::open)
                 .background(palette.background, CircleShape)
                 .border(1.dp, lineColor(), CircleShape)
@@ -392,78 +396,23 @@ fun <T> GinnyDropdown(
             Text(text = "▾", fontSize = 12.sp, color = palette.muted)
         }
 
-        DropdownMenu(
+        // El menú se dibuja en el host de GinnyApp (misma ventana, encima de todo): ver GinnyMenu.
+        GinnyMenu(
             expanded = expanded,
-            onDismissRequest = ::close,
-            scrollState = menuScroll,
-            modifier = Modifier
-                .width(width)
-                .background(Color.White) // sin esto, Material usa un fondo lila por defecto
-                .focusRequester(menuFocus)
-                .focusable()
-                .onKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onKeyEvent true
-                    val mapping = nav?.buttonMapping ?: ButtonMapping.DEFAULT
-                    when (mapping.buttonForKeyCode(event.nativeKeyEvent.keyCode)) {
-                        LogicalButton.DPAD_UP -> if (highlight > 0) { highlight--; sound?.playFocusSound() }
-                        LogicalButton.DPAD_DOWN -> if (highlight < options.lastIndex) { highlight++; sound?.playFocusSound() }
-                        LogicalButton.A -> {
-                            sound?.playActivateSound()
-                            val value = options[highlight].second
-                            close()
-                            onSelect(value)
-                        }
-                        LogicalButton.B, LogicalButton.DPAD_LEFT -> close()
-                        else -> Unit
-                    }
-                    true // el menú se queda con todas las teclas mientras está abierto
-                },
-        ) {
-            // Con el menú ya en pantalla: toma el foco de teclas y mantiene a la vista la opción resaltada.
-            LaunchedEffect(Unit) { runCatching { menuFocus.requestFocus() } }
-            LaunchedEffect(highlight) {
-                val itemPx = with(density) { MenuItemHeight.toPx() }
-                menuScroll.animateScrollTo((highlight * itemPx - itemPx).coerceAtLeast(0f).roundToInt())
-            }
-
-            options.forEachIndexed { index, (label, value) ->
-                val active = value == selected
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            label,
-                            fontFamily = GinnyFont,
-                            fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Bold,
-                            color = if (active) accentText() else palette.ink,
-                        )
-                    },
-                    trailingIcon = if (active) {
-                        { Text("✓", fontWeight = FontWeight.ExtraBold, color = accentText()) }
-                    } else {
-                        null
-                    },
-                    onClick = {
-                        close()
-                        onSelect(value)
-                    },
-                    // La resaltada: fondo del acento suave, como una píldora dentro del menú.
-                    modifier = Modifier
-                        .padding(horizontal = 6.dp)
-                        .then(
-                            if (index == highlight) {
-                                Modifier.background(palette.accent.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                            } else {
-                                Modifier
-                            },
-                        ),
-                )
-            }
-        }
+            anchor = anchor,
+            items = options.map { (label, value) -> GinnyMenuItem(label, checked = value == selected) },
+            initialHighlight = selectedIndex,
+            onChoose = { index ->
+                close()
+                onSelect(options[index].second)
+            },
+            onDismiss = ::close,
+            buttonMapping = nav?.buttonMapping ?: ButtonMapping.DEFAULT,
+            sound = sound,
+            width = width,
+        )
     }
 }
-
-/** Alto de una opción del menú desplegable (el mínimo de Material). */
-private val MenuItemHeight = 48.dp
 
 /**
  * Botón píldora. [primary]: degradado del acento con texto blanco (la acción principal, ej.

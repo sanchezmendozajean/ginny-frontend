@@ -19,6 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.components.GeometricBackground
+import com.ginny.frontend.ui.components.GinnyMenuHost
+import com.ginny.frontend.ui.components.GinnyMenuHostState
+import com.ginny.frontend.ui.components.LocalGinnyMenuHost
 import com.ginny.frontend.ui.components.game.GridEntry
 import com.ginny.frontend.ui.display.SecondaryContent
 import com.ginny.frontend.ui.display.SecondaryScreen
@@ -185,6 +188,9 @@ fun GinnyApp(
         label = "settingsBackdropBlur",
     )
 
+    // Donde se dibujan los menús desplegables abiertos (misma ventana, encima de todo; ver GinnyMenu).
+    val menuHost = remember { GinnyMenuHostState() }
+    CompositionLocalProvider(LocalGinnyMenuHost provides menuHost) {
     Box(modifier = Modifier.fillMaxSize()) {
         // ── La interfaz de siempre (se desenfoca cuando el modal está abierto) ──────────────
         Box(modifier = Modifier.fillMaxSize().blur(backdropBlur)) {
@@ -340,6 +346,10 @@ fun GinnyApp(
                 saveCredentialsOpen = false
             },
         )
+
+        // ── Menús desplegables abiertos: lo último, encima de todo (también de los modales) ───────────────
+        GinnyMenuHost(menuHost)
+    }
     }
 }
 

@@ -111,12 +111,12 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
 
 ## C. Mejoras anotadas durante la etapa 1
 
-### 10. Desplegable propio ⬜
+### 10. Desplegable propio ✅ (hecho, a probar)
 - **Problema:** el `DropdownMenu` de Material abre una ventana emergente que hace aparecer la
   barra de navegación de Android.
 - **A decidir:** ¿hacer un desplegable propio dentro de la misma ventana (también facilitaría
   manejarlo con la cruceta, punto 2)?
-- **Decisión:**
+- **Decisión (2026-10-14):** hacerlo. `ui/components/GinnyMenu.kt`: menú propio que se dibuja en la misma ventana (capa `GinnyMenuHost`, último hijo de `GinnyApp`, encima de todo incluidos los modales). Sustituye al `DropdownMenu` de Material en `GinnyDropdown` (9 usos) y en el menú «Más» del modal del juego. B lo cierra por su `BackHandler`; `GinnyMenus.isOpen` evita que Menú / Y abran Configuración encima. Sin compilar.
 
 ### 11. Búsqueda de logos más rápida ⬜
 - **Problema:** `SystemsViewModel.systemLogos` busca los logos uno por uno vía SAF y tarda más de
