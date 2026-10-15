@@ -125,11 +125,11 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
   Assets una sola vez?
 - **Decisión (2026-10-14):** opción A: `AssetRepository.systemLogoUris` lista la raíz y `Assets` **una sola vez** y busca `system.png` de cada sistema **en paralelo** (antes: ~84 consultas SAF en serie, con los dos primeros listados repetidos 28 veces). Lo usan `SystemsViewModel` y `ScrapViewModel`. Medido por el usuario en su consola: ≈ la tercera parte del tiempo anterior (conforme; el log temporal de medición se quitó). Siguientes pasos posibles, no necesarios: caché entre arranques (B) o ruta directa (C).
 
-### 12. Transición entre pantallas ⬜
+### 12. Transición entre pantallas ✅
 - **Qué falta:** el cambio Sistemas ↔ Juegos es instantáneo.
 - **A decidir:** ¿fundido, deslizamiento, zoom desde el elemento abierto? Cuidar el rendimiento
   (regla: hardware de gama baja).
-- **Decisión:**
+- **Decisión (2026-10-14):** fundido de 180 ms (solo opacidad, barato en gama baja) entre Sistemas y Juegos, con un crecimiento 0.97 → 1 al entrar a Juegos; `AnimatedContent` en `GinnyApp` con `contentKey` por sistema. La pantalla que sale no responde a la cruceta. Conforme el usuario.
 
 ### 13. Sección Sistemas más fácil de recorrer ⬜
 - **Problema:** son ~30 grupos y hay que desplazarse mucho.

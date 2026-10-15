@@ -1,6 +1,12 @@
 package com.ginny.frontend.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -240,11 +246,30 @@ fun GinnyApp(
                         pageCount = count
                         currentPage = page
                     }
-                    when (val current = screen) {
+                    // Transición Sistemas ↔ Juegos: fundido corto (solo opacidad, barato en gama baja); al entrar a Juegos,
+                    // además crece apenas (0.97 → 1). Cada sistema es una pantalla distinta (contentKey).
+                    AnimatedContent(
+                        targetState = screen,
+                        modifier = contentModifier,
+                        transitionSpec = {
+                            val enter = fadeIn(tween(ScreenTransitionMs))
+                            val exit = fadeOut(tween(ScreenTransitionMs))
+                            if (targetState is Screen.Games) {
+                                (enter + scaleIn(tween(ScreenTransitionMs), initialScale = 0.97f)) togetherWith exit
+                            } else {
+                                enter togetherWith exit
+                            }
+                        },
+                        contentKey = { (it as? Screen.Games)?.scope ?: "systems" },
+                        label = "screen",
+                    ) { current ->
+                        // La pantalla que se está yendo no responde a la cruceta.
+                        val screenActive = gridActive && current == screen
+                        when (current) {
                         Screen.Systems -> SystemsScreen(
                             onOpenSystem = { scope, title -> screen = Screen.Games(scope, title) },
-                            modifier = contentModifier,
-                            active = gridActive,                        // con un modal abierto, la grilla no responde
+                            modifier = Modifier.fillMaxSize(),
+                            active = screenActive,                        // con un modal abierto, la grilla no responde
                             activateTick = activateTick,
                             onSelectionChanged = { entry ->
                                 onSelectionChanged(entry)
@@ -259,8 +284,8 @@ fun GinnyApp(
                                 GamesScreen(
                                     scope = current.scope,
                                     onOpenGame = { openGame = it },
-                                    modifier = contentModifier,
-                                    active = gridActive,
+                                    modifier = Modifier.fillMaxSize(),
+                                    active = screenActive,
                                     activateTick = activateTick,
                                     onSelectionChanged = onSelectionChanged,
                                     onPagingChanged = onPagingChanged,
@@ -270,6 +295,7 @@ fun GinnyApp(
                                     },
                                 )
                             }
+                        }
                     }
                     GinnyFooter(
                         title = selected?.title.orEmpty(),
@@ -390,3 +416,6 @@ private tailrec fun android.content.Context.findActivity(): android.app.Activity
     is android.content.ContextWrapper -> baseContext.findActivity()
     else -> null
 }
+
+/** Duración del fundido entre Sistemas y Juegos. */
+private const val ScreenTransitionMs = 180
