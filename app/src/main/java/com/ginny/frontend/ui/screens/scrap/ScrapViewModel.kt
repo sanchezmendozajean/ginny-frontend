@@ -94,9 +94,7 @@ class ScrapViewModel(private val container: AppContainer) : ViewModel() {
 
     private suspend fun loadLogos() {
         val userTree = container.settingsRepository.userFolderUri.first()?.let(Uri::parse) ?: return
-        _logos.value = _systems.value.mapNotNull { id ->
-            runCatching { container.assetRepository.systemLogoUri(userTree, id) }.getOrNull()?.let { id to it }
-        }.toMap()
+        _logos.value = runCatching { container.assetRepository.systemLogoUris(userTree, _systems.value) }.getOrDefault(emptyMap())
     }
 
     fun toggleSystem(id: SystemId) {

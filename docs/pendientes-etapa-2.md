@@ -118,12 +118,12 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
   manejarlo con la cruceta, punto 2)?
 - **Decisión (2026-10-14):** hacerlo. `ui/components/GinnyMenu.kt`: menú propio que se dibuja en la misma ventana (capa `GinnyMenuHost`, último hijo de `GinnyApp`, encima de todo incluidos los modales). Sustituye al `DropdownMenu` de Material en `GinnyDropdown` (9 usos) y en el menú «Más» del modal del juego. B lo cierra por su `BackHandler`; `GinnyMenus.isOpen` evita que Menú / Y abran Configuración encima. Sin compilar.
 
-### 11. Búsqueda de logos más rápida ⬜
+### 11. Búsqueda de logos más rápida ✅ (opción A hecha y medida)
 - **Problema:** `SystemsViewModel.systemLogos` busca los logos uno por uno vía SAF y tarda más de
   1 s al abrir la app (la grilla espera a tenerlos).
 - **A decidir:** ¿buscar en paralelo, guardar en caché (Room/DataStore) o indexar la carpeta
   Assets una sola vez?
-- **Decisión:**
+- **Decisión (2026-10-14):** opción A: `AssetRepository.systemLogoUris` lista la raíz y `Assets` **una sola vez** y busca `system.png` de cada sistema **en paralelo** (antes: ~84 consultas SAF en serie, con los dos primeros listados repetidos 28 veces). Lo usan `SystemsViewModel` y `ScrapViewModel`. Medido por el usuario en su consola: ≈ la tercera parte del tiempo anterior (conforme; el log temporal de medición se quitó). Siguientes pasos posibles, no necesarios: caché entre arranques (B) o ruta directa (C).
 
 ### 12. Transición entre pantallas ⬜
 - **Qué falta:** el cambio Sistemas ↔ Juegos es instantáneo.

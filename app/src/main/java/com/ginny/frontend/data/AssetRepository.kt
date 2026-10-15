@@ -5,6 +5,9 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.ginny.frontend.data.model.SystemId
 import com.ginny.frontend.util.SafUtils
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -32,6 +35,37 @@ class AssetRepository(private val context: Context) {
         iconsDir.listFiles()
             .filter { it.isFile && it.name != null }
             .associate { it.name!!.lowercase() to it.uri }
+    }
+
+    /**
+     * Los logos (`Assets/<sistema>/system.png`) de varios sistemas de una vez, por id; los que no tienen no están en el mapa.
+     *
+     * Mucho más rápido que llamar a [systemLogoUri] en un bucle: cada consulta SAF cuesta decenas de ms, y aquella repetía
+     * (por sistema) el listado de la raíz y el de `Assets`. Aquí se listan **una sola vez** y lo único que queda por
+     * sistema —listar su carpeta para hallar `system.png`— se hace **en paralelo**. Mismo criterio de búsqueda: sin
+     * distinguir mayúsculas.
+     */
+    suspend fun systemLogoUris(userTreeUri: Uri, systemIds: Collection<SystemId>): Map<SystemId, Uri> = withContext(Dispatchers.IO) {
+        val root = SafUtils.treeDocument(context, userTreeUri) ?: return@withContext emptyMap()
+        val assets = SafUtils.findChild(root, ASSETS_DIR_NAME)?.takeIf { it.isDirectory } ?: return@withContext emptyMap()
+        // Una sola lectura de Assets; si hay dos carpetas que solo difieren en mayúsculas, vale la primera (como findChild).
+        val systemDirs = HashMap<String, DocumentFile>()
+        for (dir in assets.listFiles()) {
+            val name = dir.name ?: continue
+            if (dir.isDirectory) systemDirs.putIfAbsent(name.lowercase(), dir)
+        }
+        coroutineScope {
+            systemIds
+                .map { id ->
+                    async {
+                        val dir = systemDirs[id.folderName.lowercase()] ?: return@async null
+                        runCatching { SafUtils.findChildFileIgnoreCase(dir, SYSTEM_LOGO_FILE_NAME) }.getOrNull()?.let { id to it.uri }
+                    }
+                }
+                .awaitAll()
+                .filterNotNull()
+                .toMap()
+        }
     }
 
     suspend fun systemLogoUri(userTreeUri: Uri, systemId: SystemId): Uri? = withContext(Dispatchers.IO) {

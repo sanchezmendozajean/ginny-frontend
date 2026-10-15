@@ -61,11 +61,9 @@ class SystemsViewModel(private val container: AppContainer) : ViewModel() {
     val systemLogos: StateFlow<Map<SystemId, Uri>?> = container.settingsRepository.userFolderUri
         .map { uriString ->
             val userTree = uriString?.let(Uri::parse) ?: return@map emptyMap()
-            SystemCatalog.all.mapNotNull { system ->
-                runCatching { container.assetRepository.systemLogoUri(userTree, system.id) }
-                    .getOrNull()
-                    ?.let { logo -> system.id to logo }
-            }.toMap()
+            // Una sola pasada (listados compartidos y búsquedas en paralelo): ver AssetRepository.systemLogoUris.
+            runCatching { container.assetRepository.systemLogoUris(userTree, SystemCatalog.all.map { it.id }) }
+                .getOrDefault(emptyMap())
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
