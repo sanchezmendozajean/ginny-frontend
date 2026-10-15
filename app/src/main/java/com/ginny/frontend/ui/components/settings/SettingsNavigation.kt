@@ -107,6 +107,12 @@ class SettingsFocusItem {
     /** El control está dentro de un panel con desplazamiento (ver [LocalInScrollPanel]). */
     internal var scrolls: Boolean = false
 
+    /** Panel secundario (con desplazamiento propio) al que pertenece; null = el panel principal de opciones o los controles fijos. */
+    internal var pane: SettingsPane? = null
+
+    /** Entre los controles de un panel secundario, el que representa la elección actual: donde cae el foco al volver a él. */
+    internal var anchor: Boolean = false
+
     /** false = el control se puede enfocar pero está apagado: A no hace nada (ni suena). */
     internal var activatable: Boolean = true
 
@@ -298,7 +304,9 @@ class SettingsNav(
         val list = placed()
         // El último: el de abajo a la derecha entre los controles fijos (los botones de un modal); si no hay, el último.
         val fixed = list.filter { !it.first.scrolls }.ifEmpty { list }
-        moveFocusTo(if (last) fixed.lastOrNull()?.first else list.firstOrNull()?.first)
+        val target = if (last) fixed.lastOrNull()?.first else (list.firstOrNull { it.first.anchor } ?: list.firstOrNull())?.first
+        moveFocusTo(target)
+        if (target != null && target.pane != null) ensureVisible(target) // la elección actual de un panel secundario
         // El panel pudo quedar desplazado de una visita anterior: se empieza desde arriba.
         if (!last) scroll?.let { s -> scope.launch { s.animateScrollTo(0) } }
     }
@@ -348,14 +356,24 @@ class SettingsNav(
         val cur = list[current]
 
         // 1) Dentro de su grupo: el panel con desplazamiento, o los controles fijos (ej. los botones de un modal).
-        val sameGroup = list.filter { it.first.scrolls == cur.first.scrolls }
+        val sameGroup = list.filter { it.first.scrolls == cur.first.scrolls && it.first.pane === cur.first.pane }
         FocusSearch.next(sameGroup.map { it.second }, sameGroup.indexOfFirst { it.first === cur.first }, direction, rowTolerancePx)
             ?.let { focus(sameGroup[it].first); return true }
 
         // 2) Arriba / abajo entre grupos. Las posiciones de la lista, que se desplaza, no sirven para comparar
         // con las de los controles fijos (una fila oculta bajo el panel queda "a la altura" de los botones):
         // se sale del panel por su borde y se entra por el borde contrario, solo a lo que está a la vista.
-        if (direction == FocusMove.Left || direction == FocusMove.Right) return false
+        if (direction == FocusMove.Left || direction == FocusMove.Right) {
+            // Entre paneles (lista de la izquierda ↔ opciones): derecha entra a la primera opción; izquierda vuelve a la elección.
+            if (direction == FocusMove.Right && cur.first.pane != null) {
+                list.firstOrNull { it.first.scrolls && it.first.pane == null }?.let { focus(it.first); return true }
+            }
+            if (direction == FocusMove.Left && cur.first.pane == null && cur.first.scrolls) {
+                val secondary = list.filter { it.first.pane != null }
+                (secondary.firstOrNull { it.first.anchor } ?: secondary.firstOrNull())?.let { focus(it.first); return true }
+            }
+            return false
+        }
         val view = viewport?.takeIf { it.isAttached }?.rectInRoot() ?: return false
         val otherGroup = list.filter { it.first.scrolls != cur.first.scrolls }
         val candidates = if (cur.first.scrolls) otherGroup else otherGroup.filter { it.second.overlaps(view) }
@@ -375,10 +393,11 @@ class SettingsNav(
     /** Desplaza el panel lo justo para que [item] se vea; en la primera / última fila, hasta el borde. */
     private fun ensureVisible(item: SettingsFocusItem) {
         if (!item.scrolls) return // fuera del panel con desplazamiento (ej. los botones de un modal)
-        val scroll = scroll ?: return
-        val viewport = viewport?.takeIf { it.isAttached } ?: return
+        val pane = item.pane
+        val scroll = pane?.scroll ?: scroll ?: return
+        val viewport = (pane?.viewport ?: viewport)?.takeIf { it.isAttached } ?: return
         scope.launch {
-            val list = placed().filter { it.first.scrolls } // la primera / última fila son las del panel
+            val list = placed().filter { it.first.scrolls && it.first.pane === pane } // la primera / última fila son las del panel
             val index = list.indexOfFirst { it.first === item }
             if (index < 0) return@launch
             val rects = list.map { it.second }
@@ -398,6 +417,9 @@ class SettingsNav(
         scope.launch { scroll.animateScrollBy(delta) }
     }
 
+    /** Mueve el foco como la cruceta (para controles que, al activarse con A, equivalen a un movimiento). */
+    fun step(direction: FocusMove) { if (move(direction)) sound?.playFocusSound() }
+
     /** Un botón del mando con el foco en las opciones. */
     fun handleKey(button: LogicalButton?) {
         if (editing) {
@@ -411,8 +433,8 @@ class SettingsNav(
             return
         }
         when (button) {
-            LogicalButton.DPAD_UP -> if (move(FocusMove.Up)) sound?.playFocusSound() else scrollBy(-ScrollStepPx)
-            LogicalButton.DPAD_DOWN -> if (move(FocusMove.Down)) sound?.playFocusSound() else scrollBy(ScrollStepPx)
+            LogicalButton.DPAD_UP -> if (move(FocusMove.Up)) sound?.playFocusSound() else if (focused?.pane == null) scrollBy(-ScrollStepPx)
+            LogicalButton.DPAD_DOWN -> if (move(FocusMove.Down)) sound?.playFocusSound() else if (focused?.pane == null) scrollBy(ScrollStepPx)
             LogicalButton.DPAD_LEFT -> {
                 val item = focused
                 when {
@@ -438,6 +460,18 @@ class SettingsNav(
 /** true dentro de un panel con desplazamiento: sus controles se mantienen a la vista al enfocarlos. */
 val LocalInScrollPanel = staticCompositionLocalOf { false }
 
+/**
+ * Panel con desplazamiento propio junto al principal (ej. la lista de sistemas, a la izquierda de sus opciones).
+ * Lo crea [com.ginny.frontend.ui.screens.settings.SettingsListPane].
+ */
+@Stable
+class SettingsPane(val scroll: ScrollState) {
+    internal var viewport: LayoutCoordinates? = null
+}
+
+/** El panel secundario en el que está un control; null en el principal. */
+val LocalSettingsPane = staticCompositionLocalOf<SettingsPane?> { null }
+
 /** El [SettingsNav] de la Configuración abierta; null fuera de ella (los controles funcionan solo con toque). */
 val LocalSettingsNav = staticCompositionLocalOf<SettingsNav?> { null }
 
@@ -461,11 +495,15 @@ fun Modifier.settingsFocus(
     onFocused: (() -> Unit)? = null,
     /** true = tocar el control también le lleva el cursor (para listas de elementos que se eligen, como íconos). */
     focusOnTap: Boolean = false,
+    /** true = en un panel secundario, este control es la elección actual (ver [SettingsPane]). */
+    anchor: Boolean = false,
     onActivate: () -> Unit,
 ): Modifier {
     val nav = LocalSettingsNav.current ?: return this
     val item = remember { SettingsFocusItem() }
     item.scrolls = LocalInScrollPanel.current
+    item.pane = LocalSettingsPane.current
+    item.anchor = anchor
     item.onLeft = onLeft
     item.onRight = onRight
     item.onActivate = onActivate

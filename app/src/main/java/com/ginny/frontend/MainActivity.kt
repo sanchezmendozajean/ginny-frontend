@@ -40,10 +40,9 @@ private const val FocusReturnDelayMs = 600L
 /**
  * Single-activity host. Immersive landscape shell.
  *
- * La UI se está reconstruyendo paso a paso (docs/plan-reconstruccion-ui.md). Los botones globales
- * (Menú / Y abren Configuración, B la cierra) se manejan aquí, en [dispatchKeyEvent], porque deben
- * funcionar sin importar qué composable tenga el foco — mismo enfoque que el diseño anterior
- * (docs/ui-legacy/MainActivity.kt). La navegación entre pantallas se reincorporará cuando existan.
+ * Los botones globales (Menú / Y abren Configuración, B la cierra o retrocede) se manejan aquí, en [dispatchKeyEvent],
+ * porque deben funcionar sin importar qué composable tenga el foco; lo demás de «atrás» lo resuelven los `BackHandler`
+ * de [com.ginny.frontend.ui.GinnyApp] (ver docs/architecture.md, «Interfaz actual»).
  */
 class MainActivity : ComponentActivity() {
 

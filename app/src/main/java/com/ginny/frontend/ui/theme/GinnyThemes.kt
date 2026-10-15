@@ -36,8 +36,7 @@ fun paletteFrom(base: Color) = GinnyPalette(
 
 /**
  * Los temas fijos: solo se define el color base de cada uno.
- * - Menta, Cielo, Durazno, Lila: acentos del diseño anterior (docs/ui-legacy/ui/theme/
- *   GinnyPalette.kt), todos con L=0.70 y C=0.14 en OKLCH.
+ * - Menta, Cielo, Durazno, Lila: acentos del diseño original, todos con L=0.70 y C=0.14 en OKLCH.
  * - Fucsia, Rosa, Lava, Smog: nuevos, con su propio carácter (entre paréntesis, su OKLCH):
  *   Fucsia vivo (0.64 0.22 345), Rosa suave y claro (0.76 0.11 5), Lava rojo anaranjado intenso
  *   (0.64 0.19 35, más rojo y saturado que Durazno) y Smog gris apenas azulado (0.66 0.012 255).

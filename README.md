@@ -101,11 +101,11 @@ retroconsola a largo plazo, generá tu propia key de firma una sola vez:
    ```
 
    El APK firmado queda en `app/build/outputs/apk/release/GinnyFrontend-<versionName>.apk` (por
-   ejemplo `GinnyFrontend-0.2.0.apk` — el nombre se arma solo a partir de `versionName`, ver punto
+   ejemplo `GinnyFrontend-0.2.1.apk` — el nombre se arma solo a partir de `versionName`, ver punto
    4). Instalalo con:
 
    ```bash
-   adb install -r app/build/outputs/apk/release/GinnyFrontend-0.2.0.apk
+   adb install -r app/build/outputs/apk/release/GinnyFrontend-0.2.1.apk
    ```
 
    (`-r` reinstala/actualiza si ya tenías una versión anterior instalada, siempre que esté firmada
@@ -117,7 +117,7 @@ retroconsola a largo plazo, generá tu propia key de firma una sola vez:
    ```kotlin
    defaultConfig {
        versionCode = 1
-       versionName = "0.2.0"
+       versionName = "0.2.1"
    }
    ```
 

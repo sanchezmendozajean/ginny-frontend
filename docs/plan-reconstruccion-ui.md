@@ -20,7 +20,7 @@ visual (Compose).
 
 En cada paso, Claude debe:
 
-- **Consultar el backup** ([ui-legacy/](ui-legacy/)) para ver cómo se había resuelto antes ese
+- **Consultar el backup** (`ui-legacy/`, ya retirado: solo en el historial de git) para ver cómo se había resuelto antes ese
   mismo elemento, qué opciones tenía y qué reglas respetaba.
 - **Avisar proactivamente** si la nueva implementación omite una opción/función que existía antes,
   o rompe una regla ya establecida (ver checklist abajo). Avisar no es imponer: el usuario puede
@@ -44,20 +44,12 @@ En cada paso, Claude debe:
   el resto de `ui/theme/` (paleta OKLCH, tipografía, Ciclo, sigla/matiz por sistema).
 - Las fuentes M PLUS Rounded 1c siguen en `res/font/` (sin uso por ahora).
 
-## El backup: `docs/ui-legacy/`
+## El backup: `docs/ui-legacy/` (retirado 2026-10-14)
 
-Copia exacta del estado de la UI al 2026-09-27 (incluye cambios que no estaban commiteados en ese
-momento). **No se compila** (está fuera de `app/src`) y **no se modifica**: es de solo consulta.
-
-| Ruta en el backup | Qué había |
-|---|---|
-| `MainActivity.kt` | Manejo global de B (cierra Configuración → si no, `popBackStack`) y Menú (abre Configuración) vía `dispatchKeyEvent` + `ButtonMapping` |
-| `ui/navigation/GinnyNavHost.kt` | Rutas `systems → games/{systemId}`, `games/favorites`, `saves`; Configuración como overlay con blur del fondo |
-| `ui/theme/` | `OklchColor`, `GinnyPalette` (toda la paleta desde un solo hue), `ThemeMode`, `CycleHue` (modo Ciclo), `Type` (M PLUS Rounded 1c), `SystemHue`, `SystemShortCode` |
-| `ui/components/` | `PagedFocusGrid` + `FocusGridMath` (grid paginado D-Pad), `Tile`, `TopBar`, `BottomBar`, `GlassSurface`, `AuroraBackground`, `ButtonBadge`, `SegmentedPillPicker`, `GinnySlider`, `PillDropdown`, `PageJumpButton`, `SystemLogo`, `GridPanel` |
-| `ui/common/` | `GinnyModalSurface`, `GameOptionsDialog`, `EmulatorConfigDialog`, `ScanProgressDialog`, `GameCountLabel` |
-| `ui/screens/*/` | `SystemsScreen`, `GamesScreen`, `SaveStatesScreen`, `SettingsScreen` (+ copias de los ViewModels) |
-| `res/` | `themes.xml`, `colors.xml` de ese momento |
+La copia de solo consulta de la UI anterior (estado al 2026-09-27) se **borró** al cerrar la reconstrucción (pendiente 14). Sigue
+en el historial de git (commits anteriores al de la limpieza; `git log -- docs/ui-legacy`). Contenía: `MainActivity`, `GinnyNavHost`,
+`ui/theme`, `PagedFocusGrid`, `TopBar`/`BottomBar`, `GameOptionsDialog`, `SaveStatesScreen`, etc.; todo reemplazado por la UI actual
+(ver `architecture.md`, «Interfaz actual»).
 
 La maqueta de diseño que originó esa versión sigue en `docs/diseño/Ginny Frontend.dc.html`, y la
 anterior en `docs/mockup-visual.html`.

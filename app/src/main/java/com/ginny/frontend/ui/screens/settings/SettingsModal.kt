@@ -202,13 +202,18 @@ fun SettingsModal(
                 // Opciones de la sección elegida. key: cada sección empieza con su propio
                 // desplazamiento, desde arriba.
                 key(section) {
-                    SettingsContent(modifier = Modifier.weight(1f)) {
-                        when (section) {
-                            SettingsSection.Interfaz -> InterfazOptions(viewModel)
-                            SettingsSection.Carpetas -> CarpetasOptions(viewModel, contextSystem)
-                            SettingsSection.Sistemas -> SistemasOptions(viewModel)
-                            SettingsSection.Scrapper -> ScrapperOptions(viewModel, onOpenScrapLaunch, onOpenScrapProgress, onRequestSaveCredentials)
-                            SettingsSection.Creditos -> CreditosOptions()
+                    if (section == SettingsSection.Sistemas) {
+                        // Maestro-detalle: lista de sistemas a la izquierda y sus opciones a la derecha (cada panel se desplaza solo).
+                        SistemasOptions(viewModel, contextSystem, Modifier.weight(1f))
+                    } else {
+                        SettingsContent(modifier = Modifier.weight(1f)) {
+                            when (section) {
+                                SettingsSection.Interfaz -> InterfazOptions(viewModel)
+                                SettingsSection.Carpetas -> CarpetasOptions(viewModel, contextSystem)
+                                SettingsSection.Scrapper -> ScrapperOptions(viewModel, onOpenScrapLaunch, onOpenScrapProgress, onRequestSaveCredentials)
+                                SettingsSection.Creditos -> CreditosOptions()
+                                SettingsSection.Sistemas -> Unit // tiene su propio diseño (arriba)
+                            }
                         }
                     }
                 }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -25,6 +26,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ginny.frontend.ui.components.settings.LocalInScrollPanel
 import com.ginny.frontend.ui.components.settings.LocalSettingsNav
+import com.ginny.frontend.ui.components.settings.LocalSettingsPane
+import com.ginny.frontend.ui.components.settings.SettingsPane
 
 /** Alto del desvanecimiento en los bordes superior e inferior del panel de opciones. */
 val SettingsFadeHeight = 28.dp
@@ -61,6 +64,32 @@ fun SettingsContent(
                 .padding(20.dp),
             content = options,
         )
+        }
+    }
+}
+
+/**
+ * Panel secundario a la izquierda de las opciones (ej. la lista de sistemas): se desplaza por su cuenta y, como
+ * el principal, se desvanece en los bordes. Sus controles se mantienen a la vista al enfocarlos (ver [SettingsPane]).
+ * [scroll] lo crea quien lo usa, por si necesita desplazarlo al abrirse.
+ */
+@Composable
+fun SettingsListPane(
+    modifier: Modifier = Modifier,
+    scroll: ScrollState = rememberScrollState(),
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val pane = remember(scroll) { SettingsPane(scroll) }
+    Box(modifier = modifier.onGloballyPositioned { pane.viewport = it }) {
+        CompositionLocalProvider(LocalInScrollPanel provides true, LocalSettingsPane provides pane) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .fadingEdges(scroll, SettingsFadeHeight)
+                    .verticalScroll(scroll)
+                    .padding(horizontal = 12.dp, vertical = 20.dp),
+                content = content,
+            )
         }
     }
 }

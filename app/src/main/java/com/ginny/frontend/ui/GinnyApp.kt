@@ -72,7 +72,6 @@ val SettingsBackdropBlur = 16.dp
 
 /**
  * Raíz de la interfaz, reconstruida paso a paso (ver docs/plan-reconstruccion-ui.md).
- * La implementación anterior completa está archivada en docs/ui-legacy/ como referencia.
  *
  * [settingsOpen]: si el modal de Configuración está abierto (lo controla MainActivity).
  * [onCloseSettings]: cerrarlo desde la interfaz (ej. tocando "Cerrar").

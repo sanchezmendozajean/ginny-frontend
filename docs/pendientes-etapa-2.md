@@ -131,23 +131,23 @@ Lo que se implemente se registra, como siempre, en el "Registro de avances" de
   (regla: hardware de gama baja).
 - **Decisión (2026-10-14):** fundido de 180 ms (solo opacidad, barato en gama baja) entre Sistemas y Juegos, con un crecimiento 0.97 → 1 al entrar a Juegos; `AnimatedContent` en `GinnyApp` con `contentKey` por sistema. La pantalla que sale no responde a la cruceta. Conforme el usuario.
 
-### 13. Sección Sistemas más fácil de recorrer ⬜
+### 13. Sección Sistemas más fácil de recorrer ✅ (implementado, falta probar)
 - **Problema:** son ~30 grupos y hay que desplazarse mucho.
 - **A decidir:** ¿índice/salto entre sistemas, mostrar solo los que tienen juegos (con opción de
   ver todos), grupos plegables, o elegir el sistema en una lista y ver sus opciones al lado?
-- **Decisión:**
+- **Decisión (2026-10-14):** maestro-detalle: lista de sistemas a la izquierda (panel con desplazamiento propio) y las opciones del elegido a la derecha. Con la cruceta, arriba/abajo recorren la lista y la elección sigue al foco; derecha o A entran a las opciones; izquierda vuelve a la lista y, desde ella, a las secciones. Al abrir, queda elegido el sistema que se estaba viendo (`contextSystem`). `SettingsNav` admite un panel secundario (`SettingsPane`, `settingsFocus(anchor=…)`). Pendiente: probar en el dispositivo; posible filtro "solo con juegos".
 
 ---
 
 ## D. Limpieza al terminar la reconstrucción
 
-### 14. Retirar el respaldo y actualizar la documentación ⬜
+### 14. Retirar el respaldo y actualizar la documentación ✅
 - **Qué falta:** borrar `docs/ui-legacy/` cuando ya no haga falta como referencia, y actualizar
   `docs/architecture.md` y `../docs/ginny-frontend.md` con la estructura nueva (`Screen`,
   `Content` genérico, `SystemsScreen` / `GamesScreen`, `SettingsModal`, `GameModal`, temas).
   También quitar de `CLAUDE.md` la nota de "UI en reconstrucción" cuando corresponda.
 - **A decidir:** cuándo (¿al terminar la etapa 2?).
-- **Decisión:**
+- **Decisión (2026-10-14):** hecho: `docs/ui-legacy/` borrado (queda en git), `docs/architecture.md` reescrito en sus partes de UI (estructura de paquetes, grilla `ElementGrid`, gestión de juegos, «Interfaz actual»), `../docs/ginny-frontend.md` y `CLAUDE.md` actualizados.
 
 ---
 

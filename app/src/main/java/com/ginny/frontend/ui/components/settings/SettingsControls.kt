@@ -173,6 +173,44 @@ fun SettingsRow(
     }
 }
 
+/**
+ * Variante de [SettingsRow] en dos celdas, una sobre otra: el texto ([title] y [subtitle], p. ej. una ruta larga) arriba y
+ * el control ([content], p. ej. una fila de botones) debajo. Para cuando el control no deja espacio al texto al lado.
+ */
+@Composable
+fun SettingsStackedRow(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    content: @Composable () -> Unit,
+) {
+    val palette = GinnyThemes.current
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier.fillMaxWidth().padding(vertical = 10.dp),
+    ) {
+        Column {
+            Text(
+                text = title,
+                fontFamily = GinnyFont,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 15.sp,
+                color = palette.ink,
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    fontFamily = GinnyFont,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp,
+                    color = palette.muted,
+                )
+            }
+        }
+        content()
+    }
+}
+
 // ── Controles ─────────────────────────────────────────────────────────────────────────────
 
 /** Opciones en una píldora; la elegida, resaltada en blanco. Ej. filas visibles 1 · 2 · 3 · 4. */
